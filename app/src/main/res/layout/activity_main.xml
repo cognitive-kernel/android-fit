@@ -106,6 +106,30 @@
                 android:textAllCaps="false"
                 android:minHeight="60dp"/>
             <Button
+                android:id="@+id/sleepButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="ثبت خواب"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#23345B"
+                android:backgroundTint="#EAF0FF"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
+                android:id="@+id/vitalsButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="فشار خون و ضربان قلب"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#14563F"
+                android:backgroundTint="#E2F6EC"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
                 android:id="@+id/reportButton"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
