@@ -38,7 +38,8 @@ public class ReportChartView extends View {
         paint.setColor(ink); paint.setStrokeWidth(1);
         if (values.isEmpty()) {
             paint.setTextSize(14 * getResources().getDisplayMetrics().scaledDensity);
-            canvas.drawText("هنوز داده‌ای برای نمودار وجود ندارد", 12, h / 2, paint);
+            String empty = getContext().getSharedPreferences("fit_settings", 0).getString("language", "fa").equals("en") ? "No chart data available yet" : "هنوز داده‌ای برای نمودار وجود ندارد";
+            canvas.drawText(empty, 12, h / 2, paint);
             return;
         }
         float max = 1;
