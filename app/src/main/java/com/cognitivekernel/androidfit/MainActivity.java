@@ -13,14 +13,21 @@ public class MainActivity extends Activity implements SensorEventListener {
   ((TextView)findViewById(R.id.homePrompt)).setText(en?"What would you like to do today?":"امروز چه کاری انجام می‌دهی؟");
   ((TextView)findViewById(R.id.statusText)).setText(en?"Workout data is stored on your device.":"اطلاعات تمرین روی دستگاه شما ذخیره می‌شود.");
   ((TextView)findViewById(R.id.footerText)).setText(en?"FitYar • Your daily workout companion":"فیت‌یار • همراه تمرین‌های روزانه");((Button)findViewById(R.id.settingsButton)).setText(en?"Settings":"تنظیمات");((Button)findViewById(R.id.darkModeButton)).setText(dark()?(en?"Light mode":"حالت روشن"):(en?"Dark mode":"حالت تاریک"));((Button)findViewById(R.id.logWorkoutButton)).setText(tr("Log workout","ثبت تمرین"));((Button)findViewById(R.id.managePlansButton)).setText(en?"Plans & exercises":"برنامه‌ها و حرکات");((Button)findViewById(R.id.stepsButton)).setText(en?"Step counter":"قدم‌شمار");((Button)findViewById(R.id.reportButton)).setText(en?"Progress report":"گزارش عملکرد و نمودار");((Button)findViewById(R.id.exportButton)).setText(en?"Export records":"خروجی و ذخیره سوابق");View root=findViewById(android.R.id.content);applyFontSize(root,getSharedPreferences("fit_settings",0).getInt("font",0));applyTheme(root); }
+ int accentColor(){int a=getSharedPreferences("fit_settings",0).getInt("accent",0);return a==1?0xFF16835D:a==2?0xFF7952B3:0xFF365CF5;}
+ int accentSoftColor(){int a=getSharedPreferences("fit_settings",0).getInt("accent",0);return dark()?(a==1?0xFF214B40:a==2?0xFF403052:0xFF26365F):(a==1?0xFFE2F6EC:a==2?0xFFF0E8FA:0xFFEAF0FF);}
  void applyTheme(View view){
-  boolean night=dark();
+  boolean night=dark(); int accent=accentColor(), soft=accentSoftColor();
   int bg=night?0xFF101522:0xFFF5F7FB, surface=night?0xFF1B2435:0xFFFFFFFF, text=night?0xFFF1F5F9:0xFF17233D, muted=night?0xFFB8C2D4:0xFF53617A;
   if(view instanceof TextView){TextView t=(TextView)view;
-   if(t instanceof Button){Button b=(Button)t;b.setTextColor(night?0xFFF1F5F9:0xFF23345B);b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?0xFF303B50:0xFFEAF0FF));}
+   if(t instanceof Button){Button b=(Button)t;int id=view.getId();
+    boolean primary=id==R.id.logWorkoutButton||id==R.id.reportButton;
+    b.setTextColor(primary?0xFFFFFFFF:(night?0xFFF1F5F9:(getSharedPreferences("fit_settings",0).getInt("accent",0)==1?0xFF14563F:getSharedPreferences("fit_settings",0).getInt("accent",0)==2?0xFF50327A:0xFF23345B)));
+    b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary?accent:soft));
+   }
    else if(view.getId()==R.id.heroTitle||view.getId()==R.id.heroSubtitle||view.getId()==R.id.heroDescription){}
    else if(view.getId()==R.id.footerText)t.setTextColor(night?0xFF9AA8BD:0xFF8A94A8);
    else if(view.getId()==R.id.statusText)t.setTextColor(muted);
+   else if(view.getId()==R.id.stepsCountText)t.setTextColor(night?0xFFF1F5F9:(getSharedPreferences("fit_settings",0).getInt("accent",0)==1?0xFF17664D:getSharedPreferences("fit_settings",0).getInt("accent",0)==2?0xFF50327A:0xFF23345B));
    else t.setTextColor(text);
   }
   if(view instanceof EditText){((EditText)view).setTextColor(text);((EditText)view).setHintTextColor(muted);((EditText)view).setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?0xFF7B8AA5:0xFF8A94A8));}
