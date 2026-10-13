@@ -20,6 +20,8 @@ jobs:
         with:
           gradle-version: "8.9"
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install Android SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
       - name: Run unit tests
@@ -45,6 +47,8 @@ jobs:
         with:
           gradle-version: "8.9"
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
       - name: Install Android SDK
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64"
       - name: Run instrumented tests on emulator
