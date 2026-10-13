@@ -18,13 +18,15 @@ public class MainActivity extends Activity implements SensorEventListener {
  void applyTheme(View view){
   boolean night=dark(); int accent=accentColor(), soft=accentSoftColor();
   int bg=night?0xFF101522:0xFFF5F7FB, surface=night?0xFF1B2435:0xFFFFFFFF, text=night?0xFFF1F5F9:0xFF17233D, muted=night?0xFFB8C2D4:0xFF53617A;
+  // Keep the original dark palette; the updated light palette remains unchanged.
+  if(night){accent=0xFF365CF5;soft=0xFF26365F;}
   if(view instanceof TextView){TextView t=(TextView)view;
    if(t instanceof Button){Button b=(Button)t;int id=view.getId();
     boolean primary=id==R.id.logWorkoutButton||id==R.id.reportButton;
     b.setTextColor(primary?0xFFFFFFFF:(night?0xFFF1F5F9:(getSharedPreferences("fit_settings",0).getInt("accent",0)==1?0xFF14563F:getSharedPreferences("fit_settings",0).getInt("accent",0)==2?0xFF50327A:0xFF23345B)));
     b.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primary?accent:soft));
    }
-   else if(view.getId()==R.id.heroTitle||view.getId()==R.id.heroSubtitle||view.getId()==R.id.heroDescription){}
+   else if(view.getId()==R.id.heroTitle||view.getId()==R.id.heroSubtitle||view.getId()==R.id.heroDescription){if(night)t.setTextColor(0xFFF1F5F9);}
    else if(view.getId()==R.id.footerText)t.setTextColor(night?0xFF9AA8BD:0xFF8A94A8);
    else if(view.getId()==R.id.statusText)t.setTextColor(muted);
    else if(view.getId()==R.id.stepsCountText)t.setTextColor(night?0xFFF1F5F9:(getSharedPreferences("fit_settings",0).getInt("accent",0)==1?0xFF17664D:getSharedPreferences("fit_settings",0).getInt("accent",0)==2?0xFF50327A:0xFF23345B));
@@ -33,7 +35,7 @@ public class MainActivity extends Activity implements SensorEventListener {
   if(view instanceof EditText){((EditText)view).setTextColor(text);((EditText)view).setHintTextColor(muted);((EditText)view).setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?0xFF7B8AA5:0xFF8A94A8));}
   if(view instanceof android.view.ViewGroup){
    android.view.ViewGroup group=(android.view.ViewGroup)view;
-   if(view.getId()==R.id.heroTitle || view.getId()==R.id.heroSubtitle || view.getId()==R.id.heroDescription){}
+   if(view.getId()==R.id.heroTitle || view.getId()==R.id.heroSubtitle || view.getId()==R.id.heroDescription){if(night)view.setBackgroundColor(0xFF1B2435);}
    else if(view.getId()==android.R.id.content || view instanceof ScrollView) view.setBackgroundColor(bg);
    // Preserve XML drawable backgrounds (hero gradient and action/status cards) for readable contrast.
    for(int i=0;i<group.getChildCount();i++)applyTheme(group.getChildAt(i));
