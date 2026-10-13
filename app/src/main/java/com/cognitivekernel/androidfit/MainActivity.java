@@ -37,6 +37,7 @@ public class MainActivity extends Activity implements SensorEventListener {
    android.view.ViewGroup group=(android.view.ViewGroup)view;
    int id=view.getId();
    if(id==android.R.id.content || view instanceof ScrollView) view.setBackgroundColor(bg);
+   if(id==R.id.actionMenuPanel){view.setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?surface:0xFFFFFFFF));}
    if(view instanceof LinearLayout && view.getBackground()==null) view.setBackgroundColor(night?surface:0x00000000);
    if(night && (id==R.id.stepsCountText || id==R.id.statusText)) view.setBackgroundColor(surface);
    if(night && (id==R.id.heroTitle || id==R.id.heroSubtitle || id==R.id.heroDescription)) view.setBackgroundColor(surface);
