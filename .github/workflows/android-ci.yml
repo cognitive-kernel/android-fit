@@ -46,7 +46,14 @@ jobs:
         run: |
           set -euo pipefail
           test -s "$HOME/.android/debug.keystore"
-          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA256:|Valid from:'
+          CERT_INFO="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey)"
+          echo "$CERT_INFO" | grep -E 'SHA1:|SHA256:|Valid from:'
+          EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
+          if ! echo "$CERT_INFO" | grep -Fq "$EXPECTED_SHA256"; then
+            echo "::error::Signing certificate fingerprint changed. Refusing to build an APK with a different signing key."
+            exit 1
+          fi
+          echo "Signing certificate fingerprint matches the registered FitYar release key."
       - name: Install Android SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Run unit tests
