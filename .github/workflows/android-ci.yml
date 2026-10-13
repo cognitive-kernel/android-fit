@@ -1,7 +1,7 @@
 name: Android CI
 on:
   push:
-    branches: [ main, ci/verify-workout-app, feature/performance-report ]
+    branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
