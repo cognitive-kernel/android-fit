@@ -127,6 +127,18 @@
         </LinearLayout>
 
         <TextView
+            android:id="@+id/stepsCountText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="20dp"
+            android:background="@drawable/bg_status_card"
+            android:text="قدم‌های امروز&#10;۰ قدم"
+            android:textColor="#17664D"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+        <TextView
             android:id="@+id/statusText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
