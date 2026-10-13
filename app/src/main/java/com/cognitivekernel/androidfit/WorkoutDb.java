@@ -1,0 +1,16 @@
+package com.cognitivekernel.androidfit;
+import android.content.*;import android.database.*;import android.database.sqlite.*;import java.util.*;
+public class WorkoutDb extends SQLiteOpenHelper {
+ public WorkoutDb(Context c){super(c,"fit_yar.db",null,1);}
+ public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)");d.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY AUTOINCREMENT,plan_id INTEGER NOT NULL,name TEXT NOT NULL,sets INTEGER NOT NULL,reps INTEGER NOT NULL)");d.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT,date_jalali TEXT,plan_name TEXT,exercise_name TEXT,sets INTEGER,reps INTEGER,weight REAL,created_at INTEGER)");}
+ public void onUpgrade(SQLiteDatabase d,int o,int n){}
+ public long addPlan(String n){ContentValues v=new ContentValues();v.put("name",n);return getWritableDatabase().insert("plans",null,v);}
+ public long addExercise(long p,String n,int s,int r){ContentValues v=new ContentValues();v.put("plan_id",p);v.put("name",n);v.put("sets",s);v.put("reps",r);return getWritableDatabase().insert("exercises",null,v);}
+ public boolean updateExercise(long id,String n,int s,int r){ContentValues v=new ContentValues();v.put("name",n);v.put("sets",s);v.put("reps",r);return getWritableDatabase().update("exercises",v,"id=?",new String[]{""+id})>0;}
+ public void deleteExercise(long id){getWritableDatabase().delete("exercises","id=?",new String[]{""+id});}
+ public void deletePlan(long id){SQLiteDatabase d=getWritableDatabase();d.delete("exercises","plan_id=?",new String[]{""+id});d.delete("plans","id=?",new String[]{""+id});}
+ public List<String[]> plans(){List<String[]> a=new ArrayList<>();try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name FROM plans ORDER BY name",null)){while(c.moveToNext())a.add(new String[]{c.getString(0),c.getString(1)});}return a;}
+ public List<String[]> exercises(long p){List<String[]> a=new ArrayList<>();try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps FROM exercises WHERE plan_id=?",new String[]{""+p})){while(c.moveToNext())a.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3)});}return a;}
+ public void log(String date,String plan,String ex,int s,int r,double kg){ContentValues v=new ContentValues();v.put("date_jalali",date);v.put("plan_name",plan);v.put("exercise_name",ex);v.put("sets",s);v.put("reps",r);v.put("weight",kg);v.put("created_at",System.currentTimeMillis());getWritableDatabase().insert("logs",null,v);}
+ public Cursor allLogs(){return getReadableDatabase().rawQuery("SELECT date_jalali,plan_name,exercise_name,sets,reps,weight FROM logs ORDER BY created_at DESC",null);}
+}
