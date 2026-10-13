@@ -12,13 +12,16 @@ public class ReportChartView extends View {
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private List<String> labels = new ArrayList<>();
     private List<Float> values = new ArrayList<>();
-    private final int ink = 0xFF53617A;
-    private final int blue = 0xFF365CF5;
-    private final int grid = 0xFFE3E8F2;
+    private int ink = 0xFF53617A;
+    private int blue = 0xFF365CF5;
+    private int grid = 0xFFE3E8F2;
 
     public ReportChartView(Context context) {
         super(context);
         setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        boolean night = context.getSharedPreferences("fit_settings", 0).getBoolean("dark", false);
+        if (night) { ink = 0xFFB8C2D4; blue = 0xFF7894FF; grid = 0xFF354158; setBackgroundColor(0xFF1B2435); }
+        else { setBackgroundColor(0xFFFFFFFF); }
     }
 
     public void setData(List<String> labels, List<Float> values) {
