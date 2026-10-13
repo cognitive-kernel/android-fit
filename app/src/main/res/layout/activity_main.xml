@@ -75,7 +75,7 @@
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
                 android:backgroundTint="#365CF5"
-                android:allCaps="false"
+                android:textAllCaps="false"
                 android:minHeight="64dp"/>
             <Button
                 android:id="@+id/managePlansButton"
@@ -87,7 +87,7 @@
                 android:textStyle="bold"
                 android:textColor="#23345B"
                 android:backgroundTint="#EAF0FF"
-                android:allCaps="false"
+                android:textAllCaps="false"
                 android:minHeight="60dp"/>
             <Button
                 android:id="@+id/stepsButton"
@@ -99,7 +99,7 @@
                 android:textStyle="bold"
                 android:textColor="#17664D"
                 android:backgroundTint="#E4F8EE"
-                android:allCaps="false"
+                android:textAllCaps="false"
                 android:minHeight="60dp"/>
             <Button
                 android:id="@+id/exportButton"
@@ -110,7 +110,7 @@
                 android:textStyle="bold"
                 android:textColor="#5A3E13"
                 android:backgroundTint="#FFF2D9"
-                android:allCaps="false"
+                android:textAllCaps="false"
                 android:minHeight="60dp"/>
         </LinearLayout>
 
