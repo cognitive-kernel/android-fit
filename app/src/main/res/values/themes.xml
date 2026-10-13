@@ -3,6 +3,9 @@
     <style name="AppTheme" parent="@android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:colorAccent">#365CF5</item>
+        <item name="android:textColorPrimary">#17233D</item>
+        <item name="android:textColorSecondary">#53617A</item>
+        <item name="android:textColor">#17233D</item>
         <item name="android:windowBackground">#F5F7FB</item>
         <item name="android:navigationBarColor">#F5F7FB</item>
         <item name="android:statusBarColor">#172554</item>
