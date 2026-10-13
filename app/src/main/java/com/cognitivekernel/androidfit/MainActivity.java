@@ -35,7 +35,7 @@ public class MainActivity extends Activity implements SensorEventListener {
    android.view.ViewGroup group=(android.view.ViewGroup)view;
    if(view.getId()==R.id.heroTitle || view.getId()==R.id.heroSubtitle || view.getId()==R.id.heroDescription){}
    else if(view.getId()==android.R.id.content || view instanceof ScrollView) view.setBackgroundColor(bg);
-   else if(group.getChildCount()>0) view.setBackgroundColor(night?surface:0x00000000);
+   // Preserve XML drawable backgrounds (hero gradient and action/status cards) for readable contrast.
    for(int i=0;i<group.getChildCount();i++)applyTheme(group.getChildAt(i));
   }
  }
