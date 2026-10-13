@@ -28,8 +28,8 @@ public class MainActivity extends Activity implements SensorEventListener {
    }
    else if(view.getId()==R.id.heroTitle||view.getId()==R.id.heroSubtitle||view.getId()==R.id.heroDescription){if(night)t.setTextColor(0xFFF1F5F9);}
    else if(view.getId()==R.id.footerText)t.setTextColor(night?0xFF9AA8BD:0xFF8A94A8);
-   else if(view.getId()==R.id.statusText)t.setTextColor(muted);
-   else if(view.getId()==R.id.stepsCountText)t.setTextColor(night?0xFFF1F5F9:(getSharedPreferences("fit_settings",0).getInt("accent",0)==1?0xFF17664D:getSharedPreferences("fit_settings",0).getInt("accent",0)==2?0xFF50327A:0xFF23345B));
+   else if(view.getId()==R.id.statusText){t.setTextColor(muted);t.setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?surface:0xFFFFFFFF));}
+   else if(view.getId()==R.id.stepsCountText){t.setTextColor(night?0xFFF1F5F9:(getSharedPreferences("fit_settings",0).getInt("accent",0)==1?0xFF17664D:getSharedPreferences("fit_settings",0).getInt("accent",0)==2?0xFF50327A:0xFF23345B));t.setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?surface:0xFFE4F8EE));}
    else t.setTextColor(text);
   }
   if(view instanceof EditText){((EditText)view).setTextColor(text);((EditText)view).setHintTextColor(muted);((EditText)view).setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?0xFF7B8AA5:0xFF8A94A8));}
