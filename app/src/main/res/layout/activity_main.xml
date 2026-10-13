@@ -68,8 +68,7 @@
             android:layout_height="wrap_content"
             android:id="@+id/actionMenuPanel"
             android:orientation="vertical"
-            android:padding="12dp"
-            android:background="@drawable/bg_action_card">
+            android:padding="12dp">
             <Button
                 android:id="@+id/logWorkoutButton"
                 android:layout_width="match_parent"
