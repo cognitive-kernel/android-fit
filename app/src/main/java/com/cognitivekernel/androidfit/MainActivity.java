@@ -35,9 +35,11 @@ public class MainActivity extends Activity implements SensorEventListener {
   if(view instanceof EditText){((EditText)view).setTextColor(text);((EditText)view).setHintTextColor(muted);((EditText)view).setBackgroundTintList(android.content.res.ColorStateList.valueOf(night?0xFF7B8AA5:0xFF8A94A8));}
   if(view instanceof android.view.ViewGroup){
    android.view.ViewGroup group=(android.view.ViewGroup)view;
-   if(view.getId()==R.id.heroTitle || view.getId()==R.id.heroSubtitle || view.getId()==R.id.heroDescription){if(night)view.setBackgroundColor(0xFF1B2435);}
-   else if(view.getId()==android.R.id.content || view instanceof ScrollView) view.setBackgroundColor(bg);
-   // Preserve XML drawable backgrounds (hero gradient and action/status cards) for readable contrast.
+   int id=view.getId();
+   if(id==android.R.id.content || view instanceof ScrollView) view.setBackgroundColor(bg);
+   if(view instanceof LinearLayout && view.getBackground()==null) view.setBackgroundColor(night?surface:0x00000000);
+   if(night && (id==R.id.stepsCountText || id==R.id.statusText)) view.setBackgroundColor(surface);
+   if(night && (id==R.id.heroTitle || id==R.id.heroSubtitle || id==R.id.heroDescription)) view.setBackgroundColor(surface);
    for(int i=0;i<group.getChildCount();i++)applyTheme(group.getChildAt(i));
   }
  }
