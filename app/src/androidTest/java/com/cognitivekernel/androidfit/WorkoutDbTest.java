@@ -30,7 +30,7 @@ public class WorkoutDbTest {
   try { db.addExercise(plan,"Squat",0,10);fail("Expected invalid sets to be rejected"); }
   catch(IllegalArgumentException expected) { }
  }
- @Test public void savesWorkoutLogForCsvExport(){
+ @Test public void rejectsNegativeWeight(){\n  try { db.log("1405/07/21","Plan","Squat",3,8,-1);fail("Expected negative weight to be rejected"); }\n  catch(IllegalArgumentException expected) { }\n }\n @Test public void savesWorkoutLogForCsvExport(){
   db.log("1405/07/21","Plan A","Squat",3,8,42.5);
   try(android.database.Cursor c=db.allLogs()){
    assertTrue(c.moveToFirst());assertEquals("1405/07/21",c.getString(0));assertEquals("Plan A",c.getString(1));assertEquals("Squat",c.getString(2));assertEquals(3,c.getInt(3));assertEquals(8,c.getInt(4));assertEquals(42.5,c.getDouble(5),0.001);assertFalse(c.moveToNext());
