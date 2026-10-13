@@ -41,31 +41,46 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: fit-yar-debug-signing-key-v1
-      - name: Verify and report stable signing certificate
+      - name: Verify stable signing certificate
         shell: bash
         run: |
           set -euo pipefail
-          test -s "$HOME/.android/debug.keystore"
           CERT_INFO="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey)"
           echo "$CERT_INFO" | grep -E 'SHA1:|SHA256:|Valid from:'
           EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
           if ! echo "$CERT_INFO" | grep -Fq "$EXPECTED_SHA256"; then
-            echo "::error::Signing certificate fingerprint changed. Refusing to build an APK with a different signing key."
+            echo "::error::Signing certificate fingerprint changed. Refusing to build APKs."
             exit 1
           fi
-          echo "Signing certificate fingerprint matches the registered FitYar release key."
       - name: Install Android SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Run unit tests
         run: gradle test
       - name: Run Android lint
         run: gradle lintDebug
-      - name: Build debug APK
-        run: gradle assembleDebug
+      - name: Build test APKs 99 and 100
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle assembleDebug -PFIT_YAR_VERSION_CODE=99 -PFIT_YAR_VERSION_NAME=1.1.4-test99
+          mkdir -p artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/fit-yar-v99.apk
+          gradle assembleDebug -PFIT_YAR_VERSION_CODE=100 -PFIT_YAR_VERSION_NAME=1.1.4-test100
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/fit-yar-v100.apk
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" verify --print-certs artifacts/fit-yar-v99.apk | tee /tmp/v99-certs.txt
+          "$APKSIGNER" verify --print-certs artifacts/fit-yar-v100.apk | tee /tmp/v100-certs.txt
+          grep -F "Signer #1 certificate SHA-256 digest: 578264315217b79651a86f3607c6ec5a9c0a1785d461aad576a4cbeca4d36447" /tmp/v99-certs.txt
+          grep -F "Signer #1 certificate SHA-256 digest: 578264315217b79651a86f3607c6ec5a9c0a1785d461aad576a4cbeca4d36447" /tmp/v100-certs.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: fit-yar-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: fit-yar-v99
+          path: artifacts/fit-yar-v99.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fit-yar-v100
+          path: artifacts/fit-yar-v100.apk
           if-no-files-found: error
   instrumented-tests:
     runs-on: ubuntu-latest
