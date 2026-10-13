@@ -102,6 +102,18 @@
                 android:textAllCaps="false"
                 android:minHeight="60dp"/>
             <Button
+                android:id="@+id/reportButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="گزارش عملکرد و نمودار"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#5367D9"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
                 android:id="@+id/exportButton"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
