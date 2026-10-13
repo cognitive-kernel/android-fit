@@ -41,6 +41,12 @@ jobs:
         with:
           path: ~/.android/debug.keystore
           key: fit-yar-debug-signing-key-v1
+      - name: Verify and report stable signing certificate
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s "$HOME/.android/debug.keystore"
+          keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA256:|Valid from:'
       - name: Install Android SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Run unit tests
