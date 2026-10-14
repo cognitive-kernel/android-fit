@@ -67,12 +67,13 @@ public class MainActivity extends Activity implements SensorEventListener {
   final long[] from={0},to={System.currentTimeMillis()};final boolean[] customRange={false};
   LinearLayout dateRange=new LinearLayout(this);dateRange.setOrientation(LinearLayout.HORIZONTAL);
   Button fromButton=new Button(this),toButton=new Button(this),allDates=new Button(this);
+  final Runnable[] refreshReportRange={()->{}};
   Runnable updateRangeLabels=()->{fromButton.setText(tr("From: ","از: ")+(from[0]==0?tr("Start","شروع"):stamp(from[0])));toButton.setText(tr("To: ","تا: ")+stamp(to[0]));};
   fromButton.setOnClickListener(v->chooseDateTime(from[0]==0?System.currentTimeMillis():from[0],t->{from[0]=t;customRange[0]=true;updateRangeLabels.run();refreshReportRange[0].run();}));
   toButton.setOnClickListener(v->chooseDateTime(to[0],t->{to[0]=t;customRange[0]=true;updateRangeLabels.run();refreshReportRange[0].run();}));
   allDates.setText(tr("Use preset","بازه آماده"));allDates.setOnClickListener(v->{customRange[0]=false;refreshReportRange[0].run();});
   dateRange.addView(fromButton,new LinearLayout.LayoutParams(0,-2,1));dateRange.addView(toButton,new LinearLayout.LayoutParams(0,-2,1));dateRange.addView(allDates,new LinearLayout.LayoutParams(0,-2,1));root.addView(dateRange);updateRangeLabels.run();
-  final Runnable[] refreshReportRange={()->{}};
+  
   TextView stats=new TextView(this);stats.setTextColor(primaryText);stats.setTextSize(16);stats.setPadding(0,18,0,18);root.addView(stats);
   ReportChartView chart=new ReportChartView(this);LinearLayout.LayoutParams cp=new LinearLayout.LayoutParams(-1,230);root.addView(chart,cp);
   TextView detail=new TextView(this);detail.setTextColor(secondaryText);detail.setTextSize(13);detail.setPadding(0,14,0,8);root.addView(detail);
