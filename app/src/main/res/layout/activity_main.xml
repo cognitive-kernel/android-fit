@@ -130,6 +130,18 @@
                 android:textAllCaps="false"
                 android:minHeight="60dp"/>
             <Button
+                android:id="@+id/bodyMetricsButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="ثبت وزن و دور کمر"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#23345B"
+                android:backgroundTint="#EAF0FF"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
                 android:id="@+id/reportButton"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
