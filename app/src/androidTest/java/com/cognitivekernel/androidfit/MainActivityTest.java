@@ -15,6 +15,20 @@ public class MainActivityTest {
     assertNotNull(activity.findViewById(R.id.logWorkoutButton));
     assertNotNull(activity.findViewById(R.id.stepsButton));
     assertNotNull(activity.findViewById(R.id.exportButton));
+    assertNotNull(activity.findViewById(R.id.sleepButton));
+    assertNotNull(activity.findViewById(R.id.vitalsButton));
+    assertNotNull(activity.findViewById(R.id.bodyMetricsButton));
+    assertNotNull(activity.findViewById(R.id.reportButton));
+    assertNotNull(activity.findViewById(R.id.stepGoalButton));
+    assertNotNull(activity.findViewById(R.id.personalPlanButton));
+    assertNotNull(activity.findViewById(R.id.historyButton));
+    assertNotNull(activity.findViewById(R.id.libraryButton));
+    assertNotNull(activity.findViewById(R.id.coachButton));
+    assertNotNull(activity.findViewById(R.id.weeklyGoalButton));
+    assertNotNull(activity.findViewById(R.id.reminderButton));
+    assertNotNull(activity.findViewById(R.id.backupButton));
+    assertNotNull(activity.findViewById(R.id.restoreButton));
+    assertNotNull(activity.findViewById(R.id.heroIllustration));
    });
   }
  }
