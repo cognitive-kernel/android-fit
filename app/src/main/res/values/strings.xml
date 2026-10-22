@@ -122,7 +122,7 @@
 <string name="notification_permission_message">برای نمایش یادآور، مجوز اعلان را فعال کنید.</string>
 <string name="reminder_notification_title">زمان تمرین فیت‌یار</string>
 <string name="reminder_notification_text">اگر امروز زمان دارید، جلسه تمرینی خود را ثبت کنید.</string>
-<string name="continue">ادامه</string>
+<string name="continue_action">ادامه</string>
 <string name="restore_warning">بازیابی، پایگاه داده فعلی را جایگزین می‌کند. پیش از ادامه از اطلاعات فعلی پشتیبان بگیرید.</string>
 <string name="backup_complete">پشتیبان‌گیری کامل شد</string>
 <string name="backup_saved">فایل پایگاه داده ذخیره شد.</string>
