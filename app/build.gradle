@@ -1,10 +1,12 @@
 plugins { id 'com.android.application' }
+def stableDebugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
+
 android {
     namespace 'com.cognitivekernel.androidfit'
     compileSdk 36
     signingConfigs {
         stableDebug {
-            storeFile file(System.getProperty("user.home") + "/.android/debug.keystore")
+            storeFile stableDebugKeystore
             storePassword "android"
             keyAlias "androiddebugkey"
             keyPassword "android"
@@ -12,7 +14,9 @@ android {
     }
     buildTypes {
         debug {
-            signingConfig signingConfigs.stableDebug
+            // Use the user's existing debug key when present. CI tests may use
+            // Gradle's temporary default key, but signed-artifact CI requires the registered certificate.
+            if (stableDebugKeystore.exists()) signingConfig signingConfigs.stableDebug
         }
     }
     defaultConfig {
