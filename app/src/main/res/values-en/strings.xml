@@ -48,4 +48,6 @@
     <string name="csv_header">date,plan,exercise,sets,reps,weight&#10;</string>
     <string name="file_saved">File saved.</string>
     <string name="export_failed">Could not create the file.</string>
+    <string name="ok">OK</string>
+    <string name="export_destination_error">Unable to open export destination.</string>
 </resources>
