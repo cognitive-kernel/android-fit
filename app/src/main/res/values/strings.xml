@@ -48,4 +48,6 @@
     <string name="csv_header">date,plan,exercise,sets,reps,weight&#10;</string>
     <string name="file_saved">فایل ذخیره شد.</string>
     <string name="export_failed">ساخت فایل انجام نشد.</string>
+    <string name="ok">باشه</string>
+    <string name="export_destination_error">مسیر ذخیره‌سازی باز نشد.</string>
 </resources>
