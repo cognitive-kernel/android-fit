@@ -14,6 +14,21 @@ public final class GoalPlanner {
  private static String t(Activity a,String en,String fa){return a.getSharedPreferences("fit_settings",0).getString("language","fa").equals("en")?en:fa;}
  private static EditText input(Activity a,String hint,String value){EditText e=new EditText(a);e.setHint(hint);e.setText(value);e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);return e;}
  private static Spinner choices(Activity a,String[] values){Spinner s=new Spinner(a);s.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,values));return s;}
+ /** Normalize Persian/Arabic numerals so numeric fields work with localized keyboards. */
+ private static String normalizeDigits(String value){
+  StringBuilder out=new StringBuilder(value.length());
+  for(int i=0;i<value.length();i++){
+   char ch=value.charAt(i);
+   if(ch>='۰'&&ch<='۹') ch=(char)('0'+ch-'۰');
+   else if(ch>='٠'&&ch<='٩') ch=(char)('0'+ch-'٠');
+   else if(ch=='٫') ch='.';
+   else if(ch=='٬'||ch=='،') ch=',';
+   out.append(ch);
+  }
+  return out.toString().replace(",", "").trim();
+ }
+ private static int parseInteger(String value){return Integer.parseInt(normalizeDigits(value));}
+ private static double parseDecimal(String value){return Double.parseDouble(normalizeDigits(value));}
  public static void show(Activity a){
   LinearLayout form=new LinearLayout(a);form.setOrientation(LinearLayout.VERTICAL);int p=(int)(14*a.getResources().getDisplayMetrics().density);form.setPadding(p,p,p,p);
   Spinner goal=choices(a,new String[]{t(a,"Weight loss","کاهش وزن"),t(a,"Fitness & body composition","فیتنس و تناسب اندام"),t(a,"Muscle building","عضله‌سازی")});
@@ -24,7 +39,7 @@ public final class GoalPlanner {
   form.addView(goal);form.addView(new TextView(a){{setText(t(a,"Muscle target area","ناحیه هدف عضله‌سازی"));}});form.addView(area);form.addView(sex);form.addView(age);form.addView(height);form.addView(weight);form.addView(activity);
   new AlertDialog.Builder(a).setTitle(t(a,"Personal training & nutrition","تمرین و تغذیه شخصی")).setView(form).setPositiveButton(t(a,"Create guide","ساخت راهنما"),(dialog,which)->{
    try{
-    int years=Integer.parseInt(age.getText().toString().trim());double cm=Double.parseDouble(height.getText().toString().trim()),kg=Double.parseDouble(weight.getText().toString().trim());
+    int years=parseInteger(age.getText().toString());double cm=parseDecimal(height.getText().toString()),kg=parseDecimal(weight.getText().toString());
     if(years<18||years>100||cm<120||cm>230||kg<30||kg>300)throw new IllegalArgumentException();
     int g=goal.getSelectedItemPosition(),r=area.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition();
     double bmi=kg/Math.pow(cm/100.0,2),bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161),maint=bmr*(act==0?1.35:act==1?1.55:1.725),target=Math.max(1200,g==0?maint-350:g==1?maint:maint+200),protein=kg*(g==2?1.8:1.5);
