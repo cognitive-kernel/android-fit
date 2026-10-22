@@ -113,12 +113,72 @@ public final class AdvancedFeatures {
  public void backup(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/octet-stream");i.putExtra(Intent.EXTRA_TITLE,"fityar-backup.db");a.startActivityForResult(i,BACKUP);}
  public void restore(){new AlertDialog.Builder(a).setTitle(s("restore_backup")).setMessage(s("restore_warning")).setPositiveButton(s("continue"),(d,w)->{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");a.startActivityForResult(i,RESTORE);}).setNegativeButton(android.R.string.cancel,null).show();}
  public boolean onActivityResult(int requestCode,int resultCode,Intent data){
-  if((requestCode!=BACKUP&&requestCode!=RESTORE)||resultCode!=Activity.RESULT_OK||data==null||data.getData()==null)return false;
+  if(requestCode!=BACKUP&&requestCode!=RESTORE)return false;
+  if(resultCode!=Activity.RESULT_OK||data==null||data.getData()==null)return true;
+  File dbFile=a.getDatabasePath(WorkoutDb.DATABASE_NAME);
+  File tmp=new File(a.getCacheDir(),"fit-yar-restore.tmp");
+  File rollback=new File(a.getCacheDir(),"fit-yar-restore-rollback.db");
   try{
-   File dbFile=a.getDatabasePath("fit_yar.db");db.close();
-   if(requestCode==BACKUP){db.getReadableDatabase().close();try(InputStream in=new FileInputStream(dbFile);OutputStream out=a.getContentResolver().openOutputStream(data.getData())){if(out==null)throw new IOException("No output stream");copy(in,out);}db.getReadableDatabase();message(s("backup_complete"),s("backup_saved"));}
-   else{File tmp=new File(a.getCacheDir(),"fit-yar-restore.tmp");try(InputStream in=a.getContentResolver().openInputStream(data.getData());OutputStream out=new FileOutputStream(tmp)){if(in==null)throw new IOException("No input stream");copy(in,out);}try(SQLiteDatabase check=SQLiteDatabase.openDatabase(tmp.getAbsolutePath(),null,SQLiteDatabase.OPEN_READONLY);Cursor integrity=check.rawQuery("PRAGMA integrity_check",null)){if(!integrity.moveToFirst()||!"ok".equalsIgnoreCase(integrity.getString(0)))throw new IOException("Invalid database");try(Cursor tables=check.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('plans','exercises','logs')",null)){if(!tables.moveToFirst()||tables.getInt(0)!=3)throw new IOException("Not a FitYar database");}}if(!tmp.renameTo(dbFile)){try(InputStream in=new FileInputStream(tmp);OutputStream out=new FileOutputStream(dbFile)){copy(in,out);}tmp.delete();}db.getReadableDatabase();message(s("restore_complete"),s("restore_saved"));}
-  }catch(Exception ex){try{db.getReadableDatabase();}catch(Exception ignored){}message(s("error"),s("backup_failed"));}return true;
+   db.close();
+   if(requestCode==BACKUP){
+    try(InputStream in=new FileInputStream(dbFile);OutputStream out=a.getContentResolver().openOutputStream(data.getData())){
+     if(out==null)throw new IOException("No output stream");copy(in,out);
+    }
+    db.getReadableDatabase();
+    message(s("backup_complete"),s("backup_saved"));
+    return true;
+   }
+   try(InputStream in=a.getContentResolver().openInputStream(data.getData());OutputStream out=new FileOutputStream(tmp)){
+    if(in==null)throw new IOException("No input stream");copy(in,out);
+   }
+   validateDatabase(tmp);
+   if(rollback.exists()&&!rollback.delete())throw new IOException("Cannot clear rollback file");
+   if(dbFile.exists())try(InputStream in=new FileInputStream(dbFile);OutputStream out=new FileOutputStream(rollback)){copy(in,out);}
+   deleteSidecars(dbFile);
+   if(dbFile.exists()&&!dbFile.delete())throw new IOException("Cannot safely replace current database");
+   if(!tmp.renameTo(dbFile))try(InputStream in=new FileInputStream(tmp);OutputStream out=new FileOutputStream(dbFile)){copy(in,out);}
+   validateDatabase(dbFile);
+   db.getReadableDatabase(); // Triggers only additive schema migration when restoring an older backup.
+   rollback.delete();
+   message(s("restore_complete"),s("restore_saved"));
+  }catch(Exception ex){
+   try{
+    db.close();
+    if(rollback.exists()){
+     deleteSidecars(dbFile);
+     if(dbFile.exists())dbFile.delete();
+     try(InputStream in=new FileInputStream(rollback);OutputStream out=new FileOutputStream(dbFile)){copy(in,out);}
+    }
+    db.getReadableDatabase();
+   }catch(Exception ignored){}
+   message(s("error"),s("backup_failed"));
+  }finally{
+   if(tmp.exists())tmp.delete();
+  }
+  return true;
  }
- private void copy(InputStream in,OutputStream out)throws IOException{byte[] b=new byte[8192];int n;while((n=in.read(b))!=-1)out.write(b,0,n);out.flush();}
+
+ private void validateDatabase(File file)throws IOException{
+  if(!file.isFile()||file.length()<100)throw new IOException("Empty database");
+  try(SQLiteDatabase check=SQLiteDatabase.openDatabase(file.getAbsolutePath(),null,SQLiteDatabase.OPEN_READONLY);
+      Cursor integrity=check.rawQuery("PRAGMA integrity_check",null)){
+   if(!integrity.moveToFirst()||!"ok".equalsIgnoreCase(integrity.getString(0)))throw new IOException("Invalid SQLite database");
+   try(Cursor version=check.rawQuery("PRAGMA user_version",null)){
+    if(!version.moveToFirst()||version.getInt(0)>4)throw new IOException("Backup comes from a newer app version");
+   }
+   try(Cursor tables=check.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('plans','exercises','logs')",null)){
+    if(!tables.moveToFirst()||tables.getInt(0)!=3)throw new IOException("Not a FitYar database");
+   }
+  }catch(android.database.SQLException ex){throw new IOException("Invalid FitYar backup",ex);}
+ }
+
+ private void deleteSidecars(File dbFile){
+  for(String suffix:new String[]{"-wal","-shm","-journal"}){File sidecar=new File(dbFile.getAbsolutePath()+suffix);if(sidecar.exists())sidecar.delete();}
+ }
+
+ private void copy(InputStream in,OutputStream out)throws IOException{
+  byte[] buffer=new byte[8192];int count;
+  while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
+  out.flush();
+ }
 }
