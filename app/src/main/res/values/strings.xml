@@ -129,4 +129,9 @@
 <string name="restore_complete">بازیابی انجام شد</string>
 <string name="restore_saved">اطلاعات از پشتیبان بازیابی شد.</string>
 <string name="backup_failed">عملیات انجام نشد. فایل باید پشتیبان معتبر فیت‌یار باشد.</string>
+    <string name="step_goal">هدف قدم‌ها</string>
+    <string name="step_goal_hint">تعداد قدم هدف در هر نوبت پیاده‌روی</string>
+    <string name="step_goal_session_note">این هدف برای نوبت فعالی است که قدم‌شمار را شروع می‌کنید؛ شمارش روزانه در پس‌زمینه نیست.</string>
+    <string name="step_goal_saved">هدف قدم‌ها ذخیره شد.</string>
+    <string name="step_progress_format">قدم‌های این نوبت: %1$d از %2$d</string>
 </resources>
