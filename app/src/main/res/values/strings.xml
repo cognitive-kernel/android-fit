@@ -50,4 +50,6 @@
     <string name="export_failed">ساخت فایل انجام نشد.</string>
     <string name="ok">باشه</string>
     <string name="export_destination_error">مسیر ذخیره‌سازی باز نشد.</string>
+    <string name="choose_language_title">زبان برنامه را انتخاب کنید</string>
+    <string name="change_language">تغییر زبان / Change language</string>
 </resources>
