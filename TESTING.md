@@ -27,7 +27,7 @@ gradle assembleDebug
 gradle connectedDebugAndroidTest
 ```
 
-The instrumented test task requires a running Android emulator or device. The workflow uses an API 35 emulator while compiling against API 36.
+The instrumented test task requires a running Android emulator or device. The workflow uses a Google APIs x86_64 API 34 emulator while compiling against API 36. API 34 is used for emulator stability; newer platform behavior still needs a separate device/API-level check.
 
 ## Update-safety rule
 
