@@ -30,6 +30,16 @@ public class WorkoutDbTest {
   try { db.addExercise(plan,"Squat",0,10);fail("Expected invalid sets to be rejected"); }
   catch(IllegalArgumentException expected) { }
  }
+ @Test public void savesRestEffortAndNotes(){
+  db.logDetailed("1405/07/21","Plan B","Deadlift",4,6,60,90,8,"Felt strong");
+  try(android.database.Cursor c=db.allLogs()){
+   assertTrue(c.moveToFirst());assertEquals(90,c.getInt(6));assertEquals(8,c.getInt(7));assertEquals("Felt strong",c.getString(8));
+  }
+ }
+ @Test public void weeklyGoalCountsRecentTrainingDates(){
+  db.log("1405/07/21","Plan","Squat",3,8,20);
+  assertTrue(db.weeklyTrainingDays()>=1);
+ }
  @Test public void rejectsNegativeWeight(){
   try { db.log("1405/07/21","Plan","Squat",3,8,-1);fail("Expected negative weight to be rejected"); }
   catch(IllegalArgumentException expected) { }
