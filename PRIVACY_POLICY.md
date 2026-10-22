@@ -17,7 +17,7 @@ The app does not currently include advertising, analytics, account registration,
 
 ## Sharing and retention
 
-Your workout data remains in the app's local database until you delete it or uninstall the app. Exported CSV files are saved to a location you choose and are managed by you. Anyone with access to your device or exported files may be able to read that information.
+Your workout data remains in the app's local database until you delete it or uninstall the app. Android Auto Backup is disabled for this app, so the app does not ask Android to back up its database. Exported CSV files are saved to a location you choose and are managed by you. If you uninstall the app or lose your device, the local database may be lost. Anyone with access to your device or exported files may be able to read that information.
 
 ## Children
 
