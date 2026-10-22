@@ -1,7 +1,7 @@
 name: Android CI
 on:
   push:
-    branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter ]
+    branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter, 'release/**' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
@@ -10,8 +10,9 @@ permissions:
 concurrency:
   group: android-ci-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
-  unit-tests-and-build:
+  unit-tests-and-lint:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -26,42 +27,104 @@ jobs:
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
-      - name: Restore stable debug signing key
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Run unit tests and lint
+        run: gradle test lintDebug
+
+  instrumented-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android SDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          packages=( "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" )
+          installed=false
+          for attempt in 1 2 3; do
+            if sdkmanager "${packages[@]}"; then
+              installed=true
+              break
+            fi
+            echo "Android SDK download failed (attempt $attempt/3); retrying after clearing incomplete package archives..."
+            rm -f "$ANDROID_HOME"/.temp/*.zip "$ANDROID_HOME"/.temp/*.partial 2>/dev/null || true
+            sleep 5
+          done
+          if [ "$installed" != true ]; then
+            echo "Android SDK installation failed after 3 attempts."
+            exit 1
+          fi
+      - name: Run instrumented tests on emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          script: gradle connectedDebugAndroidTest
+
+  signed-apk:
+    needs: [unit-tests-and-lint, instrumented-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Restore original signing key
         uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
           key: fit-yar-debug-signing-key-v1
-      - name: Ensure stable debug signing key exists
+      - name: Verify original signing key is available
         shell: bash
+        env:
+          FIT_YAR_DEBUG_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_DEBUG_KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.android"
-          if [ ! -f "$HOME/.android/debug.keystore" ]; then
-            keytool -genkeypair -noprompt -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          if [ ! -f "$HOME/.android/debug.keystore" ] && [ -n "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" ]; then
+            printf '%s' "$FIT_YAR_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
           fi
-      - name: Verify stable signing certificate
-        shell: bash
-        run: |
-          set -euo pipefail
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            echo "::error::Original signing key is unavailable. Tests can run, but no installable APK will be published."
+            echo "::error::Restore the original keystore securely; do not generate a replacement key."
+            exit 1
+          fi
           CERT_INFO="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey)"
           echo "$CERT_INFO" | grep -E 'SHA1:|SHA256:|Valid from:'
           EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
           if ! echo "$CERT_INFO" | grep -Fq "$EXPECTED_SHA256"; then
-            echo "::error::Signing certificate fingerprint changed. Refusing to build APKs."
+            echo "::error::Signing certificate mismatch. Refusing to publish an APK."
             exit 1
           fi
-      - name: Save stable debug signing key
+      - name: Save verified original signing key
         uses: actions/cache/save@v4
         with:
           path: ~/.android/debug.keystore
           key: fit-yar-debug-signing-key-v1
       - name: Install Android SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Run unit tests
-        run: gradle test
-      - name: Run Android lint
-        run: gradle lintDebug
-      - name: Build single APK
+      - name: Build and verify signed APK
         shell: bash
         run: |
           set -euo pipefail
@@ -76,70 +139,3 @@ jobs:
           name: fit-yar-v1.1.7
           path: artifacts/fit-yar-v1.1.7.apk
           if-no-files-found: error
-  instrumented-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "17"
-      - uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: "8.11.1"
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: platform-tools
-      - name: Restore stable debug signing key
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: fit-yar-debug-signing-key-v1
-      - name: Ensure stable debug signing key exists
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.android"
-          if [ ! -f "$HOME/.android/debug.keystore" ]; then
-            keytool -genkeypair -noprompt -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
-          fi
-      - name: Verify stable signing certificate
-        shell: bash
-        run: |
-          set -euo pipefail
-          CERT_INFO="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey)"
-          echo "$CERT_INFO" | grep -E 'SHA1:|SHA256:|Valid from:'
-          EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
-          if ! echo "$CERT_INFO" | grep -Fq "$EXPECTED_SHA256"; then
-            echo "::error::Signing certificate changed. Refusing to build an APK with a different signing key."
-            exit 1
-          fi
-      - name: Save stable debug signing key
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: fit-yar-debug-signing-key-v1
-      - name: Install Android SDK
-        shell: bash
-        run: |
-          set -euo pipefail
-          packages=( "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" )
-          for attempt in 1 2 3; do
-            if sdkmanager "${packages[@]}"; then
-              exit 0
-            fi
-            if [ "$attempt" -lt 3 ]; then
-              echo "Android SDK download failed (attempt $attempt/3); retrying after clearing incomplete package archives..."
-              rm -rf "$ANDROID_SDK_ROOT/temp" "$ANDROID_HOME/temp"
-              sleep 10
-            fi
-          done
-          echo "Android SDK installation failed after 3 attempts."
-          exit 1
-      - name: Run instrumented tests on emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_2
-          script: gradle connectedDebugAndroidTest
