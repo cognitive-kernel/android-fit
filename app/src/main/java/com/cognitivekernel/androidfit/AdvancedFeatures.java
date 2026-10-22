@@ -83,6 +83,65 @@ public final class AdvancedFeatures {
  private Spinner spinner(String[] values){Spinner sp=new Spinner(a);sp.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,values));return sp;}
  private TextView label(String t){TextView v=new TextView(a);v.setText(t);v.setTextSize(15);return v;}
 
+
+ /** Goal-specific exercise and nutrition guide based on age, height, weight and activity. */
+ public void buildGoalPlan(){
+  LinearLayout l=column();
+  Spinner goal=spinner(new String[]{tg("Weight loss","کاهش وزن"),tg("Fitness & body composition","فیتنس و تناسب اندام"),tg("Muscle building","عضله‌سازی")});
+  Spinner region=spinner(new String[]{tg("Full body","کل بدن"),tg("Shoulders","سرشانه"),tg("Arms","بازو"),tg("Abs / core","شکم و میان‌تنه"),tg("Legs & glutes","پا و باسن"),tg("Chest","سینه"),tg("Back","پشت و زیربغل")});
+  Spinner sex=spinner(new String[]{tg("Male","مرد"),tg("Female","زن")});
+  EditText age=field(tg("Age (years)","سن (سال)"),"30",android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText height=field(tg("Height (cm)","قد (سانتی‌متر)"),"170",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  EditText weight=field(tg("Weight (kg)","وزن (کیلوگرم)"),"70",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  Spinner activity=spinner(new String[]{tg("Low activity","فعالیت کم"),tg("Moderate activity","فعالیت متوسط"),tg("High activity","فعالیت زیاد")});
+  l.addView(label(tg("Choose your goal","هدف اصلی")));l.addView(goal);
+  l.addView(label(tg("Muscle-building target area","ناحیهٔ هدف عضله‌سازی")));l.addView(region);
+  l.addView(label(tg("Sex for calorie estimate","جنسیت برای تخمین کالری")));l.addView(sex);
+  l.addView(age);l.addView(height);l.addView(weight);l.addView(label(tg("Usual daily activity","فعالیت معمول روزانه")));l.addView(activity);
+  new AlertDialog.Builder(a).setTitle(tg("Personal training & nutrition","تمرین و تغذیهٔ شخصی")).setView(l).setPositiveButton(tg("Create guide","ساخت راهنما"),(d,w)->{
+   try{
+    int years=Integer.parseInt(age.getText().toString().trim());
+    double cm=Double.parseDouble(height.getText().toString().trim()),kg=Double.parseDouble(weight.getText().toString().trim());
+    if(years<18||years>100||cm<120||cm>230||kg<30||kg>300)throw new IllegalArgumentException();
+    int g=goal.getSelectedItemPosition(),r=region.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition();
+    double bmi=kg/((cm/100.0)*(cm/100.0));
+    double bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161);
+    double maintenance=bmr*(act==0?1.35:act==1?1.55:1.725);
+    double target=Math.max(1200,g==0?maintenance-350:g==1?maintenance:maintenance+200);
+    double protein=(g==2?1.8:1.5)*kg;
+    StringBuilder out=new StringBuilder();
+    out.append(tg("Profile","مشخصات")).append("\\n").append(tg("BMI (screening estimate only)","BMI (فقط شاخص غربالگری تقریبی)")).append(": ").append(String.format(Locale.getDefault(),"%.1f",bmi)).append("\\n")
+      .append(tg("Estimated maintenance","کالری نگهدارندهٔ تخمینی")).append(": ").append(Math.round(maintenance)).append(" kcal/day\\n")
+      .append(tg("Starting energy target","هدف اولیهٔ انرژی")).append(": ").append(Math.round(target)).append(" kcal/day\\n")
+      .append(tg("Protein guide","راهنمای پروتئین")).append(": ").append(Math.round(protein)).append(" g/day\\n\\n");
+    if(g==0){
+     out.append(tg("TRAINING — WEIGHT LOSS","تمرین — کاهش وزن")).append("\\n").append(tg("3–5 days/week: 25–45 min brisk walking/cycling plus 2–3 full-body strength sessions. Keep the calorie deficit modest and increase activity gradually.","۳ تا ۵ روز در هفته: ۲۵ تا ۴۵ دقیقه پیاده‌روی تند یا دوچرخه، به‌علاوهٔ ۲ تا ۳ جلسه قدرتی کل بدن. کسری کالری ملایم داشته باشید و فعالیت را تدریجی افزایش دهید.")).append("\\n\\n")
+      .append(tg("FOOD — vegetables, fruit, beans, whole grains and lean protein; reduce sugary drinks and highly processed snacks. Aim for slow, sustainable loss.","تغذیه — سبزی، میوه، حبوبات، غلات کامل و پروتئین کم‌چرب را بیشتر کنید؛ نوشیدنی شیرین و تنقلات بسیار فرآوری‌شده را کاهش دهید. کاهش وزن آهسته و پایدار را هدف بگیرید."));
+    }else if(g==1){
+     out.append(tg("TRAINING — FITNESS","تمرین — فیتنس و تناسب اندام")).append("\\n").append(tg("3 strength sessions/week for all major muscle groups, 2 moderate cardio sessions, and mobility work. Start with 2–3 sets of 8–15 controlled reps.","۳ جلسه قدرتی در هفته برای عضلات اصلی، ۲ جلسه هوازی متوسط و تمرین تحرک مفاصل. با ۲ تا ۳ ست و ۸ تا ۱۵ تکرار کنترل‌شده شروع کنید.")).append("\\n\\n")
+      .append(tg("FOOD — start near maintenance; include protein at each meal, vegetables, whole-food carbohydrates and healthy fats. Adjust after 2–3 weeks based on progress.","تغذیه — نزدیک کالری نگهدارنده شروع کنید؛ در هر وعده پروتئین، سبزیجات، کربوهیدرات کامل و چربی مفید بگنجانید. پس از ۲ تا ۳ هفته براساس روند پیشرفت تنظیم کنید."));
+    }else{
+     String area;
+     switch(r){
+      case 1: area=tg("shoulders: overhead press, lateral raises, rear-delt raises","سرشانه: پرس سرشانه، نشر جانب، نشر خم");break;
+      case 2: area=tg("arms: biceps curls, hammer curls, triceps extensions","بازو: جلو بازو، جلو بازو چکشی، پشت بازو");break;
+      case 3: area=tg("abs/core: plank, dead bug, reverse crunch; visible abs also depend on overall body fat","شکم و میان‌تنه: پلانک، ددباگ، کرانچ معکوس؛ نمایان‌شدن شکم به چربی کل بدن هم وابسته است");break;
+      case 4: area=tg("legs/glutes: squats, lunges, hip hinges, glute bridges","پا و باسن: اسکوات، لانج، هیپ‌هینج، پل باسن");break;
+      case 5: area=tg("chest: push-ups, dumbbell/floor press","سینه: شنا، پرس دمبل یا پرس روی زمین");break;
+      case 6: area=tg("back: rows, band rows, safe pulling movements","پشت و زیربغل: انواع پارویی، پارویی کشی و حرکات کششی ایمن");break;
+      default: area=tg("full body: squat, push-up, row, hip hinge and plank","کل بدن: اسکوات، شنا، پارویی، هیپ‌هینج و پلانک");
+     }
+     out.append(tg("TRAINING — MUSCLE BUILDING","تمرین — عضله‌سازی")).append("\\n").append(tg("Target area: ","ناحیهٔ هدف: ")).append(area).append("\\n")
+      .append(tg("Train the selected area twice weekly with about 48 hours between hard sessions. Begin with 3 exercises, 2–4 sets each and 6–15 reps; leave 1–3 good reps in reserve and increase reps/load gradually.","ناحیهٔ انتخابی را هفته‌ای ۲ بار تمرین دهید و بین جلسات سنگین حدود ۴۸ ساعت فاصله بگذارید. با ۳ حرکت، هرکدام ۲ تا ۴ ست و ۶ تا ۱۵ تکرار شروع کنید؛ ۱ تا ۳ تکرار توان اضافه باقی بگذارید و تکرار/وزنه را تدریجی افزایش دهید.")).append("\\n\\n")
+      .append(tg("FOOD — start near maintenance or a small surplus; spread protein across 3–4 meals, eat enough carbohydrates for training, and include vegetables, fruit and healthy fats. Review progress every 2–3 weeks.","تغذیه — نزدیک کالری نگهدارنده یا با مازاد اندک شروع کنید؛ پروتئین را در ۳ تا ۴ وعده تقسیم کنید، کربوهیدرات کافی برای تمرین بخورید و سبزی، میوه و چربی مفید مصرف کنید. هر ۲ تا ۳ هفته پیشرفت را بررسی کنید."));
+    }
+    out.append("\\n\\n").append(tg("Safety: these are rough estimates, not medical advice. The formula does not account for illness, medication, pregnancy or eating-disorder history. This guide is for adults; seek professional advice if needed.","ایمنی: این اعداد تخمینی‌اند و توصیهٔ پزشکی نیستند. بیماری، دارو، بارداری یا سابقهٔ اختلال خوردن در فرمول لحاظ نشده‌اند. این راهنما برای بزرگسالان است؛ در صورت نیاز با متخصص مشورت کنید."));
+    new AlertDialog.Builder(a).setTitle(tg("Your training & food guide","راهنمای تمرین و تغذیهٔ شما")).setMessage(out.toString()).setPositiveButton(android.R.string.ok,null).show();
+   }catch(Exception ex){message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, and weight 30–300 kg.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰ سانتی‌متر و وزن ۳۰ تا ۳۰۰ کیلوگرم وارد کنید."));}
+  }).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ private String tg(String en,String fa){return a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa").equals("en")?en:fa;}
+
  public void showCoach(){
   int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
   int days=db.weeklyTrainingDays();
