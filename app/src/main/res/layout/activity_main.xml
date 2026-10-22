@@ -218,6 +218,15 @@
             android:textSize="22sp"
             android:textStyle="bold"
             android:gravity="center" />
+        <ProgressBar
+            android:id="@+id/stepProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:max="100"
+            android:progress="0" />
         <TextView
             android:id="@+id/statusText"
             android:layout_width="match_parent"
