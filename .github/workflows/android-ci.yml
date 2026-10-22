@@ -103,11 +103,6 @@ jobs:
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             keytool -genkeypair -noprompt -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
-      - name: Save stable debug signing key
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.android/debug.keystore
-          key: fit-yar-debug-signing-key-v1
       - name: Verify stable signing certificate
         shell: bash
         run: |
@@ -119,6 +114,11 @@ jobs:
             echo "::error::Signing certificate changed. Refusing to build an APK with a different signing key."
             exit 1
           fi
+      - name: Save stable debug signing key
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fit-yar-debug-signing-key-v1
       - name: Install Android SDK
         shell: bash
         run: |
