@@ -72,6 +72,8 @@ jobs:
           api-level: 35
           arch: x86_64
           profile: pixel_2
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
+          disable-animations: true
           script: gradle connectedDebugAndroidTest
 
   signed-apk:
