@@ -51,7 +51,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          packages=( "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" )
+          packages=( "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64" )
           installed=false
           for attempt in 1 2 3; do
             if sdkmanager "${packages[@]}"; then
@@ -69,9 +69,11 @@ jobs:
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           arch: x86_64
+          target: google_apis
           profile: pixel_2
+          emulator-boot-timeout: 600
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
           script: gradle connectedDebugAndroidTest
