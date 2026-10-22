@@ -15,7 +15,7 @@ public final class GoalPlanner {
  private static EditText input(Activity a,String hint,String value){EditText e=new EditText(a);e.setHint(hint);e.setText(value);e.setInputType(InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);return e;}
  private static Spinner choices(Activity a,String[] values){Spinner s=new Spinner(a);s.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,values));return s;}
  /** Normalize Persian/Arabic numerals so numeric fields work with localized keyboards. */
- private static String normalizeDigits(String value){
+ static String normalizeDigits(String value){
   StringBuilder out=new StringBuilder(value.length());
   for(int i=0;i<value.length();i++){
    char ch=value.charAt(i);
@@ -27,8 +27,8 @@ public final class GoalPlanner {
   }
   return out.toString().replace(",", "").trim();
  }
- private static int parseInteger(String value){return Integer.parseInt(normalizeDigits(value));}
- private static double parseDecimal(String value){return Double.parseDouble(normalizeDigits(value));}
+ static int parseInteger(String value){return Integer.parseInt(normalizeDigits(value));}
+ static double parseDecimal(String value){return Double.parseDouble(normalizeDigits(value));}
  public static void show(Activity a){
   LinearLayout form=new LinearLayout(a);form.setOrientation(LinearLayout.VERTICAL);int p=(int)(14*a.getResources().getDisplayMetrics().density);form.setPadding(p,p,p,p);
   Spinner goal=choices(a,new String[]{t(a,"Weight loss","کاهش وزن"),t(a,"Fitness & body composition","فیتنس و تناسب اندام"),t(a,"Muscle building","عضله‌سازی")});
