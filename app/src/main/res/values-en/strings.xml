@@ -121,7 +121,7 @@
 <string name="notification_permission_message">Allow notifications to show workout reminders.</string>
 <string name="reminder_notification_title">FitYar workout time</string>
 <string name="reminder_notification_text">If you have time today, log your workout session.</string>
-<string name="continue">Continue</string>
+<string name="continue_action">Continue</string>
 <string name="restore_warning">Restore replaces the current database. Back up current data before continuing.</string>
 <string name="backup_complete">Backup complete</string>
 <string name="backup_saved">Database file saved.</string>
