@@ -4,13 +4,13 @@
 
 ## پیش‌نیازها
 - Android Studio و JDK 17
-- Android SDK Platform 35
-- Android Gradle Plugin 8.7.3 و Gradle 8.9
+- Android SDK Platform 36
+- Android Gradle Plugin 8.9.2 و Gradle 8.11.1
 
 ## اجرا و تست
 مخزن را در Android Studio باز کنید و Gradle Sync را انجام دهید. تست‌های واحد را از بخش verification اجرا کنید. برای ساخت APK از Build > Build APK(s) استفاده کنید.
 
-GitHub Actions با هر push به شاخه main تست‌های واحد را اجرا می‌کند، APK دیباگ را می‌سازد و آن را به‌عنوان artifact نگه می‌دارد. فایل APK در صفحه Actions و اجرای موفق workflow قابل دریافت است.
+GitHub Actions روی شاخه main، شاخه‌های release و Pull Requestها تست‌های واحد، Android Lint، تست‌های ابزاری روی شبیه‌ساز Android 16 و ساخت APK دیباگ و AAB انتشار را اجرا می‌کند. AAB ساخته‌شده در CI بدون کلید انتشار امضاشده، صرفاً نامزد ساخت است. فایل APK در صفحه Actions و اجرای موفق workflow قابل دریافت است.
 
 ## قابلیت‌ها
 - ساخت و حذف برنامه تمرینی و افزودن، ویرایش یا حذف حرکات
