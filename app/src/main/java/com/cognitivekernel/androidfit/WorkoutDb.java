@@ -16,5 +16,6 @@ public class WorkoutDb extends SQLiteOpenHelper {
  public Cursor allLogs(){return getReadableDatabase().rawQuery("SELECT date_jalali,plan_name,exercise_name,sets,reps,weight,rest_seconds,effort,notes FROM logs ORDER BY created_at DESC",null);}
  public Cursor summary(){return getReadableDatabase().rawQuery("SELECT COUNT(*),COUNT(DISTINCT date_jalali),COALESCE(SUM(sets*reps*weight),0),COALESCE(MAX(weight),0) FROM logs",null);}
  public Cursor recentLogs(){return getReadableDatabase().rawQuery("SELECT date_jalali,exercise_name,sets,reps,weight,effort,notes FROM logs ORDER BY created_at DESC LIMIT 30",null);}
- public int weeklyTrainingDays(){try(Cursor c=getReadableDatabase().rawQuery("SELECT COUNT(DISTINCT date_jalali) FROM logs WHERE created_at>=?",new String[]{String.valueOf(System.currentTimeMillis()-7L*24*60*60*1000)})){return c.moveToFirst()?c.getInt(0):0;}}\n public Cursor volumeByDate(){return getReadableDatabase().rawQuery("SELECT date_jalali,COALESCE(SUM(sets*reps*weight),0) FROM logs GROUP BY date_jalali ORDER BY MIN(created_at) DESC LIMIT 7",null);}
+ public int weeklyTrainingDays(){try(Cursor c=getReadableDatabase().rawQuery("SELECT COUNT(DISTINCT date_jalali) FROM logs WHERE created_at>=?",new String[]{String.valueOf(System.currentTimeMillis()-7L*24*60*60*1000)})){return c.moveToFirst()?c.getInt(0):0;}}
+ public Cursor volumeByDate(){return getReadableDatabase().rawQuery("SELECT date_jalali,COALESCE(SUM(sets*reps*weight),0) FROM logs GROUP BY date_jalali ORDER BY MIN(created_at) DESC LIMIT 7",null);}
 }
