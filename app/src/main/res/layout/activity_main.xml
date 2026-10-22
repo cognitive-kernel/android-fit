@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView android:id="@+id/rootContainer" xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F5F7FB"
@@ -17,6 +17,14 @@
             android:orientation="vertical"
             android:padding="26dp"
             android:background="@drawable/bg_hero">
+            <ImageView
+                android:id="@+id/heroIllustration"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp"
+                android:contentDescription="FitYar"
+                android:src="@drawable/ic_launcher_foreground" />
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -153,6 +161,15 @@
                 android:backgroundTint="#5367D9"
                 android:textAllCaps="false"
                 android:minHeight="60dp"/>
+            <Button android:id="@+id/stepGoalButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="هدف قدم‌ها" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
+            <Button android:id="@+id/personalPlanButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="ساخت برنامه شخصی" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/historyButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="تاریخچه و پیشرفت" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/libraryButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="کتابخانه تصویری حرکات" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
+            <Button android:id="@+id/coachButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="مربی آفلاین" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/weeklyGoalButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="هدف هفتگی" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
+            <Button android:id="@+id/reminderButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="یادآور تمرین" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/backupButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="پشتیبان‌گیری" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
+            <Button android:id="@+id/restoreButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="بازیابی پشتیبان" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
             <Button
                 android:id="@+id/exportButton"
                 android:layout_width="match_parent"
