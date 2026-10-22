@@ -29,6 +29,7 @@ public class MainActivityTest {
     assertNotNull(activity.findViewById(R.id.backupButton));
     assertNotNull(activity.findViewById(R.id.restoreButton));
     assertNotNull(activity.findViewById(R.id.heroIllustration));
+    assertNotNull(activity.findViewById(R.id.goalNutritionButton));
    });
   }
  }
