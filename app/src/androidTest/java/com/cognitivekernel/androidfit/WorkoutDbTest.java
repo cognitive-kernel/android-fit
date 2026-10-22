@@ -69,4 +69,21 @@ public class WorkoutDbTest {
   assertEquals(4,db.getReadableDatabase().getVersion());
   try(android.database.Cursor c=db.sleepLogs()){assertFalse(c.moveToFirst());}
  }
+ @Test public void upgradesVersionTwoDetailedSchemaFromOtherBranch(){
+  db.close();context.deleteDatabase(WorkoutDb.DATABASE_NAME);
+  android.database.sqlite.SQLiteDatabase legacy=android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(WorkoutDb.DATABASE_NAME),null);
+  legacy.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)");
+  legacy.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY AUTOINCREMENT,plan_id INTEGER NOT NULL,name TEXT NOT NULL,sets INTEGER NOT NULL,reps INTEGER NOT NULL)");
+  legacy.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT,date_jalali TEXT,plan_name TEXT,exercise_name TEXT,sets INTEGER,reps INTEGER,weight REAL,created_at INTEGER,rest_seconds INTEGER NOT NULL DEFAULT 60,effort INTEGER NOT NULL DEFAULT 7,notes TEXT NOT NULL DEFAULT '')");
+  legacy.execSQL("INSERT INTO plans(name) VALUES('Version two plan')");
+  legacy.execSQL("INSERT INTO logs(date_jalali,plan_name,exercise_name,sets,reps,weight,created_at,rest_seconds,effort,notes) VALUES('1405/07/21','Version two plan','Deadlift',4,6,70,123456789,120,9,'Kept from old schema')");
+  legacy.setVersion(2);legacy.close();
+  db=new WorkoutDb(context);
+  assertEquals("Version two plan",db.plans().get(0)[1]);
+  try(android.database.Cursor c=db.allLogs()){
+   assertTrue(c.moveToFirst());assertEquals("Deadlift",c.getString(2));assertEquals(120,c.getInt(6));assertEquals(9,c.getInt(7));assertEquals("Kept from old schema",c.getString(8));
+  }
+  try(android.database.Cursor c=db.vitalLogs()){assertFalse(c.moveToFirst());}
+  try(android.database.Cursor c=db.bodyMetrics()){assertFalse(c.moveToFirst());}
+ }
 }
