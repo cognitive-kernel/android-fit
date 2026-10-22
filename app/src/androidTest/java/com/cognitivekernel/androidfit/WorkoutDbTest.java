@@ -86,4 +86,23 @@ public class WorkoutDbTest {
   try(android.database.Cursor c=db.vitalLogs()){assertFalse(c.moveToFirst());}
   try(android.database.Cursor c=db.bodyMetrics()){assertFalse(c.moveToFirst());}
  }
+ @Test public void upgradesVersionThreeHealthSchemaWithoutLosingRecords(){
+  db.close();context.deleteDatabase(WorkoutDb.DATABASE_NAME);
+  android.database.sqlite.SQLiteDatabase legacy=android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(WorkoutDb.DATABASE_NAME),null);
+  legacy.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)");
+  legacy.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY AUTOINCREMENT,plan_id INTEGER NOT NULL,name TEXT NOT NULL,sets INTEGER NOT NULL,reps INTEGER NOT NULL)");
+  legacy.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT,date_jalali TEXT,plan_name TEXT,exercise_name TEXT,sets INTEGER,reps INTEGER,weight REAL,created_at INTEGER)");
+  legacy.execSQL("CREATE TABLE sleep_logs(id INTEGER PRIMARY KEY AUTOINCREMENT,start_at INTEGER NOT NULL,end_at INTEGER NOT NULL,duration_minutes INTEGER NOT NULL)");
+  legacy.execSQL("CREATE TABLE vital_logs(id INTEGER PRIMARY KEY AUTOINCREMENT,measured_at INTEGER NOT NULL,systolic INTEGER NOT NULL,diastolic INTEGER NOT NULL,pulse INTEGER NOT NULL)");
+  legacy.execSQL("CREATE TABLE body_metrics(id INTEGER PRIMARY KEY AUTOINCREMENT,measured_at INTEGER NOT NULL,weight_kg REAL,waist_cm REAL)");
+  legacy.execSQL("INSERT INTO plans(name) VALUES('Version three plan')");
+  legacy.execSQL("INSERT INTO logs(date_jalali,plan_name,exercise_name,sets,reps,weight,created_at) VALUES('1405/07/21','Version three plan','Row',3,12,25,123456789)");
+  legacy.execSQL("INSERT INTO sleep_logs(start_at,end_at,duration_minutes) VALUES(1800000000000,1800028800000,480)");
+  legacy.execSQL("INSERT INTO body_metrics(measured_at,weight_kg,waist_cm) VALUES(1800000000000,72.5,84.0)");
+  legacy.setVersion(3);legacy.close();
+  db=new WorkoutDb(context);
+  try(android.database.Cursor c=db.allLogs()){assertTrue(c.moveToFirst());assertEquals("Row",c.getString(2));assertEquals(60,c.getInt(6));assertEquals(7,c.getInt(7));}
+  try(android.database.Cursor c=db.sleepLogs()){assertTrue(c.moveToFirst());assertEquals(480,c.getInt(2));}
+  try(android.database.Cursor c=db.bodyMetrics()){assertTrue(c.moveToFirst());assertEquals(72.5,c.getDouble(1),0.001);}
+ }
 }
