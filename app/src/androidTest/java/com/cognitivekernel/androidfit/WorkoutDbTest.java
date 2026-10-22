@@ -40,4 +40,33 @@ public class WorkoutDbTest {
    assertTrue(c.moveToFirst());assertEquals("1405/07/21",c.getString(0));assertEquals("Plan A",c.getString(1));assertEquals("Squat",c.getString(2));assertEquals(3,c.getInt(3));assertEquals(8,c.getInt(4));assertEquals(42.5,c.getDouble(5),0.001);assertFalse(c.moveToNext());
   }
  }
+ @Test public void savesDetailedWorkoutMetadataAndHealthRecords(){
+  db.logDetailed("1405/07/21","Plan A","Squat",3,8,42.5,90,8,"Controlled tempo");
+  try(android.database.Cursor c=db.allLogs()){
+   assertTrue(c.moveToFirst());assertEquals(90,c.getInt(6));assertEquals(8,c.getInt(7));assertEquals("Controlled tempo",c.getString(8));
+  }
+  long start=1_800_000_000_000L;db.addSleep(start,start+8L*60*60*1000);
+  try(android.database.Cursor c=db.sleepLogs()){assertTrue(c.moveToFirst());assertEquals(480,c.getInt(2));}
+  db.addVitals(start,120,80,70);
+  try(android.database.Cursor c=db.vitalLogs()){assertTrue(c.moveToFirst());assertEquals(120,c.getInt(1));assertEquals(80,c.getInt(2));assertEquals(70,c.getInt(3));}
+  db.addBodyMetrics(start,72.5,84.0);
+  try(android.database.Cursor c=db.bodyMetrics()){assertTrue(c.moveToFirst());assertEquals(72.5,c.getDouble(1),0.001);assertEquals(84.0,c.getDouble(2),0.001);}
+ }
+ @Test public void upgradesLegacyVersionOneWithoutLosingWorkoutRecords(){
+  db.close();context.deleteDatabase(WorkoutDb.DATABASE_NAME);
+  android.database.sqlite.SQLiteDatabase legacy=android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(WorkoutDb.DATABASE_NAME),null);
+  legacy.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)");
+  legacy.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY AUTOINCREMENT,plan_id INTEGER NOT NULL,name TEXT NOT NULL,sets INTEGER NOT NULL,reps INTEGER NOT NULL)");
+  legacy.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT,date_jalali TEXT,plan_name TEXT,exercise_name TEXT,sets INTEGER,reps INTEGER,weight REAL,created_at INTEGER)");
+  legacy.execSQL("INSERT INTO plans(name) VALUES('Legacy plan')");
+  legacy.execSQL("INSERT INTO logs(date_jalali,plan_name,exercise_name,sets,reps,weight,created_at) VALUES('1405/07/21','Legacy plan','Squat',3,10,20,123456789)");
+  legacy.setVersion(1);legacy.close();
+  db=new WorkoutDb(context);
+  assertEquals("Legacy plan",db.plans().get(0)[1]);
+  try(android.database.Cursor c=db.allLogs()){
+   assertTrue(c.moveToFirst());assertEquals("Squat",c.getString(2));assertEquals(60,c.getInt(6));assertEquals(7,c.getInt(7));assertEquals("",c.getString(8));
+  }
+  assertEquals(4,db.getReadableDatabase().getVersion());
+  try(android.database.Cursor c=db.sleepLogs()){assertFalse(c.moveToFirst());}
+ }
 }
