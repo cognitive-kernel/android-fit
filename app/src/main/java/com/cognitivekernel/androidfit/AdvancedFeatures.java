@@ -119,6 +119,7 @@ public final class AdvancedFeatures {
   File tmp=new File(a.getCacheDir(),"fit-yar-restore.tmp");
   File rollback=new File(a.getCacheDir(),"fit-yar-restore-rollback.db");
   try{
+   if(requestCode==BACKUP)db.getReadableDatabase(); // Create an empty database before backing it up on a fresh install.
    db.close();
    if(requestCode==BACKUP){
     try(InputStream in=new FileInputStream(dbFile);OutputStream out=a.getContentResolver().openOutputStream(data.getData())){
