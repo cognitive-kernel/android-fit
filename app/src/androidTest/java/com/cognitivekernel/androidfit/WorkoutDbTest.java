@@ -54,7 +54,7 @@ public class WorkoutDbTest {
  }
  @Test public void upgradesLegacyVersionOneWithoutLosingWorkoutRecords(){
   db.close();context.deleteDatabase(WorkoutDb.DATABASE_NAME);
-  android.database.sqlite.SQLiteDatabase legacy=android.database.sqlite.SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(WorkoutDb.DATABASE_NAME),null);
+  android.database.sqlite.SQLiteDatabase legacy=context.openOrCreateDatabase(WorkoutDb.DATABASE_NAME,Context.MODE_PRIVATE,null);
   legacy.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)");
   legacy.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY AUTOINCREMENT,plan_id INTEGER NOT NULL,name TEXT NOT NULL,sets INTEGER NOT NULL,reps INTEGER NOT NULL)");
   legacy.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT,date_jalali TEXT,plan_name TEXT,exercise_name TEXT,sets INTEGER,reps INTEGER,weight REAL,created_at INTEGER)");
