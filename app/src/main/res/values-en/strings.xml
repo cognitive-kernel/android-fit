@@ -50,4 +50,6 @@
     <string name="export_failed">Could not create the file.</string>
     <string name="ok">OK</string>
     <string name="export_destination_error">Unable to open export destination.</string>
+    <string name="choose_language_title">Choose app language</string>
+    <string name="change_language">Change language / تغییر زبان</string>
 </resources>
