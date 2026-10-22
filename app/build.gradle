@@ -14,6 +14,12 @@ android {
     }
     buildTypes {
         debug {
+            // Test-install APKs use a separate package so they can be installed beside
+            // the user's existing app without replacing its private data.
+            if (providers.gradleProperty('FIT_YAR_TEST_INSTALL').orNull == 'true') {
+                applicationIdSuffix '.test'
+                versionNameSuffix '-test'
+            }
             // Use the user's existing debug key when present. CI tests may use
             // Gradle's temporary default key, but signed-artifact CI requires the registered certificate.
             if (stableDebugKeystore.exists()) signingConfig signingConfigs.stableDebug
