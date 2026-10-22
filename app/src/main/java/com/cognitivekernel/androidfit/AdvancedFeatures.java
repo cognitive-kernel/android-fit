@@ -2,7 +2,7 @@ package com.cognitivekernel.androidfit;
 
 import android.app.*;
 import android.content.*;
-import android.database.Cursor;
+import android.database.Cursor;import android.database.sqlite.SQLiteDatabase;
 import android.graphics.*;
 import android.net.Uri;
 import android.os.Build;
@@ -83,7 +83,7 @@ public final class AdvancedFeatures {
 
  public void showCoach(){
   int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
-  int days=0;try(Cursor c=db.summary()){if(c.moveToFirst())days=c.getInt(1);}
+  int days=db.weeklyTrainingDays();
   String advice;
   if(days==0)advice=s("coach_start");
   else if(days<goal)advice=s("coach_consistency")+" "+(goal-days)+" "+s("sessions_left");
@@ -93,7 +93,7 @@ public final class AdvancedFeatures {
  }
 
  public void showWeeklyGoal(){
-  int current=0;try(Cursor c=db.summary()){if(c.moveToFirst())current=c.getInt(1);}
+  int current=db.weeklyTrainingDays();
   int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
   EditText e=field(s("weekly_goal_hint"),String.valueOf(goal),android.text.InputType.TYPE_CLASS_NUMBER);
   new AlertDialog.Builder(a).setTitle(s("weekly_goal")).setMessage(s("weekly_progress")+": "+Math.min(current,goal)+"/"+goal).setView(e).setPositiveButton(s("save"),(d,w)->{try{int v=Integer.parseInt(e.getText().toString());if(v<1||v>7)throw new Exception();a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",v).apply();message(s("saved"),s("weekly_goal_saved"));}catch(Exception ex){message(s("error"),s("invalid_plan_values"));}}).setNegativeButton(android.R.string.cancel,null).show();
