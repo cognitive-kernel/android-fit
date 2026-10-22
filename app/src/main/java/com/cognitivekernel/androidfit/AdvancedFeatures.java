@@ -71,8 +71,11 @@ public final class AdvancedFeatures {
     if(eq.equals(s("equipment_none")))exercises=new String[][]{{s("lib_squat"),"3","10"},{s("lib_pushup"),"3","8"},{s("lib_lunge"),"2","10"},{s("lib_plank"),"3","30"}};
     else if(eq.equals(s("equipment_home")))exercises=new String[][]{{s("lib_squat"),"3","12"},{s("lib_pushup"),"3","10"},{s("lib_dumbbell_row"),"3","10"},{s("lib_lunge"),"3","10"},{s("lib_plank"),"3","30"}};
     else exercises=new String[][]{{s("lib_squat"),"4","8"},{s("lib_pushup"),"3","10"},{s("lib_dumbbell_row"),"4","10"},{s("lib_lunge"),"3","10"},{s("lib_plank"),"3","40"}};
+    int goalIndex=goal.getSelectedItemPosition();
+    if(goalIndex==2||goalIndex==3){String[][] expanded=Arrays.copyOf(exercises,exercises.length+1);expanded[exercises.length]=new String[]{s("lib_walk"),"1","20"};exercises=expanded;}
+    if(mins<=20&&exercises.length>3)exercises=Arrays.copyOf(exercises,3);
     int scale=level.getSelectedItemPosition()==0?0:(level.getSelectedItemPosition()==1?1:2);
-    for(String[] ex:exercises){int sets=Integer.parseInt(ex[1])+scale;db.addExercise(id,ex[0],sets,Integer.parseInt(ex[2]));}
+    for(String[] ex:exercises){int sets=Integer.parseInt(ex[1])+scale;int reps=Integer.parseInt(ex[2]);if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);if(ex[0].equals(s("lib_walk")))reps=20;db.addExercise(id,ex[0],sets,reps);}
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putInt("fitness_level",level.getSelectedItemPosition()).putString("equipment",eq).apply();
     message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+n+"\n"+s("session_minutes")+": "+mins);
    }catch(Exception ex){message(s("error"),s("invalid_plan_values"));}
