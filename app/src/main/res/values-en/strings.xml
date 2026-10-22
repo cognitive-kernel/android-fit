@@ -128,4 +128,5 @@
 <string name="restore_complete">Restore complete</string>
 <string name="restore_saved">Data restored from backup.</string>
 <string name="backup_failed">Operation failed. The selected file must be a valid FitYar database backup.</string>
+    <string name="saved">Saved</string>
 </resources>
