@@ -6,7 +6,7 @@ FitYar is an offline workout-planning and workout-logging application.
 
 ## Information stored by the app
 
-FitYar stores workout plans, exercise names, workout dates, sets, repetitions, weights, and step-counter values locally on your Android device. The app does not currently send this information to the developer or to a server.
+FitYar stores workout plans, exercise names, workout dates, sets, repetitions, and weights locally on your Android device. The step counter displays the sensor count while the feature is active; step counts are not saved to the app database. The app does not currently send workout information to the developer or to a server.
 
 The app does not currently include advertising, analytics, account registration, or third-party tracking SDKs.
 
