@@ -13,8 +13,18 @@ public class MainActivityTest {
    scenario.onActivity(activity -> {
     assertNotNull(activity.findViewById(R.id.managePlansButton));
     assertNotNull(activity.findViewById(R.id.logWorkoutButton));
-    assertNotNull(activity.findViewById(R.id.stepsButton));\n    assertNotNull(activity.findViewById(R.id.stepGoalButton));
-    assertNotNull(activity.findViewById(R.id.exportButton));\n    assertNotNull(activity.findViewById(R.id.languageButton));\n    assertNotNull(activity.findViewById(R.id.personalPlanButton));\n    assertNotNull(activity.findViewById(R.id.historyButton));\n    assertNotNull(activity.findViewById(R.id.libraryButton));\n    assertNotNull(activity.findViewById(R.id.coachButton));\n    assertNotNull(activity.findViewById(R.id.weeklyGoalButton));\n    assertNotNull(activity.findViewById(R.id.reminderButton));\n    assertNotNull(activity.findViewById(R.id.backupButton));\n    assertNotNull(activity.findViewById(R.id.restoreButton));
+    assertNotNull(activity.findViewById(R.id.stepsButton));
+    assertNotNull(activity.findViewById(R.id.stepGoalButton));
+    assertNotNull(activity.findViewById(R.id.exportButton));
+    assertNotNull(activity.findViewById(R.id.languageButton));
+    assertNotNull(activity.findViewById(R.id.personalPlanButton));
+    assertNotNull(activity.findViewById(R.id.historyButton));
+    assertNotNull(activity.findViewById(R.id.libraryButton));
+    assertNotNull(activity.findViewById(R.id.coachButton));
+    assertNotNull(activity.findViewById(R.id.weeklyGoalButton));
+    assertNotNull(activity.findViewById(R.id.reminderButton));
+    assertNotNull(activity.findViewById(R.id.backupButton));
+    assertNotNull(activity.findViewById(R.id.restoreButton));
    });
   }
  }
