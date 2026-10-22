@@ -129,4 +129,9 @@
 <string name="restore_saved">Data restored from backup.</string>
 <string name="backup_failed">Operation failed. The selected file must be a valid FitYar database backup.</string>
     <string name="saved">Saved</string>
+    <string name="step_goal">Step goal</string>
+    <string name="step_goal_hint">Target steps for each walking session</string>
+    <string name="step_goal_session_note">This target applies to a walking session after you start the counter; it is not a background daily total.</string>
+    <string name="step_goal_saved">Step target saved.</string>
+    <string name="step_progress_format">Steps this session: %1$d of %2$d</string>
 </resources>
