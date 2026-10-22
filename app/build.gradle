@@ -18,9 +18,9 @@ android {
     defaultConfig {
         applicationId 'com.cognitivekernel.androidfit'
         minSdk 23
-        targetSdk 35
-        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('102').toInteger()
-        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.6')
+        targetSdk 36
+        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('103').toInteger()
+        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.7')
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     compileOptions {
@@ -29,6 +29,7 @@ android {
     }
 }
 dependencies {
+    implementation 'androidx.core:core:1.15.0'
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
     androidTestImplementation 'androidx.test:core:1.6.1'
