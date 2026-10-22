@@ -18,22 +18,24 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: "8.11.1"
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
       - name: Install Android SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Run unit tests
         run: gradle test
       - name: Run Android lint
         run: gradle lintDebug
-      - name: Build debug APK
-        run: gradle assembleDebug
+      - name: Build debug APK and release bundle
+        run: gradle assembleDebug bundleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: fit-yar-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: fit-yar-build-candidates
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
   instrumented-tests:
     runs-on: ubuntu-latest
@@ -45,16 +47,16 @@ jobs:
           java-version: "17"
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: "8.9"
+          gradle-version: "8.11.1"
       - uses: android-actions/setup-android@v3
         with:
           packages: platform-tools
       - name: Install Android SDK
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64"
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64"
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 36
           arch: x86_64
           profile: pixel_2
           script: gradle connectedDebugAndroidTest
