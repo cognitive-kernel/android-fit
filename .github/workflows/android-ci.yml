@@ -75,6 +75,12 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
           script: gradle connectedDebugAndroidTest
+      - name: Capture emulator diagnostics on test failure
+        if: failure()
+        shell: bash
+        run: |
+          adb devices -l || true
+          adb logcat -d -t 6000 || true
 
   signed-apk:
     needs: [unit-tests-and-lint, instrumented-tests]
