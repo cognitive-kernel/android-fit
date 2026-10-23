@@ -144,6 +144,8 @@ jobs:
         shell: bash
         env:
           FIT_YAR_DEBUG_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_DEBUG_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
           EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
@@ -152,19 +154,24 @@ jobs:
             echo "::notice::Original signing key is available in the Actions cache."
             exit 0
           fi
-          if [ -n "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" ]; then
+          found_secret=false
+          for candidate in "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" "${ANDROID_KEYSTORE_BASE64:-}" "${KEYSTORE_BASE64:-}"; do
+            [ -n "$candidate" ] || continue
+            found_secret=true
             TEMP_KEY="$(mktemp)"
-            if printf '%s' "$FIT_YAR_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$TEMP_KEY" 2>/dev/null \
+            if printf '%s' "$candidate" | base64 --decode > "$TEMP_KEY" 2>/dev/null \
               && keytool -list -v -keystore "$TEMP_KEY" -storepass android -alias androiddebugkey 2>/dev/null | grep -Fq "$EXPECTED_SHA256"; then
-              echo "::notice::The configured Actions secret contains the expected signing key."
+              echo "::notice::A configured Actions secret contains the expected signing key."
               rm -f "$TEMP_KEY"
               exit 0
             fi
             rm -f "$TEMP_KEY"
-            echo "::warning::A signing-key secret exists, but it does not match the registered certificate or cannot be opened."
-            exit 0
+          done
+          if [ "$found_secret" = true ]; then
+            echo "::warning::Configured keystore secret candidates do not match the registered certificate or cannot be opened."
+          else
+            echo "::warning::No matching signing key was found in the Actions cache or configured secret. Production APK signing remains blocked."
           fi
-          echo "::warning::No matching signing key was found in the Actions cache or configured secret. Production APK signing remains blocked."
 
   signed-apk:
     # Signing/update work is intentionally deferred until the original key is recovered.
@@ -194,22 +201,24 @@ jobs:
         shell: bash
         env:
           FIT_YAR_DEBUG_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_DEBUG_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.android"
           EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
-          # Prefer a valid explicitly configured secret over a stale cached file.
-          # Never replace the cached key with a secret unless its certificate matches.
-          if [ -n "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" ]; then
+          # Accept only a candidate whose certificate exactly matches the installed app.
+          # Never replace the cache with an unverified or mismatched key.
+          for candidate in "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" "${ANDROID_KEYSTORE_BASE64:-}" "${KEYSTORE_BASE64:-}"; do
+            [ -n "$candidate" ] || continue
             TEMP_KEY="$(mktemp)"
-            if printf '%s' "$FIT_YAR_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$TEMP_KEY" 2>/dev/null \
+            if printf '%s' "$candidate" | base64 --decode > "$TEMP_KEY" 2>/dev/null \
               && keytool -list -v -keystore "$TEMP_KEY" -storepass android -alias androiddebugkey 2>/dev/null | grep -Fq "$EXPECTED_SHA256"; then
               mv "$TEMP_KEY" "$HOME/.android/debug.keystore"
-            else
-              rm -f "$TEMP_KEY"
-              echo "::warning::The configured keystore secret is invalid or does not match the registered certificate; ignoring it."
+              break
             fi
-          fi
+            rm -f "$TEMP_KEY"
+          done
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             echo "::error::Original signing key is unavailable. Tests can run, but no installable APK will be published."
             echo "::error::Restore the original keystore securely; do not generate a replacement key."
