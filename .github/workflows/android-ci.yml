@@ -29,8 +29,8 @@ jobs:
           packages: platform-tools
       - name: Install Android SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-      - name: Run unit tests and lint
-        run: gradle test lintDebug
+      - name: Run unit tests, lint, and compile instrumentation tests
+        run: gradle test lintDebug compileDebugAndroidTestJavaWithJavac
 
   instrumented-tests:
     runs-on: ubuntu-latest
