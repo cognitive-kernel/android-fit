@@ -2,6 +2,11 @@ package com.cognitivekernel.androidfit;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.core.app.ActivityScenario;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.widget.Button;
+import androidx.test.platform.app.InstrumentationRegistry;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.assertNotNull;
@@ -33,4 +38,24 @@ public class MainActivityTest {
    });
   }
  }
+ @Test public void mainScreenUsesEnglishResourcesWhenEnglishIsSelected() {
+  Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+  SharedPreferences prefs=context.getSharedPreferences("fit_settings",Context.MODE_PRIVATE);
+  String previous=prefs.getString("language","fa");
+  prefs.edit().putString("language","en").commit();
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> assertEquals("Manage workout plans",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString()));
+  } finally { prefs.edit().putString("language",previous).commit(); }
+ }
+
+ @Test public void mainScreenUsesPersianResourcesWhenPersianIsSelected() {
+  Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
+  SharedPreferences prefs=context.getSharedPreferences("fit_settings",Context.MODE_PRIVATE);
+  String previous=prefs.getString("language","fa");
+  prefs.edit().putString("language","fa").commit();
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> assertEquals("مدیریت برنامه‌های تمرینی",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString()));
+  } finally { prefs.edit().putString("language",previous).commit(); }
+ }
+
 }
