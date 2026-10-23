@@ -34,6 +34,10 @@ public class WorkoutDbTest {
   try { db.log("1405/07/21","Plan","Squat",3,8,-1);fail("Expected negative weight to be rejected"); }
   catch(IllegalArgumentException expected) { }
  }
+ @Test public void rejectsDiastolicPressureNotBelowSystolic(){
+  try { db.addVitals(1_800_000_000_000L,80,90,70);fail("Expected diastolic pressure at or above systolic to be rejected"); }
+  catch(IllegalArgumentException expected) { }
+ }
  @Test public void rejectsNonFiniteWorkoutWeights(){
   try { db.log("1405/07/21","Plan","Squat",3,8,Double.NaN);fail("Expected NaN weight to be rejected"); }
   catch(IllegalArgumentException expected) { }
