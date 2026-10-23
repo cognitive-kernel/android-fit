@@ -9,7 +9,7 @@ The GitHub Actions workflow runs these checks on the latest commit:
 3. Android Lint for the debug variant.
 4. Android 16 / API 36 debug APK build.
 5. Keystore certificate verification and an explicit APK certificate check. The artifact is rejected if it is not signed with the fixed CI test certificate.
-6. Instrumented tests on an API 35 emulator:
+6. Instrumented tests on an API 34 emulator:
    - All home-screen navigation actions and the illustration are present.
    - Plan/exercise create, list, update, and delete behavior.
    - Invalid set counts and negative weights are rejected.
@@ -36,7 +36,7 @@ Do not uninstall the existing app to bypass a signature conflict. Before install
 
 ## آزمون دستی روی گوشی واقعی (نسخهٔ آزمایشی مستقل)
 
-این چک‌لیست برای APK با شناسهٔ بستهٔ `com.cognitivekernel.androidfit.test` است؛ این نسخه در کنار نسخهٔ اصلی نصب می‌شود و نتیجهٔ آن، سازگاری امضای APK اصلی یا مهاجرت داده‌های برنامهٔ اصلی را ثابت نمی‌کند.
+این چک‌لیست برای APK با شناسهٔ بستهٔ `com.cognitivekernel.androidfit.test2` است؛ این نسخه در کنار نسخهٔ اصلی نصب می‌شود و نتیجهٔ آن، سازگاری امضای APK اصلی یا مهاجرت داده‌های برنامهٔ اصلی را ثابت نمی‌کند.
 
 1. **نصب و شروع:** APK را نصب کنید، برنامه را باز کنید و صفحهٔ اصلی را در حالت فارسی و انگلیسی بررسی کنید.
 2. **GIFها:** کتابخانهٔ حرکات را باز کنید؛ هر شش حرکت اسکوات، شنا، لانج، پلانک، پارویی و راه‌رفتن را جداگانه باز کنید. بررسی کنید تصویر حرکت می‌کند، تصویر بریده یا خالی نیست و بدون اینترنت هم نمایش داده می‌شود.
