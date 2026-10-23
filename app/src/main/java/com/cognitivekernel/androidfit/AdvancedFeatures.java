@@ -275,7 +275,7 @@ public final class AdvancedFeatures {
       .setPositiveButton(tr("Restore","بازیابی"),(confirm,button)->{
        try{db.getWritableDatabase().beginTransaction();
         try{
-         for(int i=0;i<valid.size();i++)if(chosen[i]&&!"preferences".equals(ids.get(i)))restoreSection(valid.get(i),ids.get(i));
+         for(int i=0;i<valid.size();i++)if(chosen[i]&&!"preferences".equals(ids.get(i))&&!"steps".equals(ids.get(i)))restoreSection(valid.get(i),ids.get(i));
          db.getWritableDatabase().setTransactionSuccessful();
         }finally{db.getWritableDatabase().endTransaction();}
         for(int i=0;i<valid.size();i++)if(chosen[i]&&"steps".equals(ids.get(i))){
