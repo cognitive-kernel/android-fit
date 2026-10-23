@@ -58,6 +58,9 @@ public class SelectiveBackupTest {
      try(Cursor sleeps=db.sleepLogs()){assertEquals(2,countRows(sleeps));}
      try(Cursor vitals=db.vitalLogs()){assertEquals(1,countRows(vitals));}
      try(Cursor metrics=db.bodyMetrics()){assertEquals(1,countRows(metrics));}
+     sql.beginTransaction();
+     try { for(String table:new String[]{"exercises","plans","logs","sleep_logs","vital_logs","body_metrics"})sql.delete(table,null,null);sql.setTransactionSuccessful(); }
+     finally { sql.endTransaction(); }
     } catch (Exception ex) { throw new AssertionError("Selective backup/restore regression",ex); }
    });
   }
@@ -122,6 +125,10 @@ public class SelectiveBackupTest {
      finally { sql.endTransaction(); }
      try (Cursor sleeps = activity.db.sleepLogs()) { assertEquals(1,countRows(sleeps)); }
      assertEquals("Keep workout data",activity.db.plans().get(0)[1]);
+     sql.beginTransaction();
+     try { for(String table:new String[]{"exercises","plans","logs","sleep_logs","vital_logs","body_metrics"})sql.delete(table,null,null);sql.setTransactionSuccessful(); }
+     finally { sql.endTransaction(); }
+     stepPreferences.edit().clear().apply();
     } catch (Exception ex) { throw new AssertionError("Selective health/step backup regression",ex); }
    });
   }
