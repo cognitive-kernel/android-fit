@@ -5,7 +5,7 @@
 The GitHub Actions workflow runs these checks on the latest commit:
 
 1. Java 17 / Gradle 8.11.1 build.
-2. JVM unit tests for Gregorian-to-Jalali conversion, including Nowruz boundaries, zero padding, and invalid dates.
+2. JVM unit tests for Gregorian-to-Jalali conversion, including Nowruz boundaries, zero padding, and invalid dates, localized numeric parsing, and UTF-8 CSV quoting/formula-injection protection.
 3. Android Lint for the debug variant.
 4. Android 16 / API 36 debug APK build.
 5. Keystore certificate verification and an explicit APK certificate check. The artifact is rejected if it is not signed with the fixed CI test certificate.
