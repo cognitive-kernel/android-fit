@@ -19,6 +19,16 @@ Older GitHub Actions artifacts were signed by different, automatically generated
 
 Neither matches the currently pinned CI certificate. Therefore, the current CI APK is **not guaranteed to update** an installation made from those older artifacts. A local Android Studio build may also use a different local debug key. On 2026-10-23, the CI diagnostic found a cache hit under the old v1 cache key, but its certificate did not match the registered fingerprint; the `FIT_YAR_DEBUG_KEYSTORE_BASE64` secret was empty. The workflow now uses a fresh v2 cache namespace so the stale key cannot be mistaken for the original. No private keystore was found in tracked repository paths or the inspected CI artifacts. Therefore, no signed APK can be published until the exact original key is recovered and securely supplied. If you still have the exact keystore, store its base64 contents as the GitHub Actions secret `FIT_YAR_DEBUG_KEYSTORE_BASE64`; do not commit it or paste the private key into a public issue. The workflow also checks the fingerprint, so a different key will still be rejected. A non-blocking CI diagnostic checks cache/secret availability without printing or uploading the private key.
 
+## Recovery steps in GitHub (phone-friendly)
+
+1. First locate the **original private keystore file** used to sign the installed app. The certificate fingerprint or an exported APK is not enough to reconstruct the private key.
+2. If that keystore file is available, encode the file locally as one Base64 string on a trusted device. Do not upload it to a public website, commit it to Git, or paste the keystore/private key into an issue or chat.
+3. Open the repository on GitHub, then go to **Settings → Secrets and variables → Actions → New repository secret**. Use the exact name `FIT_YAR_DEBUG_KEYSTORE_BASE64` and set its value to the Base64 text. GitHub does not reveal a saved secret's value later, so a blank CI diagnostic means this workflow cannot currently read a usable value under that name.
+4. After the key is securely configured, go to **Settings → Secrets and variables → Actions → Variables** and set `ENABLE_SIGNED_APK` to `true`. The workflow will verify the certificate fingerprint before it publishes anything.
+5. Download the resulting APK only after the signed job and all required tests pass. Compare its certificate with the installed app before installing.
+
+If the original keystore no longer exists in a trusted backup or an accessible old environment, the installed app cannot be updated in place with a newly generated key. The safe options are to continue searching for the original key or plan a separate migration to a differently signed/new package; do not uninstall the existing app as a workaround.
+
 ## Non-negotiable update checks
 
 Before installing a new APK over an existing FitYar installation, all of these must be true:
