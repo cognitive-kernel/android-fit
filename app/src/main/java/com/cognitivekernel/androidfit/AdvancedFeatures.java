@@ -184,10 +184,21 @@ public final class AdvancedFeatures {
     boolean any=false;for(boolean value:selected)any|=value;
     if(!any){message(tr("Error","خطا"),tr("Select at least one section.","حداقل یک بخش را انتخاب کنید."));return;}
     Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/json");i.putExtra(Intent.EXTRA_TITLE,"fityar-backup.json");
-    pendingBackupSections=selected.clone();a.startActivityForResult(i,BACKUP);
+    pendingBackupSections=selected.clone();
+    int mask=0;for(int index=0;index<selected.length;index++)if(selected[index])mask|=(1<<index);
+    a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().putInt("pending_backup_sections",mask).apply();
+    a.startActivityForResult(i,BACKUP);
    }).setNegativeButton(android.R.string.cancel,null).show();
  }
  private boolean[] pendingBackupSections={true,true,true,true};
+ private boolean[] loadPendingBackupSections(){
+  int mask=a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).getInt("pending_backup_sections",15);
+  boolean[] selected=new boolean[4];for(int index=0;index<selected.length;index++)selected[index]=(mask&(1<<index))!=0;
+  return selected;
+ }
+ private void clearPendingBackupSections(){
+  a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().remove("pending_backup_sections").apply();
+ }
  private JSONObject createSelectiveBackup(boolean[] selected)throws Exception{
   JSONObject root=new JSONObject();root.put("format","fityar-selective-backup");root.put("version",1);root.put("createdAt",System.currentTimeMillis());
   JSONArray sections=new JSONArray();
@@ -233,15 +244,19 @@ public final class AdvancedFeatures {
  }
  public boolean onActivityResult(int requestCode,int resultCode,Intent data){
   if(requestCode!=BACKUP&&requestCode!=RESTORE)return false;
-  if(resultCode!=Activity.RESULT_OK||data==null||data.getData()==null)return true;
+  if(resultCode!=Activity.RESULT_OK||data==null||data.getData()==null){
+   if(requestCode==BACKUP)clearPendingBackupSections();
+   return true;
+  }
   try{
    if(requestCode==BACKUP){
-    JSONObject backup=createSelectiveBackup(pendingBackupSections);
+    JSONObject backup=createSelectiveBackup(loadPendingBackupSections());
     byte[] payload=backup.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8);
     if(payload.length>MAX_BACKUP_BYTES)throw new IOException("Backup exceeds the 25 MiB safety limit");
     try(OutputStream out=a.getContentResolver().openOutputStream(data.getData())){
      if(out==null)throw new IOException("No output stream");out.write(payload);out.flush();
     }
+    clearPendingBackupSections();
     message(tr("Backup complete","پشتیبان‌گیری کامل شد"),tr("Selected sections were saved.","بخش‌های انتخاب‌شده ذخیره شدند."));
     return true;
    }
@@ -310,7 +325,10 @@ public final class AdvancedFeatures {
        }catch(Exception ex){message(tr("Error","خطا"),tr("Could not restore backup. Current data was kept where possible.","بازیابی انجام نشد؛ تا حد امکان اطلاعات فعلی حفظ شدند.")+"\n"+ex.getMessage());}
       }).setNegativeButton(android.R.string.cancel,null).show();
     }).setNegativeButton(android.R.string.cancel,null).show();
-  }catch(Exception ex){message(tr("Error","خطا"),tr("Invalid or unreadable backup file.","فایل پشتیبان نامعتبر است یا خوانده نمی‌شود.")+"\n"+ex.getMessage());}
+  }catch(Exception ex){
+   if(requestCode==BACKUP)clearPendingBackupSections();
+   message(tr("Error","خطا"),tr("Invalid or unreadable backup file.","فایل پشتیبان نامعتبر است یا خوانده نمی‌شود.")+"\n"+ex.getMessage());
+  }
   return true;
  }
  private void restoreLegacyDatabase(byte[] imported)throws Exception{
