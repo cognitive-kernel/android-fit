@@ -29,6 +29,10 @@ gradle connectedDebugAndroidTest
 
 The instrumented test task requires a running Android emulator or device. The workflow uses a Google APIs x86_64 API 34 emulator while compiling against API 36. API 34 is used for emulator stability; newer platform behavior still needs a separate device/API-level check.
 
+## Selective backup and restore
+
+The app exports a versioned UTF-8 JSON backup. The user can select workout plans/exercise logs, health records (sleep, vitals, body metrics), and app preferences independently. Restore lists only sections found in the chosen backup; selected sections replace their corresponding current data while unselected sections remain unchanged. Database changes are applied in a transaction. Verify on a test install: back up one section at a time, restore it, restore multiple sections, cancel restore, and confirm unrelated records/preferences remain unchanged. Do not use production data for destructive restore tests.
+
 ## Update-safety rule
 
 Do not uninstall the existing app to bypass a signature conflict. Before installing an APK over an existing FitYar installation, compare its signer certificate with the installed version and confirm the new version code is not lower. The CI key is not the same as some older automatically signed artifacts; see [ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md). Never replace or regenerate the registered key silently.
