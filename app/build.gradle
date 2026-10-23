@@ -17,7 +17,7 @@ android {
             // Test-install APKs use a separate package so they can be installed beside
             // the user's existing app without replacing its private data.
             if (providers.gradleProperty('FIT_YAR_TEST_INSTALL').orNull == 'true') {
-                applicationIdSuffix '.test'
+                applicationIdSuffix '.test2'
                 versionNameSuffix '-test'
             }
             // Use the user's existing debug key when present. CI tests may use
