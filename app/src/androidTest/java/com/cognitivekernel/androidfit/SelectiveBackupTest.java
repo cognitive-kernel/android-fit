@@ -116,6 +116,9 @@ public class SelectiveBackupTest {
      assertEquals(125,stepPreferences.getInt("session_steps",0));
      assertFalse(stepPreferences.getBoolean("running",false));
      assertFalse(stepPreferences.getBoolean("paused",false));
+     activity.refreshStepCounterAfterRestore();
+     assertTrue(activity.findViewById(R.id.stepsCountText).toString()!=null);
+     assertTrue(((android.widget.TextView)activity.findViewById(R.id.stepsCountText)).getText().toString().contains("5,400"));
 
      activity.db.addSleep(now + 2_000_000L, now + 2_000_000L + 60L*60*1000);
      Method restore = AdvancedFeatures.class.getDeclaredMethod("restoreSection",JSONObject.class,String.class);
