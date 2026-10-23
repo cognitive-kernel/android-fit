@@ -15,6 +15,7 @@ The GitHub Actions workflow runs these checks on the latest commit:
    - Invalid set counts and negative weights are rejected.
    - Detailed workout metadata and health-log persistence.
    - Additive migration from historical database schemas v1, v2, and v3 without losing records.
+   - Selective backup export and restoration of workout data without overwriting unrelated health records.
 
 ## Local commands
 
