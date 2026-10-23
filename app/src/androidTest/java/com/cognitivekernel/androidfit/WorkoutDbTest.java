@@ -34,6 +34,12 @@ public class WorkoutDbTest {
   try { db.log("1405/07/21","Plan","Squat",3,8,-1);fail("Expected negative weight to be rejected"); }
   catch(IllegalArgumentException expected) { }
  }
+ @Test public void rejectsNonFiniteWorkoutWeights(){
+  try { db.log("1405/07/21","Plan","Squat",3,8,Double.NaN);fail("Expected NaN weight to be rejected"); }
+  catch(IllegalArgumentException expected) { }
+  try { db.log("1405/07/21","Plan","Squat",3,8,Double.POSITIVE_INFINITY);fail("Expected infinite weight to be rejected"); }
+  catch(IllegalArgumentException expected) { }
+ }
  @Test public void savesWorkoutLogForCsvExport(){
   db.log("1405/07/21","Plan A","Squat",3,8,42.5);
   try(android.database.Cursor c=db.allLogs()){
