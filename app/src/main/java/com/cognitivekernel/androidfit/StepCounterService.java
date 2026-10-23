@@ -125,9 +125,9 @@ public class StepCounterService extends Service implements SensorEventListener {
         if (event.sensor.getType() != Sensor.TYPE_STEP_COUNTER || event.values.length == 0) return;
         String date = dateNow();
         if (!date.equals(today)) {
+            // Keep the last sensor reading across midnight so the first delta
+            // after the date changes is credited to the new day instead of lost.
             today = date;
-            needsBaseline = true;
-            lastRaw = -1f;
         }
         if (prefs.getBoolean("paused", false) || !prefs.getBoolean("running", false)) return;
         float raw = event.values[0];
