@@ -68,6 +68,12 @@ public class SelectiveBackupTest {
   try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
    scenario.onActivity(activity -> {
     try {
+     SQLiteDatabase sql = activity.db.getWritableDatabase();
+     sql.beginTransaction();
+     try {
+      for (String table : new String[]{"exercises","plans","logs","sleep_logs","vital_logs","body_metrics"}) sql.delete(table,null,null);
+      sql.setTransactionSuccessful();
+     } finally { sql.endTransaction(); }
      long now = System.currentTimeMillis();
      activity.db.addSleep(now, now + 7L*60*60*1000);
      activity.db.addVitals(now, 118, 78, 68);
