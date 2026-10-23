@@ -16,6 +16,7 @@ import org.json.JSONObject;
 public final class AdvancedFeatures {
  private final Activity a; private final WorkoutDb db;
  private static final int BACKUP=4101, RESTORE=4102, NOTIFY=4103;
+ private static final int MAX_BACKUP_BYTES=25*1024*1024;
  public AdvancedFeatures(Activity activity, WorkoutDb database){a=activity;db=database;}
  private String s(String key){int id=a.getResources().getIdentifier(key,"string",a.getPackageName());return id==0?key:a.getString(id);}
  private String tr(String en,String fa){return a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa").equals("en")?en:fa;}
@@ -236,8 +237,10 @@ public final class AdvancedFeatures {
   try{
    if(requestCode==BACKUP){
     JSONObject backup=createSelectiveBackup(pendingBackupSections);
+    byte[] payload=backup.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    if(payload.length>MAX_BACKUP_BYTES)throw new IOException("Backup exceeds the 25 MiB safety limit");
     try(OutputStream out=a.getContentResolver().openOutputStream(data.getData())){
-     if(out==null)throw new IOException("No output stream");out.write(backup.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8));out.flush();
+     if(out==null)throw new IOException("No output stream");out.write(payload);out.flush();
     }
     message(tr("Backup complete","پشتیبان‌گیری کامل شد"),tr("Selected sections were saved.","بخش‌های انتخاب‌شده ذخیره شدند."));
     return true;
@@ -399,8 +402,8 @@ public final class AdvancedFeatures {
   editor.apply();
  }
  private byte[] readBackupBytes(InputStream in)throws IOException{
-  final int maxBytes=25*1024*1024;ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count,total=0;
-  while((count=in.read(buffer))!=-1){total+=count;if(total>maxBytes)throw new IOException("Backup exceeds the 25 MiB safety limit");bytes.write(buffer,0,count);}
+  ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count,total=0;
+  while((count=in.read(buffer))!=-1){total+=count;if(total>MAX_BACKUP_BYTES)throw new IOException("Backup exceeds the 25 MiB safety limit");bytes.write(buffer,0,count);}
   return bytes.toByteArray();
  }
  private void copy(InputStream in,OutputStream out)throws IOException{
