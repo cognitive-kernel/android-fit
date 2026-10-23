@@ -80,7 +80,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
     public Cursor sleepLogs() { return getReadableDatabase().rawQuery("SELECT start_at,end_at,duration_minutes FROM sleep_logs ORDER BY start_at ASC",null); }
     public long addVitals(long at,int systolic,int diastolic,int pulse) {
-        if(systolic<50||systolic>300||diastolic<30||diastolic>200||pulse<20||pulse>250) throw new IllegalArgumentException("Invalid vital values");
+        if(systolic<50||systolic>300||diastolic<30||diastolic>200||diastolic>=systolic||pulse<20||pulse>250) throw new IllegalArgumentException("Invalid vital values");
         ContentValues v=new ContentValues(); v.put("measured_at",at); v.put("systolic",systolic); v.put("diastolic",diastolic); v.put("pulse",pulse); return getWritableDatabase().insertOrThrow("vital_logs",null,v);
     }
     public Cursor vitalLogs() { return getReadableDatabase().rawQuery("SELECT measured_at,systolic,diastolic,pulse FROM vital_logs ORDER BY measured_at ASC",null); }
