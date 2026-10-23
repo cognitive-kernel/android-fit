@@ -278,6 +278,9 @@ public final class AdvancedFeatures {
          JSONObject section=valid.get(i);
          restorePreferences("fityar_preferences",section.getJSONObject("fityar_preferences"));
          restorePreferences("fit_settings",section.getJSONObject("fit_settings"));
+         Context app=a.getApplicationContext();android.content.SharedPreferences prefs=app.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE);
+         if(prefs.getBoolean("reminder_enabled",false))WorkoutReminderReceiver.schedule(app,prefs.getInt("reminder_hour",19),prefs.getInt("reminder_minute",0));
+         else WorkoutReminderReceiver.cancel(app);
         }
         message(tr("Restore complete","بازیابی کامل شد"),tr("Selected sections were restored. Other sections were left unchanged.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند."));
        }catch(Exception ex){message(tr("Error","خطا"),tr("Could not restore backup. Current data was kept where possible.","بازیابی انجام نشد؛ تا حد امکان اطلاعات فعلی حفظ شدند.")+"\n"+ex.getMessage());}
