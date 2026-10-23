@@ -110,7 +110,7 @@ jobs:
         run: |
           set -euo pipefail
           APK="app/build/outputs/apk/debug/app-debug.apk"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit.test'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit.test2'"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs "$APK"
           mkdir -p artifacts
           cp "$APK" artifacts/fityar-test-side-by-side.apk
