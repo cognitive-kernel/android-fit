@@ -25,7 +25,18 @@ public final class GoalPlanner {
    else if(ch=='٬'||ch=='،') ch=',';
    out.append(ch);
   }
-  return out.toString().replace(",", "").trim();
+  String normalized=out.toString().trim();
+  // Android keyboards follow the device locale: accept a comma decimal for
+  // one- or two-digit fractional parts, while preserving common 1,234 grouping.
+  if(normalized.indexOf('.')<0) {
+   int comma=normalized.indexOf(',');
+   if(comma>=0&&comma==normalized.lastIndexOf(',')) {
+    int fractionalDigits=normalized.length()-comma-1;
+    if(fractionalDigits==1||fractionalDigits==2) normalized=normalized.substring(0,comma)+"."+normalized.substring(comma+1);
+    else normalized=normalized.replace(",", "");
+   } else normalized=normalized.replace(",", "");
+  } else normalized=normalized.replace(",", "");
+  return normalized;
  }
  static int parseInteger(String value){return Integer.parseInt(normalizeDigits(value));}
  static double parseDecimal(String value){
