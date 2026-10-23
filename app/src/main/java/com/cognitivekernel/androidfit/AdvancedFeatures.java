@@ -296,6 +296,7 @@ public final class AdvancedFeatures {
         for(int i=0;i<valid.size();i++)if(chosen[i]&&"steps".equals(ids.get(i))){
          a.stopService(new Intent(a,StepCounterService.class));
          restorePreferences("step_counter",valid.get(i).getJSONObject("step_counter"));
+         if(a instanceof MainActivity)((MainActivity)a).refreshStepCounterAfterRestore();
         }
         for(int i=0;i<valid.size();i++)if(chosen[i]&&"preferences".equals(ids.get(i))){
          JSONObject section=valid.get(i);
