@@ -109,13 +109,14 @@ public final class AdvancedFeatures {
     double bmi=kg/((cm/100.0)*(cm/100.0));
     double bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161);
     double maintenance=bmr*(act==0?1.35:act==1?1.55:1.725);
-    double target=Math.max(1200,g==0?maintenance-350:g==1?maintenance:maintenance+200);
+    double target;if(g==0)target=bmi<18.5?maintenance:Math.max(1200,maintenance-350);else target=g==1?maintenance:maintenance+200;target=Math.max(1200,target);
     double protein=(g==2?1.8:1.5)*kg;
     StringBuilder out=new StringBuilder();
     out.append(tg("Profile","مشخصات")).append("\\n").append(tg("BMI (screening estimate only)","BMI (فقط شاخص غربالگری تقریبی)")).append(": ").append(String.format(Locale.getDefault(),"%.1f",bmi)).append("\\n")
       .append(tg("Estimated maintenance","کالری نگهدارندهٔ تخمینی")).append(": ").append(Math.round(maintenance)).append(" kcal/day\\n")
       .append(tg("Starting energy target","هدف اولیهٔ انرژی")).append(": ").append(Math.round(target)).append(" kcal/day\\n")
       .append(tg("Protein guide","راهنمای پروتئین")).append(": ").append(Math.round(protein)).append(" g/day\\n\\n");
+    if(g==0&&bmi<18.5)out.append(tg("Weight note: BMI is below 18.5, so this guide does not set a calorie deficit. Consider discussing unintended weight loss or nutrition concerns with a qualified clinician.","نکتهٔ وزن: BMI کمتر از ۱۸٫۵ است؛ بنابراین این راهنما کسری کالری پیشنهاد نمی‌کند. اگر کاهش وزن ناخواسته یا نگرانی تغذیه‌ای دارید، با متخصص سلامت مشورت کنید.")).append("\\n\\n");
     if(g==0){
      out.append(tg("TRAINING — WEIGHT LOSS","تمرین — کاهش وزن")).append("\\n").append(tg("3–5 days/week: 25–45 min brisk walking/cycling plus 2–3 full-body strength sessions. Keep the calorie deficit modest and increase activity gradually.","۳ تا ۵ روز در هفته: ۲۵ تا ۴۵ دقیقه پیاده‌روی تند یا دوچرخه، به‌علاوهٔ ۲ تا ۳ جلسه قدرتی کل بدن. کسری کالری ملایم داشته باشید و فعالیت را تدریجی افزایش دهید.")).append("\\n\\n")
       .append(tg("FOOD — vegetables, fruit, beans, whole grains and lean protein; reduce sugary drinks and highly processed snacks. Aim for slow, sustainable loss.","تغذیه — سبزی، میوه، حبوبات، غلات کامل و پروتئین کم‌چرب را بیشتر کنید؛ نوشیدنی شیرین و تنقلات بسیار فرآوری‌شده را کاهش دهید. کاهش وزن آهسته و پایدار را هدف بگیرید."));
