@@ -68,14 +68,16 @@ public class StepCounterService extends Service implements SensorEventListener {
         startForeground(41, notification(prefs.getBoolean("paused", false) ? "قدم‌شمار متوقف موقت است" : "قدم‌شمار فعال است"));
     }
 
-    private void registerSensor() {
+    private boolean registerSensor() {
         today = dateNow();
         needsBaseline = true;
         lastRaw = -1f;
-        if (stepSensor != null && !listening && sensorManager != null)
-            listening = sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if (stepSensor == null || sensorManager == null) return false;
+        if (!listening) listening = sensorManager.registerListener(this, stepSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if (!listening) return false;
         prefs.edit().putBoolean("running", true).putBoolean("paused", false).apply();
         updateNotification("قدم‌شمار فعال است");
+        return true;
     }
 
     private void pauseCounting() {
@@ -102,7 +104,13 @@ public class StepCounterService extends Service implements SensorEventListener {
             prefs.edit().putInt("session_steps", 0).putBoolean("paused", false).apply();
         }
         beginForeground();
-        registerSensor();
+        if (!registerSensor()) {
+            prefs.edit().putBoolean("running", false).putBoolean("paused", false).apply();
+            updateNotification("قدم‌شمار در این دستگاه در دسترس نیست");
+            if (Build.VERSION.SDK_INT >= 24) stopForeground(STOP_FOREGROUND_REMOVE); else stopForeground(true);
+            stopSelf();
+            return START_NOT_STICKY;
+        }
         return START_STICKY;
     }
 
