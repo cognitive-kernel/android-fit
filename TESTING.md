@@ -31,7 +31,7 @@ The instrumented test task requires a running Android emulator or device. The wo
 
 ## Selective backup and restore
 
-The app exports a versioned UTF-8 JSON backup. The user can select workout plans/exercise logs, health records (sleep, vitals, body metrics), and app preferences independently. Restore lists only sections found in the chosen backup; selected sections replace their corresponding current data while unselected sections remain unchanged. Database changes are applied in a transaction. Verify on a test install: back up one section at a time, restore it, restore multiple sections, cancel restore, and confirm unrelated records/preferences remain unchanged. Do not use production data for destructive restore tests.
+The app exports a versioned UTF-8 JSON backup. The user can select workout plans/exercise logs, health records (sleep, vitals, body metrics), step-counter history, and app preferences independently. Restoring step-counter history stops any active counting session and never resumes it automatically. Restore lists only sections found in the chosen backup; selected sections replace their corresponding current data while unselected sections remain unchanged. Database changes are applied in a transaction. Verify on a test install: back up one section at a time, restore it, restore multiple sections, cancel restore, and confirm unrelated records/preferences remain unchanged. Do not use production data for destructive restore tests.
 
 ## Update-safety rule
 
