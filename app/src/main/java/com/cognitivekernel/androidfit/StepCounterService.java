@@ -92,6 +92,13 @@ public class StepCounterService extends Service implements SensorEventListener {
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent == null ? "RESUME" : intent.getAction();
         if ("PAUSE".equals(action)) { pauseCounting(); return START_STICKY; }
+        // A sticky restart has no Intent. Preserve an explicit user pause instead of
+        // silently restarting the sensor and changing the saved paused state.
+        if (intent == null && prefs.getBoolean("paused", false)) {
+            beginForeground();
+            updateNotification("قدم‌شمار متوقف موقت است");
+            return START_STICKY;
+        }
         if ("FINISH".equals(action)) {
             if (sensorManager != null) sensorManager.unregisterListener(this);
             listening = false;
