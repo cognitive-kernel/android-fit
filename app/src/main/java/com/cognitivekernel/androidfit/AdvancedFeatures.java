@@ -239,7 +239,7 @@ public final class AdvancedFeatures {
    }
    byte[] imported;
    try(InputStream in=a.getContentResolver().openInputStream(data.getData())){
-    if(in==null)throw new IOException("No input stream");ByteArrayOutputStream bytes=new ByteArrayOutputStream();copy(in,bytes);imported=bytes.toByteArray();
+    if(in==null)throw new IOException("No input stream");imported=readBackupBytes(in);
    }
    int first=0;while(first<imported.length&&Character.isWhitespace((char)(imported[first]&0xff)))first++;
    if(first>=imported.length)throw new IOException("Empty backup");
@@ -372,6 +372,11 @@ public final class AdvancedFeatures {
    else if(value instanceof JSONArray){HashSet<String> set=new HashSet<>();JSONArray array=(JSONArray)value;for(int j=0;j<array.length();j++)set.add(array.optString(j));editor.putStringSet(key,set);}
   }
   editor.apply();
+ }
+ private byte[] readBackupBytes(InputStream in)throws IOException{
+  final int maxBytes=100*1024*1024;ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count,total=0;
+  while((count=in.read(buffer))!=-1){total+=count;if(total>maxBytes)throw new IOException("Backup exceeds the 100 MiB safety limit");bytes.write(buffer,0,count);}
+  return bytes.toByteArray();
  }
  private void copy(InputStream in,OutputStream out)throws IOException{
   byte[] buffer=new byte[8192];int count;while((count=in.read(buffer))!=-1)out.write(buffer,0,count);out.flush();
