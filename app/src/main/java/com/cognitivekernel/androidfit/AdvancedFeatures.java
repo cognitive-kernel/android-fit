@@ -10,6 +10,8 @@ import android.view.*;
 import android.widget.*;
 import java.io.*;
 import java.util.*;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public final class AdvancedFeatures {
  private final Activity a; private final WorkoutDb db;
