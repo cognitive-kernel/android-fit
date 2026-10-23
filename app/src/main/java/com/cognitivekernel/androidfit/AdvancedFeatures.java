@@ -279,7 +279,7 @@ public final class AdvancedFeatures {
          db.getWritableDatabase().setTransactionSuccessful();
         }finally{db.getWritableDatabase().endTransaction();}
         for(int i=0;i<valid.size();i++)if(chosen[i]&&"steps".equals(ids.get(i))){
-         Intent finish=new Intent(a,StepCounterService.class);finish.setAction("FINISH");a.startService(finish);
+         a.stopService(new Intent(a,StepCounterService.class));
          restorePreferences("step_counter",valid.get(i).getJSONObject("step_counter"));
         }
         for(int i=0;i<valid.size();i++)if(chosen[i]&&"preferences".equals(ids.get(i))){
