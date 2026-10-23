@@ -269,9 +269,14 @@ public final class AdvancedFeatures {
       .setPositiveButton(tr("Restore","بازیابی"),(confirm,button)->{
        try{db.getWritableDatabase().beginTransaction();
         try{
-         for(int i=0;i<valid.size();i++)if(chosen[i])restoreSection(valid.get(i),ids.get(i));
+         for(int i=0;i<valid.size();i++)if(chosen[i]&&!"preferences".equals(ids.get(i)))restoreSection(valid.get(i),ids.get(i));
          db.getWritableDatabase().setTransactionSuccessful();
         }finally{db.getWritableDatabase().endTransaction();}
+        for(int i=0;i<valid.size();i++)if(chosen[i]&&"preferences".equals(ids.get(i))){
+         JSONObject section=valid.get(i);
+         restorePreferences("fityar_preferences",section.getJSONObject("fityar_preferences"));
+         restorePreferences("fit_settings",section.getJSONObject("fit_settings"));
+        }
         message(tr("Restore complete","بازیابی کامل شد"),tr("Selected sections were restored. Other sections were left unchanged.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند."));
        }catch(Exception ex){message(tr("Error","خطا"),tr("Could not restore backup. Current data was kept where possible.","بازیابی انجام نشد؛ تا حد امکان اطلاعات فعلی حفظ شدند.")+"\n"+ex.getMessage());}
       }).setNegativeButton(android.R.string.cancel,null).show();
@@ -306,7 +311,7 @@ public final class AdvancedFeatures {
     db.getReadableDatabase();
    }catch(Exception ignored){}
    throw ex;
-  }finally{if(tmp.exists())tmp.delete();if(rollback.exists())rollback.delete();}
+  }finally{if(tmp.exists())tmp.delete();}
  }
  private void validateDatabase(File file)throws IOException{
   if(!file.isFile()||file.length()<100)throw new IOException("Empty database");
