@@ -28,7 +28,11 @@ public final class GoalPlanner {
   return out.toString().replace(",", "").trim();
  }
  static int parseInteger(String value){return Integer.parseInt(normalizeDigits(value));}
- static double parseDecimal(String value){return Double.parseDouble(normalizeDigits(value));}
+ static double parseDecimal(String value){
+  double parsed=Double.parseDouble(normalizeDigits(value));
+  if(Double.isNaN(parsed)||Double.isInfinite(parsed)) throw new NumberFormatException("A finite number is required");
+  return parsed;
+}
  public static void show(Activity a){
   LinearLayout form=new LinearLayout(a);form.setOrientation(LinearLayout.VERTICAL);int p=(int)(14*a.getResources().getDisplayMetrics().density);form.setPadding(p,p,p,p);
   Spinner goal=choices(a,new String[]{t(a,"Weight loss","کاهش وزن"),t(a,"Fitness & body composition","فیتنس و تناسب اندام"),t(a,"Muscle building","عضله‌سازی")});
@@ -42,7 +46,11 @@ public final class GoalPlanner {
     int years=parseInteger(age.getText().toString());double cm=parseDecimal(height.getText().toString()),kg=parseDecimal(weight.getText().toString());
     if(years<18||years>100||cm<120||cm>230||kg<30||kg>300)throw new IllegalArgumentException();
     int g=goal.getSelectedItemPosition(),r=area.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition();
-    double bmi=kg/Math.pow(cm/100.0,2),bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161),maint=bmr*(act==0?1.35:act==1?1.55:1.725),target=Math.max(1200,g==0?maint-350:g==1?maint:maint+200),protein=kg*(g==2?1.8:1.5);
+    double bmi=kg/Math.pow(cm/100.0,2),bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161),maint=bmr*(act==0?1.35:act==1?1.55:1.725);
+    // Avoid prescribing a calorie deficit when the screening BMI is underweight.
+    double target=Math.max(1200,g==0?maint-350:g==1?maint:maint+200);
+    if(g==0&&bmi<18.5) target=maint;
+    double protein=kg*(g==2?1.8:1.5);
     String[] body={t(a,"full body: squat, push-up, row and plank","کل بدن: اسکوات، شنا، پارویی و پلانک"),t(a,"shoulders: overhead press, lateral raise, rear-delt raise","سرشانه: پرس سرشانه، نشر جانب و نشر خم"),t(a,"arms: biceps curl, hammer curl, triceps extension","بازو: جلو بازو، چکشی و پشت بازو"),t(a,"abs/core: plank, dead bug, reverse crunch; visible abs also depend on overall body fat","شکم: پلانک، ددباگ و کرانچ معکوس؛ نمایان‌شدن عضلات شکم به چربی کل بدن هم بستگی دارد"),t(a,"legs/glutes: squat, lunge, hip hinge and glute bridge","پا و باسن: اسکوات، لانج، هیپ‌هینج و پل باسن"),t(a,"chest: push-ups and dumbbell/floor press","سینه: شنا و پرس دمبل یا پرس روی زمین"),t(a,"back: rows, band rows and safe pulling exercises","پشت و زیربغل: انواع پارویی، پارویی کشی و حرکات کششی ایمن")};
     String title,training,food;
     if(g==0){title=t(a,"Weight loss plan","برنامه کاهش وزن");training=t(a,"3–5 days/week: 25–45 min brisk walking/cycling plus 2–3 full-body strength sessions. Increase activity gradually.","۳ تا ۵ روز در هفته: ۲۵ تا ۴۵ دقیقه پیاده‌روی تند یا دوچرخه و ۲ تا ۳ جلسه قدرتی کل بدن؛ فعالیت را تدریجی زیاد کنید.");food=t(a,"Modest calorie deficit; prioritize vegetables, fruit, beans, whole grains and lean protein; reduce sugary drinks and highly processed snacks.","کسری کالری ملایم؛ سبزی، میوه، حبوبات، غلات کامل و پروتئین کم‌چرب بیشتر؛ نوشیدنی شیرین و تنقلات بسیار فرآوری‌شده کمتر.");}
