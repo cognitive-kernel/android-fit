@@ -374,8 +374,8 @@ public final class AdvancedFeatures {
   editor.apply();
  }
  private byte[] readBackupBytes(InputStream in)throws IOException{
-  final int maxBytes=100*1024*1024;ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count,total=0;
-  while((count=in.read(buffer))!=-1){total+=count;if(total>maxBytes)throw new IOException("Backup exceeds the 100 MiB safety limit");bytes.write(buffer,0,count);}
+  final int maxBytes=25*1024*1024;ByteArrayOutputStream bytes=new ByteArrayOutputStream();byte[] buffer=new byte[8192];int count,total=0;
+  while((count=in.read(buffer))!=-1){total+=count;if(total>maxBytes)throw new IOException("Backup exceeds the 25 MiB safety limit");bytes.write(buffer,0,count);}
   return bytes.toByteArray();
  }
  private void copy(InputStream in,OutputStream out)throws IOException{
