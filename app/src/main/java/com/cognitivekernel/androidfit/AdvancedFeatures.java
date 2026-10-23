@@ -48,9 +48,9 @@ public final class AdvancedFeatures {
  public void showLibrary(){
   String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row"),s("lib_walk")};
   String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row"),s("detail_walk")};
-  int[] images={R.drawable.exercise_squat,R.drawable.exercise_pushup,R.drawable.exercise_lunge,R.drawable.exercise_plank,R.drawable.exercise_row,R.drawable.exercise_walk};
+  String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif","walk.gif"};
   new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->{
-   LinearLayout l=column();ImageView image=new ImageView(a);image.setImageResource(images[which]);image.setContentDescription(names[which]);image.setAdjustViewBounds(true);image.setMaxHeight((int)(180*a.getResources().getDisplayMetrics().density));l.addView(image,new LinearLayout.LayoutParams(-1,(int)(160*a.getResources().getDisplayMetrics().density)));
+   LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gifs[which]);image.setContentDescription(names[which]);int imageHeight=(int)(180*a.getResources().getDisplayMetrics().density);l.addView(image,new LinearLayout.LayoutParams(-1,imageHeight));
    TextView title=new TextView(a);title.setText(names[which]);title.setTextSize(20);l.addView(title);TextView body=new TextView(a);body.setText(details[which]);l.addView(body);
    new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(l).setPositiveButton(android.R.string.ok,null).show();
   }).setNegativeButton(android.R.string.cancel,null).show();
