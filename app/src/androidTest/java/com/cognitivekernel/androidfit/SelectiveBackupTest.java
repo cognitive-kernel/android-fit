@@ -84,6 +84,9 @@ public class SelectiveBackupTest {
     try {
      android.content.SharedPreferences appPrefs=activity.getSharedPreferences("fityar_preferences",0);
      android.content.SharedPreferences languagePrefs=activity.getSharedPreferences("fit_settings",0);
+     java.util.Map<String,?> originalApp=new java.util.HashMap<>(appPrefs.getAll());
+     java.util.Map<String,?> originalLanguage=new java.util.HashMap<>(languagePrefs.getAll());
+     try {
      appPrefs.edit().clear().putBoolean("reminder_enabled",true).putInt("weekly_goal",4).apply();
      languagePrefs.edit().clear().putString("language","en").putInt("font_scale",2).apply();
      Method create=AdvancedFeatures.class.getDeclaredMethod("createSelectiveBackup",boolean[].class);
@@ -105,6 +108,10 @@ public class SelectiveBackupTest {
      assertTrue(appPrefs.getBoolean("reminder_enabled",false));
      assertEquals("en",languagePrefs.getString("language",""));
      assertEquals(2,languagePrefs.getInt("font_scale",0));
+     } finally {
+      restorePrefs(appPrefs,originalApp);
+      restorePrefs(languagePrefs,originalLanguage);
+     }
     } catch(Exception ex) { throw new AssertionError("Preference backup/restore regression",ex); }
    });
   }
@@ -120,6 +127,21 @@ public class SelectiveBackupTest {
     } catch(Exception ex) { throw new AssertionError("Empty backup selection regression",ex); }
    });
   }
+ }
+
+
+ private static void restorePrefs(android.content.SharedPreferences prefs,java.util.Map<String,?> values) {
+  android.content.SharedPreferences.Editor editor=prefs.edit().clear();
+  for(java.util.Map.Entry<String,?> entry:values.entrySet()){
+   Object value=entry.getValue();String key=entry.getKey();
+   if(value instanceof Boolean)editor.putBoolean(key,(Boolean)value);
+   else if(value instanceof Integer)editor.putInt(key,(Integer)value);
+   else if(value instanceof Long)editor.putLong(key,(Long)value);
+   else if(value instanceof Float)editor.putFloat(key,(Float)value);
+   else if(value instanceof String)editor.putString(key,(String)value);
+   else if(value instanceof java.util.Set){java.util.HashSet<String> set=new java.util.HashSet<>();for(Object item:(java.util.Set<?>)value)set.add(String.valueOf(item));editor.putStringSet(key,set);}
+  }
+  editor.commit();
  }
 
  private static int countRows(Cursor cursor) { int count=0;while(cursor.moveToNext())count++;return count; }
