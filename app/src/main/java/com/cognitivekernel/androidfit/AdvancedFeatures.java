@@ -172,76 +172,151 @@ public final class AdvancedFeatures {
 
  public void onRequestPermissionsResult(int requestCode,int[] grantResults){if(requestCode==NOTIFY){if(grantResults.length>0&&grantResults[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){Context c=a.getApplicationContext();if(c.getSharedPreferences("fityar_preferences",0).getBoolean("reminder_enabled",false))WorkoutReminderReceiver.schedule(c,c.getSharedPreferences("fityar_preferences",0).getInt("reminder_hour",19),c.getSharedPreferences("fityar_preferences",0).getInt("reminder_minute",0));}else message(s("permission_required"),s("notification_permission_message"));}}
 
- public void backup(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/octet-stream");i.putExtra(Intent.EXTRA_TITLE,"fityar-backup.db");a.startActivityForResult(i,BACKUP);}
- public void restore(){new AlertDialog.Builder(a).setTitle(s("restore_backup")).setMessage(s("restore_warning")).setPositiveButton(s("continue_action"),(d,w)->{Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");a.startActivityForResult(i,RESTORE);}).setNegativeButton(android.R.string.cancel,null).show();}
+ public void backup(){
+  String[] categories={s("Workout plans & logs / برنامه‌ها و سوابق تمرین"),s("Health records / سوابق سلامت"),s("App preferences / تنظیمات برنامه")};
+  boolean[] selected={true,true,true};
+  new AlertDialog.Builder(a).setTitle(s("Choose backup sections")).setMultiChoiceItems(categories,selected,(d,which,checked)->selected[which]=checked)
+   .setPositiveButton(s("Continue"),(d,w)->{
+    boolean any=false;for(boolean value:selected)any|=value;
+    if(!any){message(s("Error"),s("Select at least one section."));return;}
+    Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/json");i.putExtra(Intent.EXTRA_TITLE,"fityar-backup.json");
+    pendingBackupSections=selected.clone();a.startActivityForResult(i,BACKUP);
+   }).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ private boolean[] pendingBackupSections={true,true,true};
+ private JSONObject createSelectiveBackup(boolean[] selected)throws Exception{
+  JSONObject root=new JSONObject();root.put("format","fityar-selective-backup");root.put("version",1);root.put("createdAt",System.currentTimeMillis());
+  JSONArray sections=new JSONArray();
+  if(selected[0]){JSONObject section=new JSONObject();section.put("id","workouts");section.put("plans",tableToJson("plans"));section.put("exercises",tableToJson("exercises"));section.put("logs",tableToJson("logs"));sections.put(section);}
+  if(selected[1]){JSONObject section=new JSONObject();section.put("id","health");section.put("sleep_logs",tableToJson("sleep_logs"));section.put("vital_logs",tableToJson("vital_logs"));section.put("body_metrics",tableToJson("body_metrics"));sections.put(section);}
+  if(selected[2]){JSONObject section=new JSONObject();section.put("id","preferences");section.put("fityar_preferences",preferencesToJson("fityar_preferences"));section.put("fit_settings",preferencesToJson("fit_settings"));sections.put(section);}
+  root.put("sections",sections);return root;
+ }
+ private JSONArray tableToJson(String table)throws Exception{
+  JSONArray rows=new JSONArray();
+  try(Cursor cursor=db.getReadableDatabase().query(table,null,null,null,null,null,null)){
+   String[] columns=cursor.getColumnNames();
+   while(cursor.moveToNext()){
+    JSONObject row=new JSONObject();
+    for(int i=0;i<columns.length;i++){
+     switch(cursor.getType(i)){
+      case Cursor.FIELD_TYPE_NULL:row.put(columns[i],JSONObject.NULL);break;
+      case Cursor.FIELD_TYPE_INTEGER:row.put(columns[i],cursor.getLong(i));break;
+      case Cursor.FIELD_TYPE_FLOAT:row.put(columns[i],cursor.getDouble(i));break;
+      case Cursor.FIELD_TYPE_BLOB:row.put(columns[i],android.util.Base64.encodeToString(cursor.getBlob(i),android.util.Base64.NO_WRAP));break;
+      default:row.put(columns[i],cursor.getString(i));
+     }
+    }
+    rows.put(row);
+   }
+  }
+  return rows;
+ }
+ private JSONObject preferencesToJson(String name)throws Exception{
+  JSONObject out=new JSONObject();Map<String,?> values=a.getSharedPreferences(name,Context.MODE_PRIVATE).getAll();
+  for(Map.Entry<String,?> entry:values.entrySet()){
+   Object value=entry.getValue();
+   if(value instanceof Boolean||value instanceof Integer||value instanceof Long||value instanceof Float||value instanceof String)out.put(entry.getKey(),value);
+   else if(value instanceof Set){JSONArray array=new JSONArray();for(Object item:(Set<?>)value)array.put(String.valueOf(item));out.put(entry.getKey(),array);}
+  }
+  return out;
+ }
+ public void restore(){
+  Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/json");i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/json","text/plain","*/*"});a.startActivityForResult(i,RESTORE);
+ }
  public boolean onActivityResult(int requestCode,int resultCode,Intent data){
   if(requestCode!=BACKUP&&requestCode!=RESTORE)return false;
   if(resultCode!=Activity.RESULT_OK||data==null||data.getData()==null)return true;
-  File dbFile=a.getDatabasePath(WorkoutDb.DATABASE_NAME);
-  File tmp=new File(a.getCacheDir(),"fit-yar-restore.tmp");
-  File rollback=new File(a.getCacheDir(),"fit-yar-restore-rollback.db");
   try{
-   if(requestCode==BACKUP)db.getReadableDatabase(); // Create an empty database before backing it up on a fresh install.
-   db.close();
    if(requestCode==BACKUP){
-    try(InputStream in=new FileInputStream(dbFile);OutputStream out=a.getContentResolver().openOutputStream(data.getData())){
-     if(out==null)throw new IOException("No output stream");copy(in,out);
+    JSONObject backup=createSelectiveBackup(pendingBackupSections);
+    try(OutputStream out=a.getContentResolver().openOutputStream(data.getData())){
+     if(out==null)throw new IOException("No output stream");out.write(backup.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8));out.flush();
     }
-    db.getReadableDatabase();
-    message(s("backup_complete"),s("backup_saved"));
+    message(s("Backup complete"),s("Selected sections were saved."));
     return true;
    }
-   try(InputStream in=a.getContentResolver().openInputStream(data.getData());OutputStream out=new FileOutputStream(tmp)){
-    if(in==null)throw new IOException("No input stream");copy(in,out);
+   JSONObject backup;
+   try(InputStream in=a.getContentResolver().openInputStream(data.getData())){
+    if(in==null)throw new IOException("No input stream");ByteArrayOutputStream bytes=new ByteArrayOutputStream();copy(in,bytes);
+    backup=new JSONObject(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
    }
-   validateDatabase(tmp);
-   if(rollback.exists()&&!rollback.delete())throw new IOException("Cannot clear rollback file");
-   if(dbFile.exists())try(InputStream in=new FileInputStream(dbFile);OutputStream out=new FileOutputStream(rollback)){copy(in,out);}
-   deleteSidecars(dbFile);
-   if(dbFile.exists()&&!dbFile.delete())throw new IOException("Cannot safely replace current database");
-   if(!tmp.renameTo(dbFile))try(InputStream in=new FileInputStream(tmp);OutputStream out=new FileOutputStream(dbFile)){copy(in,out);}
-   validateDatabase(dbFile);
-   db.getReadableDatabase(); // Triggers only additive schema migration when restoring an older backup.
-   rollback.delete();
-   message(s("restore_complete"),s("restore_saved"));
-  }catch(Exception ex){
-   try{
-    db.close();
-    if(rollback.exists()){
-     deleteSidecars(dbFile);
-     if(dbFile.exists())dbFile.delete();
-     try(InputStream in=new FileInputStream(rollback);OutputStream out=new FileOutputStream(dbFile)){copy(in,out);}
-    }
-    db.getReadableDatabase();
-   }catch(Exception ignored){}
-   message(s("error"),s("backup_failed"));
-  }finally{
-   if(tmp.exists())tmp.delete();
-  }
+   if(!"fityar-selective-backup".equals(backup.optString("format"))||backup.optInt("version")!=1||!(backup.opt("sections") instanceof JSONArray))throw new IOException("Unsupported backup format");
+   JSONArray sections=backup.getJSONArray("sections");
+   ArrayList<JSONObject> valid=new ArrayList<>();
+   ArrayList<String> labels=new ArrayList<>();
+   ArrayList<String> ids=new ArrayList<>();
+   for(int i=0;i<sections.length();i++){
+    JSONObject section=sections.optJSONObject(i);if(section==null)continue;String id=section.optString("id","");
+    if("workouts".equals(id)&&section.opt("plans") instanceof JSONArray&&section.opt("exercises") instanceof JSONArray&&section.opt("logs") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(s("Workout plans & logs"));}
+    else if("health".equals(id)&&section.opt("sleep_logs") instanceof JSONArray&&section.opt("vital_logs") instanceof JSONArray&&section.opt("body_metrics") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(s("Health records"));}
+    else if("preferences".equals(id)&&section.opt("fityar_preferences") instanceof JSONObject&&section.opt("fit_settings") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(s("App preferences"));}
+   }
+   if(valid.isEmpty())throw new IOException("No supported backup sections");
+   boolean[] chosen=new boolean[valid.size()];Arrays.fill(chosen,true);
+   new AlertDialog.Builder(a).setTitle(s("Choose sections to restore")).setMultiChoiceItems(labels.toArray(new String[0]),chosen,(dialog,which,checked)->chosen[which]=checked)
+    .setPositiveButton(s("Restore selected"),(dialog,which)->{
+     boolean any=false;for(boolean value:chosen)any|=value;
+     if(!any){message(s("Error"),s("Select at least one section."));return;}
+     new AlertDialog.Builder(a).setTitle(s("Confirm restore")).setMessage(s("Selected sections will replace their current data. Other sections will remain unchanged."))
+      .setPositiveButton(s("Restore"),(confirm,button)->{
+       try{db.getWritableDatabase().beginTransaction();
+        try{
+         for(int i=0;i<valid.size();i++)if(chosen[i])restoreSection(valid.get(i),ids.get(i));
+         db.getWritableDatabase().setTransactionSuccessful();
+        }finally{db.getWritableDatabase().endTransaction();}
+        message(s("Restore complete"),s("Selected sections were restored. Other sections were left unchanged."));
+       }catch(Exception ex){message(s("Error"),s("Could not restore backup. Current data was kept where possible.")+"\n"+ex.getMessage());}
+      }).setNegativeButton(android.R.string.cancel,null).show();
+    }).setNegativeButton(android.R.string.cancel,null).show();
+  }catch(Exception ex){message(s("Error"),s("Invalid or unreadable backup file.")+"\n"+ex.getMessage());}
   return true;
  }
-
- private void validateDatabase(File file)throws IOException{
-  if(!file.isFile()||file.length()<100)throw new IOException("Empty database");
-  try(SQLiteDatabase check=SQLiteDatabase.openDatabase(file.getAbsolutePath(),null,SQLiteDatabase.OPEN_READONLY);
-      Cursor integrity=check.rawQuery("PRAGMA integrity_check",null)){
-   if(!integrity.moveToFirst()||!"ok".equalsIgnoreCase(integrity.getString(0)))throw new IOException("Invalid SQLite database");
-   try(Cursor version=check.rawQuery("PRAGMA user_version",null)){
-    if(!version.moveToFirst()||version.getInt(0)>4)throw new IOException("Backup comes from a newer app version");
-   }
-   try(Cursor tables=check.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('plans','exercises','logs')",null)){
-    if(!tables.moveToFirst()||tables.getInt(0)!=3)throw new IOException("Not a FitYar database");
-   }
-  }catch(android.database.SQLException ex){throw new IOException("Invalid FitYar backup",ex);}
+ private void restoreSection(JSONObject section,String id)throws Exception{
+  SQLiteDatabase database=db.getWritableDatabase();
+  if("workouts".equals(id)){
+   restoreTable(database,"plans",section.getJSONArray("plans"));restoreTable(database,"exercises",section.getJSONArray("exercises"));restoreTable(database,"logs",section.getJSONArray("logs"));
+  }else if("health".equals(id)){
+   restoreTable(database,"sleep_logs",section.getJSONArray("sleep_logs"));restoreTable(database,"vital_logs",section.getJSONArray("vital_logs"));restoreTable(database,"body_metrics",section.getJSONArray("body_metrics"));
+  }else if("preferences".equals(id)){
+   restorePreferences("fityar_preferences",section.getJSONObject("fityar_preferences"));restorePreferences("fit_settings",section.getJSONObject("fit_settings"));
+  }else throw new IOException("Unknown section");
  }
-
- private void deleteSidecars(File dbFile){
-  for(String suffix:new String[]{"-wal","-shm","-journal"}){File sidecar=new File(dbFile.getAbsolutePath()+suffix);if(sidecar.exists())sidecar.delete();}
+ private void restoreTable(SQLiteDatabase database,String table,JSONArray rows)throws Exception{
+  database.delete(table,null,null);
+  java.util.HashSet<String> allowed=new java.util.HashSet<>();
+  try(Cursor info=database.rawQuery("PRAGMA table_info("+table+")",null)){while(info.moveToNext())allowed.add(info.getString(1));}
+  for(int i=0;i<rows.length();i++){
+   JSONObject row=rows.getJSONObject(i);ContentValues values=new ContentValues();
+   JSONArray names=row.names();if(names==null)continue;
+   for(int j=0;j<names.length();j++){
+    String column=names.getString(j);if(!allowed.contains(column))continue;Object value=row.get(column);
+    if(value==JSONObject.NULL)values.putNull(column);
+    else if(value instanceof Boolean)values.put(column,(Boolean)value);
+    else if(value instanceof Integer)values.put(column,(Integer)value);
+    else if(value instanceof Long)values.put(column,(Long)value);
+    else if(value instanceof Number)values.put(column,((Number)value).doubleValue());
+    else if(value instanceof String)values.put(column,(String)value);
+    else throw new IOException("Unsupported value in "+table+"."+column);
+   }
+   database.insertOrThrow(table,null,values);
+  }
  }
-
+ private void restorePreferences(String name,JSONObject json){
+  android.content.SharedPreferences.Editor editor=a.getSharedPreferences(name,Context.MODE_PRIVATE).edit().clear();
+  JSONArray keys=json.names();if(keys!=null)for(int i=0;i<keys.length();i++){
+   String key=keys.optString(i);Object value=json.opt(key);
+   if(value==JSONObject.NULL)continue;
+   if(value instanceof Boolean)editor.putBoolean(key,(Boolean)value);
+   else if(value instanceof Integer)editor.putInt(key,(Integer)value);
+   else if(value instanceof Long)editor.putLong(key,(Long)value);
+   else if(value instanceof Number)editor.putFloat(key,((Number)value).floatValue());
+   else if(value instanceof String)editor.putString(key,(String)value);
+   else if(value instanceof JSONArray){HashSet<String> set=new HashSet<>();JSONArray array=(JSONArray)value;for(int j=0;j<array.length();j++)set.add(array.optString(j));editor.putStringSet(key,set);}
+  }
+  editor.apply();
+ }
  private void copy(InputStream in,OutputStream out)throws IOException{
-  byte[] buffer=new byte[8192];int count;
-  while((count=in.read(buffer))!=-1)out.write(buffer,0,count);
-  out.flush();
+  byte[] buffer=new byte[8192];int count;while((count=in.read(buffer))!=-1)out.write(buffer,0,count);out.flush();
  }
 }
