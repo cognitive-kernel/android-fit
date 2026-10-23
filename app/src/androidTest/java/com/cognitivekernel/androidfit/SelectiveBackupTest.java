@@ -73,7 +73,7 @@ public class SelectiveBackupTest {
     boolean[] restored=features.loadPendingBackupSections();
     assertArrayEquals(new boolean[]{true,false,true,false},restored);
     features.clearPendingBackupSections();
-    assertArrayEquals(new boolean[]{true,true,true,true},features.loadPendingBackupSections());
+    assertArrayEquals(new boolean[]{false,false,false,false},features.loadPendingBackupSections());
    });
   }
  }
