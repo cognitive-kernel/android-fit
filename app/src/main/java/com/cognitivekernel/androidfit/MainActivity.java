@@ -117,8 +117,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
  void export(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("text/csv");i.putExtra(Intent.EXTRA_TITLE,"fit-yar-all-reports.csv");startActivityForResult(i,EXPORT);}
 private void writeCsvRow(OutputStream out,String... cells)throws IOException{
- for(int i=0;i<cells.length;i++){if(i>0)out.write(',');String value=cells[i]==null?"":cells[i];out.write(("\""+value.replace("\"","\"\"")+"\"").getBytes(StandardCharsets.UTF_8));}
- out.write('\n');
+ CsvWriter.writeRow(out,cells);
 }
 protected void onActivityResult(int r,int c,Intent d){
  super.onActivityResult(r,c,d);
