@@ -25,7 +25,7 @@ Before installing a new APK over an existing FitYar installation, all of these m
 
 1. The package name remains `com.cognitivekernel.androidfit`.
 2. The new APK certificate matches the installed APK certificate exactly.
-3. The new `versionCode` is not lower than the installed version; the current branch defaults to version code `103` / version name `1.1.7`.
+3. The new `versionCode` is not lower than the installed version; the current branch defaults to version code `104` / version name `1.1.8`.
 4. A backup exists before any restore operation or database test that could replace user data.
 
 **Do not uninstall the installed app to bypass a signature conflict. Do not install an APK with an unverified certificate.** Uninstalling can delete local workout and health records.
