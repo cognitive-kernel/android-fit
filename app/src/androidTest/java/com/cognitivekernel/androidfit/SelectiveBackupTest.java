@@ -65,6 +65,18 @@ public class SelectiveBackupTest {
    });
   }
  }
+ @Test public void backupSectionSelectionSurvivesActivityRecreationState() throws Exception {
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> {
+    AdvancedFeatures features=activity.advanced;
+    features.savePendingBackupSections(new boolean[]{true,false,true,false});
+    boolean[] restored=features.loadPendingBackupSections();
+    assertArrayEquals(new boolean[]{true,false,true,false},restored);
+    features.clearPendingBackupSections();
+    assertArrayEquals(new boolean[]{true,true,true,true},features.loadPendingBackupSections());
+   });
+  }
+ }
  private static int countRows(Cursor cursor) { int count=0;while(cursor.moveToNext())count++;return count; }
 
  @Test public void exportsHealthAndStepDataWithoutSavingLiveServiceState() throws Exception {
