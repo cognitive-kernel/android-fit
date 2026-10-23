@@ -228,7 +228,7 @@ public final class AdvancedFeatures {
   return out;
  }
  public void restore(){
-  Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/json");i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/json","text/plain","*/*"});a.startActivityForResult(i,RESTORE);
+  Intent i=new Intent(Intent.ACTION_OPEN_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("*/*");i.putExtra(Intent.EXTRA_MIME_TYPES,new String[]{"application/json","text/plain","application/octet-stream","application/x-sqlite3"});a.startActivityForResult(i,RESTORE);
  }
  public boolean onActivityResult(int requestCode,int resultCode,Intent data){
   if(requestCode!=BACKUP&&requestCode!=RESTORE)return false;
