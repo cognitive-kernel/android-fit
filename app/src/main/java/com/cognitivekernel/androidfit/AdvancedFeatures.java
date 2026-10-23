@@ -17,6 +17,21 @@ public final class AdvancedFeatures {
  public AdvancedFeatures(Activity activity, WorkoutDb database){a=activity;db=database;}
  private String s(String key){int id=a.getResources().getIdentifier(key,"string",a.getPackageName());return id==0?key:a.getString(id);}
  private EditText field(String hint,String value,int type){EditText e=new EditText(a);e.setHint(hint);if(value!=null)e.setText(value);e.setInputType(type);return e;}
+ private static String normalizeLocalizedNumber(String value){
+  StringBuilder out=new StringBuilder(value==null?0:value.length());
+  if(value==null)return "";
+  for(int i=0;i<value.length();i++){
+   char ch=value.charAt(i);
+   if(ch>='۰'&&ch<='۹')ch=(char)('0'+ch-'۰');
+   else if(ch>='٠'&&ch<='٩')ch=(char)('0'+ch-'٠');
+   else if(ch=='٫')ch='.';
+   else if(ch=='٬'||ch=='،')ch=',';
+   out.append(ch);
+  }
+  return out.toString().replace(",","").trim();
+ }
+ private static int parseLocalizedInt(String value){return Integer.parseInt(normalizeLocalizedNumber(value));}
+ private static double parseLocalizedDouble(String value){return Double.parseDouble(normalizeLocalizedNumber(value));}
  private LinearLayout column(){LinearLayout l=new LinearLayout(a);l.setOrientation(LinearLayout.VERTICAL);int p=(int)(16*a.getResources().getDisplayMetrics().density);l.setPadding(p,p,p,p);return l;}
  private void message(String title,String body){new AlertDialog.Builder(a).setTitle(title).setMessage(body).setPositiveButton(android.R.string.ok,null).show();}
 
@@ -64,7 +79,7 @@ public final class AdvancedFeatures {
   l.addView(label(s("training_goal")));l.addView(goal);l.addView(label(s("fitness_level")));l.addView(level);l.addView(label(s("available_equipment")));l.addView(equipment);l.addView(days);l.addView(minutes);
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(l).setPositiveButton(s("create_plan"),(d,w)->{
    try{
-    int n=Integer.parseInt(days.getText().toString()),mins=Integer.parseInt(minutes.getText().toString());if(n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
+    int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());if(n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
     String planName=s("personal_plan_name")+" - "+goal.getSelectedItem();
     long id=db.addPlan(planName);String eq=(String)equipment.getSelectedItem();
     String[][] exercises;
@@ -100,8 +115,8 @@ public final class AdvancedFeatures {
   l.addView(age);l.addView(height);l.addView(weight);l.addView(label(tg("Usual daily activity","فعالیت معمول روزانه")));l.addView(activity);
   new AlertDialog.Builder(a).setTitle(tg("Personal training & nutrition","تمرین و تغذیهٔ شخصی")).setView(l).setPositiveButton(tg("Create guide","ساخت راهنما"),(d,w)->{
    try{
-    int years=Integer.parseInt(age.getText().toString().trim());
-    double cm=Double.parseDouble(height.getText().toString().trim()),kg=Double.parseDouble(weight.getText().toString().trim());
+    int years=parseLocalizedInt(age.getText().toString());
+    double cm=parseLocalizedDouble(height.getText().toString()),kg=parseLocalizedDouble(weight.getText().toString());
     if(years<18||years>100||cm<120||cm>230||kg<30||kg>300)throw new IllegalArgumentException();
     int g=goal.getSelectedItemPosition(),r=region.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition();
     double bmi=kg/((cm/100.0)*(cm/100.0));
