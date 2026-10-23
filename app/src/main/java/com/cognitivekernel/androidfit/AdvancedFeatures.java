@@ -176,7 +176,7 @@ public final class AdvancedFeatures {
  public void backup(){
   String[] categories={tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"),tr("Health records","سوابق سلامت"),tr("App preferences","تنظیمات برنامه")};
   boolean[] selected={true,true,true};
-  new AlertDialog.Builder(a).setTitle(tr("Choose backup sections","انتخاب بخش‌های پشتیبان")).setMultiChoiceItems(categories,selected,(d,which,checked)->selected[which]=checked)
+  new AlertDialog.Builder(a).setTitle(tr("Choose backup sections","انتخاب بخش‌های پشتیبان")).setMessage(tr("Backup files may contain sensitive health and personal data and are not encrypted. Store them securely.","فایل پشتیبان ممکن است شامل اطلاعات شخصی و سلامت باشد و رمزگذاری نمی‌شود؛ آن را در محل امن نگه دارید.")).setMultiChoiceItems(categories,selected,(d,which,checked)->selected[which]=checked)
    .setPositiveButton(tr("Continue","ادامه"),(d,w)->{
     boolean any=false;for(boolean value:selected)any|=value;
     if(!any){message(tr("Error","خطا"),tr("Select at least one section.","حداقل یک بخش را انتخاب کنید."));return;}
