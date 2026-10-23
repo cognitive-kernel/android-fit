@@ -249,7 +249,16 @@ public final class AdvancedFeatures {
    int first=0;while(first<imported.length&&Character.isWhitespace((char)(imported[first]&0xff)))first++;
    if(first>=imported.length)throw new IOException("Empty backup");
    if(imported[first]!='{'){
-    restoreLegacyDatabase(imported);
+    // Legacy SQLite backups replace the complete local database, so require an
+    // explicit destructive-action confirmation before touching any user data.
+    new AlertDialog.Builder(a)
+     .setTitle(tr("Restore full database?","بازیابی کل پایگاه داده؟"))
+     .setMessage(tr("This legacy backup replaces all workout and health records currently on this device. Export a backup first if you need to keep them.","این پشتیبان قدیمی تمام سوابق تمرین و سلامت فعلی گوشی را جایگزین می‌کند. اگر به اطلاعات فعلی نیاز دارید، ابتدا از آن‌ها پشتیبان بگیرید."))
+     .setPositiveButton(tr("Replace all data","جایگزینی همهٔ اطلاعات"),(dialog,which)->{
+      try{restoreLegacyDatabase(imported);}
+      catch(Exception ex){message(tr("Error","خطا"),tr("Could not restore legacy database.","بازیابی پشتیبان قدیمی انجام نشد.")+"\n"+ex.getMessage());}
+     })
+     .setNegativeButton(android.R.string.cancel,null).show();
     return true;
    }
    JSONObject backup=new JSONObject(new String(imported,java.nio.charset.StandardCharsets.UTF_8));
