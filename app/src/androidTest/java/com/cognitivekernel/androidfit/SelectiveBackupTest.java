@@ -77,6 +77,51 @@ public class SelectiveBackupTest {
    });
   }
  }
+
+ @Test public void preferencesBackupRestoresOnlyTheSelectedPreferenceSection() throws Exception {
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> {
+    try {
+     android.content.SharedPreferences appPrefs=activity.getSharedPreferences("fityar_preferences",0);
+     android.content.SharedPreferences languagePrefs=activity.getSharedPreferences("fit_settings",0);
+     appPrefs.edit().clear().putBoolean("reminder_enabled",true).putInt("weekly_goal",4).apply();
+     languagePrefs.edit().clear().putString("language","en").putInt("font_scale",2).apply();
+     Method create=AdvancedFeatures.class.getDeclaredMethod("createSelectiveBackup",boolean[].class);
+     create.setAccessible(true);
+     JSONObject backup=(JSONObject)create.invoke(activity.advanced,(Object)new boolean[]{false,false,false,true});
+     JSONArray sections=backup.getJSONArray("sections");
+     assertEquals(1,sections.length());
+     JSONObject section=sections.getJSONObject(0);
+     assertEquals("preferences",section.getString("id"));
+     assertEquals(4,section.getJSONObject("fityar_preferences").getInt("weekly_goal"));
+     assertEquals("en",section.getJSONObject("fit_settings").getString("language"));
+     appPrefs.edit().putInt("weekly_goal",1).apply();
+     languagePrefs.edit().putString("language","fa").apply();
+     Method restore=AdvancedFeatures.class.getDeclaredMethod("restorePreferences",String.class,JSONObject.class);
+     restore.setAccessible(true);
+     restore.invoke(activity.advanced,"fityar_preferences",section.getJSONObject("fityar_preferences"));
+     restore.invoke(activity.advanced,"fit_settings",section.getJSONObject("fit_settings"));
+     assertEquals(4,appPrefs.getInt("weekly_goal",0));
+     assertTrue(appPrefs.getBoolean("reminder_enabled",false));
+     assertEquals("en",languagePrefs.getString("language",""));
+     assertEquals(2,languagePrefs.getInt("font_scale",0));
+    } catch(Exception ex) { throw new AssertionError("Preference backup/restore regression",ex); }
+   });
+  }
+ }
+ @Test public void refusesToCreateBackupWithNoSelectedSections() throws Exception {
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> {
+    try {
+     Method create=AdvancedFeatures.class.getDeclaredMethod("createSelectiveBackup",boolean[].class);
+     create.setAccessible(true);
+     try { create.invoke(activity.advanced,(Object)new boolean[]{false,false,false,false}); fail("Expected empty selection to be rejected"); }
+     catch(java.lang.reflect.InvocationTargetException expected) { assertTrue(expected.getCause() instanceof java.io.IOException); }
+    } catch(Exception ex) { throw new AssertionError("Empty backup selection regression",ex); }
+   });
+  }
+ }
+
  private static int countRows(Cursor cursor) { int count=0;while(cursor.moveToNext())count++;return count; }
 
  @Test public void exportsHealthAndStepDataWithoutSavingLiveServiceState() throws Exception {
