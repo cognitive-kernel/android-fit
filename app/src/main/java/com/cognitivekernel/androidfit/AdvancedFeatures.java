@@ -330,7 +330,7 @@ public final class AdvancedFeatures {
         if(preferencesRestored[0]){
          new AlertDialog.Builder(a).setTitle(tr("Restore complete","بازیابی کامل شد"))
           .setMessage(tr("Selected sections were restored. Other sections were left unchanged. Restart the screen to apply restored language, theme, and display settings.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند. برای اعمال زبان، پوسته و تنظیمات نمایش بازیابی‌شده، صفحه دوباره بارگذاری می‌شود."))
-          .setPositiveButton(android.R.string.ok,(done,which)->a.recreate()).show();
+          .setPositiveButton(android.R.string.ok,(done,buttonIndex)->a.recreate()).show();
         }else message(tr("Restore complete","بازیابی کامل شد"),tr("Selected sections were restored. Other sections were left unchanged.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند."));
        }catch(Exception ex){message(tr("Error","خطا"),tr("Could not restore backup. Current data was kept where possible.","بازیابی انجام نشد؛ تا حد امکان اطلاعات فعلی حفظ شدند.")+"\n"+ex.getMessage());}
       }).setNegativeButton(android.R.string.cancel,null).show();
