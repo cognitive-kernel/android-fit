@@ -126,6 +126,9 @@ jobs:
           retention-days: 14
 
   signed-apk:
+    # Signing/update work is intentionally deferred until the original key is recovered.
+    # Enable this job by setting repository variable ENABLE_SIGNED_APK=true.
+    if: ${{ vars.ENABLE_SIGNED_APK == 'true' }}
     needs: [unit-tests-and-lint, instrumented-tests]
     runs-on: ubuntu-latest
     timeout-minutes: 20
