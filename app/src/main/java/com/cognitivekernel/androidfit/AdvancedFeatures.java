@@ -307,6 +307,7 @@ public final class AdvancedFeatures {
      if(!any){message(tr("Error","خطا"),tr("Select at least one section.","حداقل یک بخش را انتخاب کنید."));return;}
      new AlertDialog.Builder(a).setTitle(tr("Confirm restore","تأیید بازیابی")).setMessage(tr("Selected sections will replace their current data. Other sections will remain unchanged.","بخش‌های انتخاب‌شده جایگزین اطلاعات فعلی همان بخش می‌شوند؛ سایر بخش‌ها تغییر نمی‌کنند."))
       .setPositiveButton(tr("Restore","بازیابی"),(confirm,button)->{
+       final boolean[] preferencesRestored={false};
        try{db.getWritableDatabase().beginTransaction();
         try{
          for(int i=0;i<valid.size();i++)if(chosen[i]&&!"preferences".equals(ids.get(i))&&!"steps".equals(ids.get(i)))restoreSection(valid.get(i),ids.get(i));
@@ -318,6 +319,7 @@ public final class AdvancedFeatures {
          if(a instanceof MainActivity)((MainActivity)a).refreshStepCounterAfterRestore();
         }
         for(int i=0;i<valid.size();i++)if(chosen[i]&&"preferences".equals(ids.get(i))){
+         preferencesRestored[0]=true;
          JSONObject section=valid.get(i);
          restorePreferences("fityar_preferences",section.getJSONObject("fityar_preferences"));
          restorePreferences("fit_settings",section.getJSONObject("fit_settings"));
@@ -325,7 +327,11 @@ public final class AdvancedFeatures {
          if(prefs.getBoolean("reminder_enabled",false))WorkoutReminderReceiver.schedule(app,prefs.getInt("reminder_hour",19),prefs.getInt("reminder_minute",0));
          else WorkoutReminderReceiver.cancel(app);
         }
-        message(tr("Restore complete","بازیابی کامل شد"),tr("Selected sections were restored. Other sections were left unchanged.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند."));
+        if(preferencesRestored[0]){
+         new AlertDialog.Builder(a).setTitle(tr("Restore complete","بازیابی کامل شد"))
+          .setMessage(tr("Selected sections were restored. Other sections were left unchanged. Restart the screen to apply restored language, theme, and display settings.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند. برای اعمال زبان، پوسته و تنظیمات نمایش بازیابی‌شده، صفحه دوباره بارگذاری می‌شود."))
+          .setPositiveButton(android.R.string.ok,(done,which)->a.recreate()).show();
+        }else message(tr("Restore complete","بازیابی کامل شد"),tr("Selected sections were restored. Other sections were left unchanged.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند."));
        }catch(Exception ex){message(tr("Error","خطا"),tr("Could not restore backup. Current data was kept where possible.","بازیابی انجام نشد؛ تا حد امکان اطلاعات فعلی حفظ شدند.")+"\n"+ex.getMessage());}
       }).setNegativeButton(android.R.string.cancel,null).show();
     }).setNegativeButton(android.R.string.cancel,null).show();
