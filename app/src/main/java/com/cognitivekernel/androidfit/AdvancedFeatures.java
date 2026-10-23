@@ -184,17 +184,21 @@ public final class AdvancedFeatures {
     boolean any=false;for(boolean value:selected)any|=value;
     if(!any){message(tr("Error","خطا"),tr("Select at least one section.","حداقل یک بخش را انتخاب کنید."));return;}
     Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/json");i.putExtra(Intent.EXTRA_TITLE,"fityar-backup.json");
-    int mask=0;for(int index=0;index<selected.length;index++)if(selected[index])mask|=(1<<index);
-    a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().putInt("pending_backup_sections",mask).apply();
+    savePendingBackupSections(selected);
     a.startActivityForResult(i,BACKUP);
    }).setNegativeButton(android.R.string.cancel,null).show();
  }
- private boolean[] loadPendingBackupSections(){
+ void savePendingBackupSections(boolean[] selected){
+  if(selected==null||selected.length!=4)throw new IllegalArgumentException("Exactly four backup sections are required");
+  int mask=0;for(int index=0;index<selected.length;index++)if(selected[index])mask|=(1<<index);
+  a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().putInt("pending_backup_sections",mask).apply();
+ }
+ boolean[] loadPendingBackupSections(){
   int mask=a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).getInt("pending_backup_sections",15);
   boolean[] selected=new boolean[4];for(int index=0;index<selected.length;index++)selected[index]=(mask&(1<<index))!=0;
   return selected;
  }
- private void clearPendingBackupSections(){
+ void clearPendingBackupSections(){
   a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().remove("pending_backup_sections").apply();
  }
  private JSONObject createSelectiveBackup(boolean[] selected)throws Exception{
