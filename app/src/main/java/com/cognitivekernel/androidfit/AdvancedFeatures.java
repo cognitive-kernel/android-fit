@@ -16,6 +16,7 @@ public final class AdvancedFeatures {
  private static final int BACKUP=4101, RESTORE=4102, NOTIFY=4103;
  public AdvancedFeatures(Activity activity, WorkoutDb database){a=activity;db=database;}
  private String s(String key){int id=a.getResources().getIdentifier(key,"string",a.getPackageName());return id==0?key:a.getString(id);}
+ private String tr(String en,String fa){return a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa").equals("en")?en:fa;}
  private EditText field(String hint,String value,int type){EditText e=new EditText(a);e.setHint(hint);if(value!=null)e.setText(value);e.setInputType(type);return e;}
  private static int parseLocalizedInt(String value){return GoalPlanner.parseInteger(value);}
  private static double parseLocalizedDouble(String value){return GoalPlanner.parseDecimal(value);}
@@ -173,12 +174,12 @@ public final class AdvancedFeatures {
  public void onRequestPermissionsResult(int requestCode,int[] grantResults){if(requestCode==NOTIFY){if(grantResults.length>0&&grantResults[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){Context c=a.getApplicationContext();if(c.getSharedPreferences("fityar_preferences",0).getBoolean("reminder_enabled",false))WorkoutReminderReceiver.schedule(c,c.getSharedPreferences("fityar_preferences",0).getInt("reminder_hour",19),c.getSharedPreferences("fityar_preferences",0).getInt("reminder_minute",0));}else message(s("permission_required"),s("notification_permission_message"));}}
 
  public void backup(){
-  String[] categories={s("Workout plans & logs / برنامه‌ها و سوابق تمرین"),s("Health records / سوابق سلامت"),s("App preferences / تنظیمات برنامه")};
+  String[] categories={tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"),tr("Health records","سوابق سلامت"),tr("App preferences","تنظیمات برنامه")};
   boolean[] selected={true,true,true};
-  new AlertDialog.Builder(a).setTitle(s("Choose backup sections")).setMultiChoiceItems(categories,selected,(d,which,checked)->selected[which]=checked)
-   .setPositiveButton(s("Continue"),(d,w)->{
+  new AlertDialog.Builder(a).setTitle(tr("Choose backup sections","انتخاب بخش‌های پشتیبان")).setMultiChoiceItems(categories,selected,(d,which,checked)->selected[which]=checked)
+   .setPositiveButton(tr("Continue","ادامه"),(d,w)->{
     boolean any=false;for(boolean value:selected)any|=value;
-    if(!any){message(s("Error"),s("Select at least one section."));return;}
+    if(!any){message(tr("Error","خطا"),tr("Select at least one section.","حداقل یک بخش را انتخاب کنید."));return;}
     Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("application/json");i.putExtra(Intent.EXTRA_TITLE,"fityar-backup.json");
     pendingBackupSections=selected.clone();a.startActivityForResult(i,BACKUP);
    }).setNegativeButton(android.R.string.cancel,null).show();
@@ -233,7 +234,7 @@ public final class AdvancedFeatures {
     try(OutputStream out=a.getContentResolver().openOutputStream(data.getData())){
      if(out==null)throw new IOException("No output stream");out.write(backup.toString(2).getBytes(java.nio.charset.StandardCharsets.UTF_8));out.flush();
     }
-    message(s("Backup complete"),s("Selected sections were saved."));
+    message(tr("Backup complete","پشتیبان‌گیری کامل شد"),tr("Selected sections were saved.","بخش‌های انتخاب‌شده ذخیره شدند."));
     return true;
    }
    byte[] imported;
@@ -254,28 +255,28 @@ public final class AdvancedFeatures {
    ArrayList<String> ids=new ArrayList<>();
    for(int i=0;i<sections.length();i++){
     JSONObject section=sections.optJSONObject(i);if(section==null)continue;String id=section.optString("id","");
-    if("workouts".equals(id)&&section.opt("plans") instanceof JSONArray&&section.opt("exercises") instanceof JSONArray&&section.opt("logs") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(s("Workout plans & logs"));}
-    else if("health".equals(id)&&section.opt("sleep_logs") instanceof JSONArray&&section.opt("vital_logs") instanceof JSONArray&&section.opt("body_metrics") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(s("Health records"));}
-    else if("preferences".equals(id)&&section.opt("fityar_preferences") instanceof JSONObject&&section.opt("fit_settings") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(s("App preferences"));}
+    if("workouts".equals(id)&&section.opt("plans") instanceof JSONArray&&section.opt("exercises") instanceof JSONArray&&section.opt("logs") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"));}
+    else if("health".equals(id)&&section.opt("sleep_logs") instanceof JSONArray&&section.opt("vital_logs") instanceof JSONArray&&section.opt("body_metrics") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Health records","سوابق سلامت"));}
+    else if("preferences".equals(id)&&section.opt("fityar_preferences") instanceof JSONObject&&section.opt("fit_settings") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(tr("App preferences","تنظیمات برنامه"));}
    }
    if(valid.isEmpty())throw new IOException("No supported backup sections");
    boolean[] chosen=new boolean[valid.size()];Arrays.fill(chosen,true);
-   new AlertDialog.Builder(a).setTitle(s("Choose sections to restore")).setMultiChoiceItems(labels.toArray(new String[0]),chosen,(dialog,which,checked)->chosen[which]=checked)
-    .setPositiveButton(s("Restore selected"),(dialog,which)->{
+   new AlertDialog.Builder(a).setTitle(tr("Choose sections to restore","انتخاب بخش‌های بازیابی")).setMultiChoiceItems(labels.toArray(new String[0]),chosen,(dialog,which,checked)->chosen[which]=checked)
+    .setPositiveButton(tr("Restore selected","بازیابی بخش‌های انتخاب‌شده"),(dialog,which)->{
      boolean any=false;for(boolean value:chosen)any|=value;
-     if(!any){message(s("Error"),s("Select at least one section."));return;}
-     new AlertDialog.Builder(a).setTitle(s("Confirm restore")).setMessage(s("Selected sections will replace their current data. Other sections will remain unchanged."))
-      .setPositiveButton(s("Restore"),(confirm,button)->{
+     if(!any){message(tr("Error","خطا"),tr("Select at least one section.","حداقل یک بخش را انتخاب کنید."));return;}
+     new AlertDialog.Builder(a).setTitle(tr("Confirm restore","تأیید بازیابی")).setMessage(tr("Selected sections will replace their current data. Other sections will remain unchanged.","بخش‌های انتخاب‌شده جایگزین اطلاعات فعلی همان بخش می‌شوند؛ سایر بخش‌ها تغییر نمی‌کنند."))
+      .setPositiveButton(tr("Restore","بازیابی"),(confirm,button)->{
        try{db.getWritableDatabase().beginTransaction();
         try{
          for(int i=0;i<valid.size();i++)if(chosen[i])restoreSection(valid.get(i),ids.get(i));
          db.getWritableDatabase().setTransactionSuccessful();
         }finally{db.getWritableDatabase().endTransaction();}
-        message(s("Restore complete"),s("Selected sections were restored. Other sections were left unchanged."));
-       }catch(Exception ex){message(s("Error"),s("Could not restore backup. Current data was kept where possible.")+"\n"+ex.getMessage());}
+        message(tr("Restore complete","بازیابی کامل شد"),tr("Selected sections were restored. Other sections were left unchanged.","بخش‌های انتخاب‌شده بازیابی شدند و سایر بخش‌ها بدون تغییر ماندند."));
+       }catch(Exception ex){message(tr("Error","خطا"),tr("Could not restore backup. Current data was kept where possible.","بازیابی انجام نشد؛ تا حد امکان اطلاعات فعلی حفظ شدند.")+"\n"+ex.getMessage());}
       }).setNegativeButton(android.R.string.cancel,null).show();
     }).setNegativeButton(android.R.string.cancel,null).show();
-  }catch(Exception ex){message(s("Error"),s("Invalid or unreadable backup file.")+"\n"+ex.getMessage());}
+  }catch(Exception ex){message(tr("Error","خطا"),tr("Invalid or unreadable backup file.","فایل پشتیبان نامعتبر است یا خوانده نمی‌شود.")+"\n"+ex.getMessage());}
   return true;
  }
  private void restoreLegacyDatabase(byte[] imported)throws Exception{
@@ -294,7 +295,7 @@ public final class AdvancedFeatures {
    validateDatabase(dbFile);
    db.getReadableDatabase();
    rollback.delete();
-   message(s("Restore complete"),s("Legacy full-database backup restored."));
+   message(tr("Restore complete","بازیابی کامل شد"),tr("Legacy full-database backup restored.","پشتیبان قدیمیِ کل پایگاه داده بازیابی شد."));
   }catch(Exception ex){
    try{
     db.close();deleteSidecars(dbFile);
