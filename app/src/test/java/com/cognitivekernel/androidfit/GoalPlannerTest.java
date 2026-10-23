@@ -22,6 +22,13 @@ public class GoalPlannerTest {
         assertEquals(1234.5, GoalPlanner.parseDecimal("1,234.5"), 0.000001);
     }
 
+    @Test public void acceptsLocaleCommaDecimalsWithoutBreakingThousandsGrouping() {
+        assertEquals(70.5, GoalPlanner.parseDecimal("70,5"), 0.000001);
+        assertEquals(12.25, GoalPlanner.parseDecimal("۱۲,۲۵"), 0.000001);
+        assertEquals(1234, GoalPlanner.parseInteger("1,234"));
+        assertEquals(1234.5, GoalPlanner.parseDecimal("1,234.5"), 0.000001);
+    }
+
     @Test public void acceptsAsciiNumbersWithoutChangingTheirValue() {
         assertEquals(42, GoalPlanner.parseInteger("42"));
         assertEquals(70.25, GoalPlanner.parseDecimal("70.25"), 0.000001);
