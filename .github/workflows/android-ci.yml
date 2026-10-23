@@ -156,8 +156,18 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.android"
-          if [ ! -f "$HOME/.android/debug.keystore" ] && [ -n "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" ]; then
-            printf '%s' "$FIT_YAR_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/debug.keystore"
+          EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
+          # Prefer a valid explicitly configured secret over a stale cached file.
+          # Never replace the cached key with a secret unless its certificate matches.
+          if [ -n "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" ]; then
+            TEMP_KEY="$(mktemp)"
+            if printf '%s' "$FIT_YAR_DEBUG_KEYSTORE_BASE64" | base64 --decode > "$TEMP_KEY" 2>/dev/null \
+              && keytool -list -v -keystore "$TEMP_KEY" -storepass android -alias androiddebugkey 2>/dev/null | grep -Fq "$EXPECTED_SHA256"; then
+              mv "$TEMP_KEY" "$HOME/.android/debug.keystore"
+            else
+              rm -f "$TEMP_KEY"
+              echo "::warning::The configured keystore secret is invalid or does not match the registered certificate; ignoring it."
+            fi
           fi
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             echo "::error::Original signing key is unavailable. Tests can run, but no installable APK will be published."
@@ -166,7 +176,6 @@ jobs:
           fi
           CERT_INFO="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey)"
           echo "$CERT_INFO" | grep -E 'SHA1:|SHA256:|Valid from:'
-          EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
           if ! echo "$CERT_INFO" | grep -Fq "$EXPECTED_SHA256"; then
             echo "::error::Signing certificate mismatch. Refusing to publish an APK."
             exit 1
