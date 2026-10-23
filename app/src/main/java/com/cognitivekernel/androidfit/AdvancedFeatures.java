@@ -17,21 +17,8 @@ public final class AdvancedFeatures {
  public AdvancedFeatures(Activity activity, WorkoutDb database){a=activity;db=database;}
  private String s(String key){int id=a.getResources().getIdentifier(key,"string",a.getPackageName());return id==0?key:a.getString(id);}
  private EditText field(String hint,String value,int type){EditText e=new EditText(a);e.setHint(hint);if(value!=null)e.setText(value);e.setInputType(type);return e;}
- private static String normalizeLocalizedNumber(String value){
-  StringBuilder out=new StringBuilder(value==null?0:value.length());
-  if(value==null)return "";
-  for(int i=0;i<value.length();i++){
-   char ch=value.charAt(i);
-   if(ch>='۰'&&ch<='۹')ch=(char)('0'+ch-'۰');
-   else if(ch>='٠'&&ch<='٩')ch=(char)('0'+ch-'٠');
-   else if(ch=='٫')ch='.';
-   else if(ch=='٬'||ch=='،')ch=',';
-   out.append(ch);
-  }
-  return out.toString().replace(",","").trim();
- }
- private static int parseLocalizedInt(String value){return Integer.parseInt(normalizeLocalizedNumber(value));}
- private static double parseLocalizedDouble(String value){return Double.parseDouble(normalizeLocalizedNumber(value));}
+ private static int parseLocalizedInt(String value){return GoalPlanner.parseInteger(value);}
+ private static double parseLocalizedDouble(String value){return GoalPlanner.parseDecimal(value);}
  private LinearLayout column(){LinearLayout l=new LinearLayout(a);l.setOrientation(LinearLayout.VERTICAL);int p=(int)(16*a.getResources().getDisplayMetrics().density);l.setPadding(p,p,p,p);return l;}
  private void message(String title,String body){new AlertDialog.Builder(a).setTitle(title).setMessage(body).setPositiveButton(android.R.string.ok,null).show();}
 
@@ -172,10 +159,10 @@ public final class AdvancedFeatures {
   int current=db.weeklyTrainingDays();
   int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
   EditText e=field(s("weekly_goal_hint"),String.valueOf(goal),android.text.InputType.TYPE_CLASS_NUMBER);
-  new AlertDialog.Builder(a).setTitle(s("weekly_goal")).setMessage(s("weekly_progress")+": "+Math.min(current,goal)+"/"+goal).setView(e).setPositiveButton(s("save"),(d,w)->{try{int v=Integer.parseInt(e.getText().toString());if(v<1||v>7)throw new Exception();a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",v).apply();message(s("saved"),s("weekly_goal_saved"));}catch(Exception ex){message(s("error"),s("invalid_plan_values"));}}).setNegativeButton(android.R.string.cancel,null).show();
+  new AlertDialog.Builder(a).setTitle(s("weekly_goal")).setMessage(s("weekly_progress")+": "+Math.min(current,goal)+"/"+goal).setView(e).setPositiveButton(s("save"),(d,w)->{try{int v=parseLocalizedInt(e.getText().toString());if(v<1||v>7)throw new Exception();a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",v).apply();message(s("saved"),s("weekly_goal_saved"));}catch(Exception ex){message(s("error"),s("invalid_plan_values"));}}).setNegativeButton(android.R.string.cancel,null).show();
  }
 
- public void showStepGoal(){int current=a.getSharedPreferences("fityar_preferences",0).getInt("step_goal",5000);EditText e=field(s("step_goal_hint"),String.valueOf(current),android.text.InputType.TYPE_CLASS_NUMBER);new AlertDialog.Builder(a).setTitle(s("step_goal")).setMessage(s("step_goal_session_note")).setView(e).setPositiveButton(s("save"),(d,w)->{try{int v=Integer.parseInt(e.getText().toString());if(v<100||v>100000)throw new Exception();a.getSharedPreferences("fityar_preferences",0).edit().putInt("step_goal",v).apply();if(a instanceof MainActivity)((MainActivity)a).updateStepsCount();message(s("saved"),s("step_goal_saved"));}catch(Exception ex){message(s("error"),s("invalid_plan_values"));}}).setNegativeButton(android.R.string.cancel,null).show();}
+ public void showStepGoal(){int current=a.getSharedPreferences("fityar_preferences",0).getInt("step_goal",5000);EditText e=field(s("step_goal_hint"),String.valueOf(current),android.text.InputType.TYPE_CLASS_NUMBER);new AlertDialog.Builder(a).setTitle(s("step_goal")).setMessage(s("step_goal_session_note")).setView(e).setPositiveButton(s("save"),(d,w)->{try{int v=parseLocalizedInt(e.getText().toString());if(v<100||v>100000)throw new Exception();a.getSharedPreferences("fityar_preferences",0).edit().putInt("step_goal",v).apply();if(a instanceof MainActivity)((MainActivity)a).updateStepsCount();message(s("saved"),s("step_goal_saved"));}catch(Exception ex){message(s("error"),s("invalid_plan_values"));}}).setNegativeButton(android.R.string.cancel,null).show();}
 
  public void showReminders(){
   LinearLayout l=column();CheckBox enabled=new CheckBox(a);enabled.setText(s("enable_reminder"));enabled.setChecked(a.getSharedPreferences("fityar_preferences",0).getBoolean("reminder_enabled",false));TimePicker time=new TimePicker(a);time.setIs24HourView(true);time.setHour(a.getSharedPreferences("fityar_preferences",0).getInt("reminder_hour",19));time.setMinute(a.getSharedPreferences("fityar_preferences",0).getInt("reminder_minute",0));l.addView(enabled);l.addView(label(s("reminder_time")));l.addView(time);
