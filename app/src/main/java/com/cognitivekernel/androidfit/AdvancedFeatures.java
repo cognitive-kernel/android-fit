@@ -191,10 +191,10 @@ public final class AdvancedFeatures {
  void savePendingBackupSections(boolean[] selected){
   if(selected==null||selected.length!=4)throw new IllegalArgumentException("Exactly four backup sections are required");
   int mask=0;for(int index=0;index<selected.length;index++)if(selected[index])mask|=(1<<index);
-  a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().putInt("pending_backup_sections",mask).apply();
+  if(!a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().putInt("pending_backup_sections",mask).commit())throw new IllegalStateException("Could not persist backup selection");
  }
  boolean[] loadPendingBackupSections(){
-  int mask=a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).getInt("pending_backup_sections",15);
+  int mask=a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).getInt("pending_backup_sections",0);
   boolean[] selected=new boolean[4];for(int index=0;index<selected.length;index++)selected[index]=(mask&(1<<index))!=0;
   return selected;
  }
@@ -202,6 +202,8 @@ public final class AdvancedFeatures {
   a.getSharedPreferences("backup_restore_state",Context.MODE_PRIVATE).edit().remove("pending_backup_sections").apply();
  }
  private JSONObject createSelectiveBackup(boolean[] selected)throws Exception{
+  boolean any=false;for(boolean value:selected)any|=value;
+  if(!any)throw new IOException("No backup sections selected; selection may have been lost");
   JSONObject root=new JSONObject();root.put("format","fityar-selective-backup");root.put("version",1);root.put("createdAt",System.currentTimeMillis());
   JSONArray sections=new JSONArray();
   if(selected[0]){JSONObject section=new JSONObject();section.put("id","workouts");section.put("plans",tableToJson("plans"));section.put("exercises",tableToJson("exercises"));section.put("logs",tableToJson("logs"));sections.put(section);}
