@@ -267,8 +267,11 @@ public final class AdvancedFeatures {
    ArrayList<JSONObject> valid=new ArrayList<>();
    ArrayList<String> labels=new ArrayList<>();
    ArrayList<String> ids=new ArrayList<>();
+   HashSet<String> seenSectionIds=new HashSet<>();
    for(int i=0;i<sections.length();i++){
     JSONObject section=sections.optJSONObject(i);if(section==null)continue;String id=section.optString("id","");
+    if(Arrays.asList("workouts","health","steps","preferences").contains(id)&&!seenSectionIds.add(id))
+     throw new IOException("Duplicate backup section: "+id);
     if("workouts".equals(id)&&section.opt("plans") instanceof JSONArray&&section.opt("exercises") instanceof JSONArray&&section.opt("logs") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"));}
     else if("health".equals(id)&&section.opt("sleep_logs") instanceof JSONArray&&section.opt("vital_logs") instanceof JSONArray&&section.opt("body_metrics") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Health records","سوابق سلامت"));}
     else if("steps".equals(id)&&section.opt("step_counter") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(tr("Step counter history","سوابق قدم‌شمار"));}
