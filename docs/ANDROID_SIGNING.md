@@ -8,7 +8,7 @@ Expected CI certificate SHA-256:
 
 `57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47`
 
-If the cache is missing, the signed-APK job fails and publishes no APK; it does not generate a replacement key. Unit tests, lint, and emulator tests run separately so development can continue. The private key is not committed to Git. GitHub Actions cache is not a durable backup; a release signing key needs encrypted, long-term storage.
+The signed-APK job is currently gated off by default because the original key has not been recovered. This keeps the rest of CI (unit tests, lint, emulator tests, and the separate test APK) independent of the deferred signing/update issue. To run the signing job after restoring the exact key, set the repository Actions variable `ENABLE_SIGNED_APK` to `true`. If the key is missing or the certificate differs, the job fails and publishes no production APK; it never generates a replacement key. The private key is not committed to Git. GitHub Actions cache is not a durable backup; a release signing key needs encrypted, long-term storage.
 
 ## Historical artifact mismatch
 
