@@ -83,9 +83,10 @@ public class SelectiveBackupTest {
      activity.db.addBodyMetrics(now, 71.0, 82.0);
      long preservedPlan = activity.db.addPlan("Keep workout data");
      activity.db.addExercise(preservedPlan,"Push-up",3,8);
+     String todayKey = "steps_" + new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(new java.util.Date());
      activity.getSharedPreferences("step_counter", android.content.Context.MODE_PRIVATE).edit()
        .putBoolean("running", true).putBoolean("paused", false)
-       .putInt("session_steps", 125).putInt("steps_2026-10-23", 5400).apply();
+       .putInt("session_steps", 125).putInt(todayKey, 5400).apply();
 
      Method create = AdvancedFeatures.class.getDeclaredMethod("createSelectiveBackup", boolean[].class);
      create.setAccessible(true);
@@ -105,7 +106,7 @@ public class SelectiveBackupTest {
      assertNotNull(steps);
      JSONObject stepPrefs=steps.getJSONObject("step_counter");
      assertEquals(125,stepPrefs.getInt("session_steps"));
-     assertEquals(5400,stepPrefs.getInt("steps_2026-10-23"));
+     assertEquals(5400,stepPrefs.getInt(todayKey));
      assertFalse(stepPrefs.has("running"));
      assertFalse(stepPrefs.has("paused"));
      android.content.SharedPreferences stepPreferences = activity.getSharedPreferences("step_counter", android.content.Context.MODE_PRIVATE);
