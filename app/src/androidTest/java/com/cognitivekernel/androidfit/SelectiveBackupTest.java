@@ -78,6 +78,8 @@ public class SelectiveBackupTest {
      activity.db.addSleep(now, now + 7L*60*60*1000);
      activity.db.addVitals(now, 118, 78, 68);
      activity.db.addBodyMetrics(now, 71.0, 82.0);
+     long preservedPlan = activity.db.addPlan("Keep workout data");
+     activity.db.addExercise(preservedPlan,"Push-up",3,8);
      activity.getSharedPreferences("step_counter", android.content.Context.MODE_PRIVATE).edit()
        .putBoolean("running", true).putBoolean("paused", false)
        .putInt("session_steps", 125).putInt("steps_2026-10-23", 5400).apply();
@@ -103,6 +105,16 @@ public class SelectiveBackupTest {
      assertEquals(5400,stepPrefs.getInt("steps_2026-10-23"));
      assertFalse(stepPrefs.has("running"));
      assertFalse(stepPrefs.has("paused"));
+
+     activity.db.addSleep(now + 2_000_000L, now + 2_000_000L + 60L*60*1000);
+     Method restore = AdvancedFeatures.class.getDeclaredMethod("restoreSection",JSONObject.class,String.class);
+     restore.setAccessible(true);
+     SQLiteDatabase sql = activity.db.getWritableDatabase();
+     sql.beginTransaction();
+     try { restore.invoke(activity.advanced,health,"health"); sql.setTransactionSuccessful(); }
+     finally { sql.endTransaction(); }
+     try (Cursor sleeps = activity.db.sleepLogs()) { assertEquals(1,countRows(sleeps)); }
+     assertEquals("Keep workout data",activity.db.plans().get(0)[1]);
     } catch (Exception ex) { throw new AssertionError("Selective health/step backup regression",ex); }
    });
   }
