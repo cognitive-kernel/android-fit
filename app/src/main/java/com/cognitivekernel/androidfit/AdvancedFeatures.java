@@ -176,8 +176,8 @@ public final class AdvancedFeatures {
  public void onRequestPermissionsResult(int requestCode,int[] grantResults){if(requestCode==NOTIFY){if(grantResults.length>0&&grantResults[0]==android.content.pm.PackageManager.PERMISSION_GRANTED){Context c=a.getApplicationContext();if(c.getSharedPreferences("fityar_preferences",0).getBoolean("reminder_enabled",false))WorkoutReminderReceiver.schedule(c,c.getSharedPreferences("fityar_preferences",0).getInt("reminder_hour",19),c.getSharedPreferences("fityar_preferences",0).getInt("reminder_minute",0));}else message(s("permission_required"),s("notification_permission_message"));}}
 
  public void backup(){
-  String[] categories={tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"),tr("Health records","سوابق سلامت"),tr("App preferences","تنظیمات برنامه")};
-  boolean[] selected={true,true,true};
+  String[] categories={tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"),tr("Health records","سوابق سلامت"),tr("Step counter history","سوابق قدم‌شمار"),tr("App preferences","تنظیمات برنامه")};
+  boolean[] selected={true,true,true,true};
   new AlertDialog.Builder(a).setTitle(tr("Choose backup sections","انتخاب بخش‌های پشتیبان")).setMessage(tr("Backup files may contain sensitive health and personal data and are not encrypted. Store them securely.","فایل پشتیبان ممکن است شامل اطلاعات شخصی و سلامت باشد و رمزگذاری نمی‌شود؛ آن را در محل امن نگه دارید.")).setMultiChoiceItems(categories,selected,(d,which,checked)->selected[which]=checked)
    .setPositiveButton(tr("Continue","ادامه"),(d,w)->{
     boolean any=false;for(boolean value:selected)any|=value;
@@ -186,13 +186,14 @@ public final class AdvancedFeatures {
     pendingBackupSections=selected.clone();a.startActivityForResult(i,BACKUP);
    }).setNegativeButton(android.R.string.cancel,null).show();
  }
- private boolean[] pendingBackupSections={true,true,true};
+ private boolean[] pendingBackupSections={true,true,true,true};
  private JSONObject createSelectiveBackup(boolean[] selected)throws Exception{
   JSONObject root=new JSONObject();root.put("format","fityar-selective-backup");root.put("version",1);root.put("createdAt",System.currentTimeMillis());
   JSONArray sections=new JSONArray();
   if(selected[0]){JSONObject section=new JSONObject();section.put("id","workouts");section.put("plans",tableToJson("plans"));section.put("exercises",tableToJson("exercises"));section.put("logs",tableToJson("logs"));sections.put(section);}
   if(selected[1]){JSONObject section=new JSONObject();section.put("id","health");section.put("sleep_logs",tableToJson("sleep_logs"));section.put("vital_logs",tableToJson("vital_logs"));section.put("body_metrics",tableToJson("body_metrics"));sections.put(section);}
-  if(selected[2]){JSONObject section=new JSONObject();section.put("id","preferences");section.put("fityar_preferences",preferencesToJson("fityar_preferences"));section.put("fit_settings",preferencesToJson("fit_settings"));sections.put(section);}
+  if(selected[2]){JSONObject section=new JSONObject();section.put("id","steps");section.put("step_counter",preferencesToJson("step_counter",new HashSet<>(Arrays.asList("running","paused"))));sections.put(section);}
+  if(selected[3]){JSONObject section=new JSONObject();section.put("id","preferences");section.put("fityar_preferences",preferencesToJson("fityar_preferences"));section.put("fit_settings",preferencesToJson("fit_settings"));sections.put(section);}
   root.put("sections",sections);return root;
  }
  private JSONArray tableToJson(String table)throws Exception{
@@ -215,9 +216,11 @@ public final class AdvancedFeatures {
   }
   return rows;
  }
- private JSONObject preferencesToJson(String name)throws Exception{
+ private JSONObject preferencesToJson(String name)throws Exception{return preferencesToJson(name,Collections.emptySet());}
+ private JSONObject preferencesToJson(String name,Set<String> excluded)throws Exception{
   JSONObject out=new JSONObject();Map<String,?> values=a.getSharedPreferences(name,Context.MODE_PRIVATE).getAll();
   for(Map.Entry<String,?> entry:values.entrySet()){
+   if(excluded.contains(entry.getKey()))continue;
    Object value=entry.getValue();
    if(value instanceof Boolean||value instanceof Integer||value instanceof Long||value instanceof Float||value instanceof String)out.put(entry.getKey(),value);
    else if(value instanceof Set){JSONArray array=new JSONArray();for(Object item:(Set<?>)value)array.put(String.valueOf(item));out.put(entry.getKey(),array);}
@@ -259,6 +262,7 @@ public final class AdvancedFeatures {
     JSONObject section=sections.optJSONObject(i);if(section==null)continue;String id=section.optString("id","");
     if("workouts".equals(id)&&section.opt("plans") instanceof JSONArray&&section.opt("exercises") instanceof JSONArray&&section.opt("logs") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"));}
     else if("health".equals(id)&&section.opt("sleep_logs") instanceof JSONArray&&section.opt("vital_logs") instanceof JSONArray&&section.opt("body_metrics") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Health records","سوابق سلامت"));}
+    else if("steps".equals(id)&&section.opt("step_counter") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(tr("Step counter history","سوابق قدم‌شمار"));}
     else if("preferences".equals(id)&&section.opt("fityar_preferences") instanceof JSONObject&&section.opt("fit_settings") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(tr("App preferences","تنظیمات برنامه"));}
    }
    if(valid.isEmpty())throw new IOException("No supported backup sections");
@@ -274,6 +278,10 @@ public final class AdvancedFeatures {
          for(int i=0;i<valid.size();i++)if(chosen[i]&&!"preferences".equals(ids.get(i)))restoreSection(valid.get(i),ids.get(i));
          db.getWritableDatabase().setTransactionSuccessful();
         }finally{db.getWritableDatabase().endTransaction();}
+        for(int i=0;i<valid.size();i++)if(chosen[i]&&"steps".equals(ids.get(i))){
+         Intent finish=new Intent(a,StepCounterService.class);finish.setAction("FINISH");a.startService(finish);
+         restorePreferences("step_counter",valid.get(i).getJSONObject("step_counter"));
+        }
         for(int i=0;i<valid.size();i++)if(chosen[i]&&"preferences".equals(ids.get(i))){
          JSONObject section=valid.get(i);
          restorePreferences("fityar_preferences",section.getJSONObject("fityar_preferences"));
