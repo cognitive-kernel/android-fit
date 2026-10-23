@@ -65,7 +65,7 @@ public class SelectiveBackupTest {
    });
   }
  }
- @Test public void backupSectionSelectionSurvivesActivityRecreationState() throws Exception {
+ @Test public void persistsSelectedBackupSectionsForDocumentPickerReturn() throws Exception {
   try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
    scenario.onActivity(activity -> {
     AdvancedFeatures features=activity.advanced;
