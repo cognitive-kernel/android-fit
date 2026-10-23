@@ -236,11 +236,17 @@ public final class AdvancedFeatures {
     message(s("Backup complete"),s("Selected sections were saved."));
     return true;
    }
-   JSONObject backup;
+   byte[] imported;
    try(InputStream in=a.getContentResolver().openInputStream(data.getData())){
-    if(in==null)throw new IOException("No input stream");ByteArrayOutputStream bytes=new ByteArrayOutputStream();copy(in,bytes);
-    backup=new JSONObject(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
+    if(in==null)throw new IOException("No input stream");ByteArrayOutputStream bytes=new ByteArrayOutputStream();copy(in,bytes);imported=bytes.toByteArray();
    }
+   int first=0;while(first<imported.length&&Character.isWhitespace((char)(imported[first]&0xff)))first++;
+   if(first>=imported.length)throw new IOException("Empty backup");
+   if(imported[first]!='{'){
+    restoreLegacyDatabase(imported);
+    return true;
+   }
+   JSONObject backup=new JSONObject(new String(imported,java.nio.charset.StandardCharsets.UTF_8));
    if(!"fityar-selective-backup".equals(backup.optString("format"))||backup.optInt("version")!=1||!(backup.opt("sections") instanceof JSONArray))throw new IOException("Unsupported backup format");
    JSONArray sections=backup.getJSONArray("sections");
    ArrayList<JSONObject> valid=new ArrayList<>();
@@ -271,6 +277,51 @@ public final class AdvancedFeatures {
     }).setNegativeButton(android.R.string.cancel,null).show();
   }catch(Exception ex){message(s("Error"),s("Invalid or unreadable backup file.")+"\n"+ex.getMessage());}
   return true;
+ }
+ private void restoreLegacyDatabase(byte[] imported)throws Exception{
+  File dbFile=a.getDatabasePath(WorkoutDb.DATABASE_NAME);
+  File tmp=new File(a.getCacheDir(),"fit-yar-legacy-restore.tmp");
+  File rollback=new File(a.getCacheDir(),"fit-yar-legacy-rollback.db");
+  try{
+   try(OutputStream out=new FileOutputStream(tmp)){out.write(imported);out.flush();}
+   validateDatabase(tmp);
+   db.close();
+   if(rollback.exists()&&!rollback.delete())throw new IOException("Cannot clear rollback file");
+   if(dbFile.exists())try(InputStream in=new FileInputStream(dbFile);OutputStream out=new FileOutputStream(rollback)){copy(in,out);}
+   deleteSidecars(dbFile);
+   if(dbFile.exists()&&!dbFile.delete())throw new IOException("Cannot replace database");
+   try(InputStream in=new FileInputStream(tmp);OutputStream out=new FileOutputStream(dbFile)){copy(in,out);}
+   validateDatabase(dbFile);
+   db.getReadableDatabase();
+   rollback.delete();
+   message(s("Restore complete"),s("Legacy full-database backup restored."));
+  }catch(Exception ex){
+   try{
+    db.close();deleteSidecars(dbFile);
+    if(rollback.exists()){
+     if(dbFile.exists())dbFile.delete();
+     try(InputStream in=new FileInputStream(rollback);OutputStream out=new FileOutputStream(dbFile)){copy(in,out);}
+    }
+    db.getReadableDatabase();
+   }catch(Exception ignored){}
+   throw ex;
+  }finally{if(tmp.exists())tmp.delete();if(rollback.exists())rollback.delete();}
+ }
+ private void validateDatabase(File file)throws IOException{
+  if(!file.isFile()||file.length()<100)throw new IOException("Empty database");
+  try(SQLiteDatabase check=SQLiteDatabase.openDatabase(file.getAbsolutePath(),null,SQLiteDatabase.OPEN_READONLY);
+      Cursor integrity=check.rawQuery("PRAGMA integrity_check",null)){
+   if(!integrity.moveToFirst()||!"ok".equalsIgnoreCase(integrity.getString(0)))throw new IOException("Invalid SQLite database");
+   try(Cursor version=check.rawQuery("PRAGMA user_version",null)){
+    if(!version.moveToFirst()||version.getInt(0)>4)throw new IOException("Backup comes from a newer app version");
+   }
+   try(Cursor tables=check.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('plans','exercises','logs')",null)){
+    if(!tables.moveToFirst()||tables.getInt(0)!=3)throw new IOException("Not a FitYar database");
+   }
+  }catch(android.database.SQLException ex){throw new IOException("Invalid FitYar backup",ex);}
+ }
+ private void deleteSidecars(File dbFile){
+  for(String suffix:new String[]{"-wal","-shm","-journal"}){File sidecar=new File(dbFile.getAbsolutePath()+suffix);if(sidecar.exists())sidecar.delete();}
  }
  private void restoreSection(JSONObject section,String id)throws Exception{
   SQLiteDatabase database=db.getWritableDatabase();
