@@ -139,7 +139,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
-          key: fit-yar-debug-signing-key-v1
+          key: fit-yar-debug-signing-key-v2
       - name: Check original signing key availability without exposing it
         shell: bash
         env:
@@ -189,7 +189,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ~/.android/debug.keystore
-          key: fit-yar-debug-signing-key-v1
+          key: fit-yar-debug-signing-key-v2
       - name: Verify original signing key is available
         shell: bash
         env:
@@ -225,7 +225,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ~/.android/debug.keystore
-          key: fit-yar-debug-signing-key-v1
+          key: fit-yar-debug-signing-key-v2
       - name: Install Android SDK
         run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
       - name: Build and verify signed APK
