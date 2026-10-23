@@ -117,7 +117,6 @@ public class SelectiveBackupTest {
      activity.db.addSleep(now + 2_000_000L, now + 2_000_000L + 60L*60*1000);
      Method restore = AdvancedFeatures.class.getDeclaredMethod("restoreSection",JSONObject.class,String.class);
      restore.setAccessible(true);
-     SQLiteDatabase sql = activity.db.getWritableDatabase();
      sql.beginTransaction();
      try { restore.invoke(activity.advanced,health,"health"); sql.setTransactionSuccessful(); }
      finally { sql.endTransaction(); }
