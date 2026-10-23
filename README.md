@@ -27,7 +27,7 @@
 
 ### نگهداری و انتقال اطلاعات
 - خروجی CSV با متن UTF-8 فارسی، escaping استاندارد فیلدها و خنثی‌سازی پیشوندهای فرمول صفحه‌گسترده از تمرین‌ها، خواب، علائم حیاتی و اندازه‌گیری‌های بدن
-- پشتیبان‌گیری انتخابی به قالب JSON: برنامه‌ها و سوابق تمرین، سوابق سلامت یا تنظیمات برنامه را می‌توان جداگانه یا با هم انتخاب کرد. فایل JSON رمزگذاری نمی‌شود؛ آن را در محل امن نگه دارید
+- پشتیبان‌گیری انتخابی به قالب JSON: برنامه‌ها و سوابق تمرین، سوابق سلامت، تاریخچهٔ قدم‌شمار یا تنظیمات برنامه را می‌توان جداگانه یا با هم انتخاب کرد. فایل JSON رمزگذاری نمی‌شود؛ آن را در محل امن نگه دارید
 - بازیابی انتخابی از فایل JSON؛ فقط بخش‌های انتخاب‌شده جایگزین می‌شوند و بخش‌های دیگر حفظ می‌شوند. فایل بررسی می‌شود و تغییرات پایگاه داده در تراکنش انجام می‌شود
 - پشتیبانی از بازیابی پشتیبان‌های قدیمیِ کل پایگاه داده برای سازگاری با فایل‌های قبلی
 - فارسی و انگلیسی، تنظیم اندازهٔ نوشته، رنگ اصلی و حالت تاریک
@@ -73,4 +73,4 @@ gradle connectedDebugAndroidTest
 
 ## English summary
 
-FitYar is a free Persian/English offline workout and personal activity tracker. It includes workout plans and logs, weight-loss, fitness and muscle-building paths, body-area-specific training (shoulders, arms, abs, legs/glutes, chest and back), approximate age/height/weight-based nutrition guidance, six bundled offline animated exercise GIF illustrations (squat, push-up, lunge, plank, row and walking), an offline rule-based coach, progress charts, a background-capable step counter, daily step and weekly workout goals, reminders, sleep and body-measurement logs, blood-pressure/pulse logs, CSV export, selective JSON backup/restore for workouts, health records and preferences, and compatibility with legacy full-database backups. No ads, subscriptions, in-app purchases, or videos are included. Cloud sync and Health Connect are not currently implemented.
+FitYar is a free Persian/English offline workout and personal activity tracker. It includes workout plans and logs, weight-loss, fitness and muscle-building paths, body-area-specific training (shoulders, arms, abs, legs/glutes, chest and back), approximate age/height/weight-based nutrition guidance, six bundled offline animated exercise GIF illustrations (squat, push-up, lunge, plank, row and walking), an offline rule-based coach, progress charts, a background-capable step counter, daily step and weekly workout goals, reminders, sleep and body-measurement logs, blood-pressure/pulse logs, CSV export, selective JSON backup/restore for workouts, health records, step-counter history and preferences, and compatibility with legacy full-database backups. No ads, subscriptions, in-app purchases, or videos are included. Cloud sync and Health Connect are not currently implemented.
