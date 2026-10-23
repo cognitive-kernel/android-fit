@@ -33,6 +33,16 @@ public class GoalPlannerTest {
     }
 
     @Test(expected = NumberFormatException.class)
+    public void rejectsNaNAsDecimalInput() {
+        GoalPlanner.parseDecimal("NaN");
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void rejectsInfiniteDecimalInput() {
+        GoalPlanner.parseDecimal("Infinity");
+    }
+
+    @Test(expected = NumberFormatException.class)
     public void rejectsMalformedDecimalInput() {
         GoalPlanner.parseDecimal("۱۲٫۳٫۴");
     }
