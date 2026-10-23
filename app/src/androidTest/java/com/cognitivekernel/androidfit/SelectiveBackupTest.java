@@ -63,4 +63,42 @@ public class SelectiveBackupTest {
   }
  }
  private static int countRows(Cursor cursor) { int count=0;while(cursor.moveToNext())count++;return count; }
+
+ @Test public void exportsHealthAndStepDataWithoutSavingLiveServiceState() throws Exception {
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> {
+    try {
+     long now = System.currentTimeMillis();
+     activity.db.addSleep(now, now + 7L*60*60*1000);
+     activity.db.addVitals(now, 118, 78, 68);
+     activity.db.addBodyMetrics(now, 71.0, 82.0);
+     activity.getSharedPreferences("step_counter", android.content.Context.MODE_PRIVATE).edit()
+       .putBoolean("running", true).putBoolean("paused", false)
+       .putInt("session_steps", 125).putInt("steps_2026-10-23", 5400).apply();
+
+     Method create = AdvancedFeatures.class.getDeclaredMethod("createSelectiveBackup", boolean[].class);
+     create.setAccessible(true);
+     JSONObject backup = (JSONObject) create.invoke(activity.advanced, (Object)new boolean[]{false,true,true,false});
+     JSONArray sections = backup.getJSONArray("sections");
+     assertEquals(2, sections.length());
+     JSONObject health = null, steps = null;
+     for (int i=0;i<sections.length();i++) {
+      JSONObject section = sections.getJSONObject(i);
+      if ("health".equals(section.getString("id"))) health=section;
+      if ("steps".equals(section.getString("id"))) steps=section;
+     }
+     assertNotNull(health);
+     assertEquals(1,health.getJSONArray("sleep_logs").length());
+     assertEquals(1,health.getJSONArray("vital_logs").length());
+     assertEquals(1,health.getJSONArray("body_metrics").length());
+     assertNotNull(steps);
+     JSONObject stepPrefs=steps.getJSONObject("step_counter");
+     assertEquals(125,stepPrefs.getInt("session_steps"));
+     assertEquals(5400,stepPrefs.getInt("steps_2026-10-23"));
+     assertFalse(stepPrefs.has("running"));
+     assertFalse(stepPrefs.has("paused"));
+    } catch (Exception ex) { throw new AssertionError("Selective health/step backup regression",ex); }
+   });
+  }
+ }
 }
