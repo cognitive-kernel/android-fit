@@ -64,7 +64,18 @@ public final class GoalPlanner {
     if(bmi<18.5 && g==0) tailoring += t(a,"\nYour estimated BMI is below the usual adult screening range; avoid an aggressive calorie deficit and consider advice from a health professional.","\nBMI تخمینی شما پایین‌تر از محدوده معمول غربالگری بزرگسالان است؛ از کسری کالری شدید پرهیز کنید و مشورت با متخصص را در نظر بگیرید.");
     String result=t(a,"Estimated BMI (screening only)","BMI تخمینی (فقط غربالگری)")+": "+String.format(Locale.getDefault(),"%.1f",bmi)+"\n"+t(a,"Estimated maintenance","کالری نگهدارنده تخمینی")+": "+Math.round(maint)+" kcal/day\n"+t(a,"Starting energy target","هدف اولیه انرژی")+": "+Math.round(target)+" kcal/day\n"+t(a,"Protein guide","راهنمای پروتئین")+": "+Math.round(protein)+" g/day\n\n"+t(a,"TRAINING","تمرین")+"\n"+training+tailoring+"\n\n"+t(a,"NUTRITION","تغذیه")+"\n"+food+"\n\n"+t(a,"Safety: rough estimates for adults only; medical conditions, medicines, pregnancy and eating-disorder history are not accounted for. Seek professional advice when needed.","ایمنی: تخمین‌های تقریبی ویژه بزرگسالان است و بیماری، دارو، بارداری یا سابقه اختلال خوردن را لحاظ نمی‌کند. در صورت نیاز با متخصص مشورت کنید.");
     LinearLayout resultView=new LinearLayout(a);resultView.setOrientation(LinearLayout.VERTICAL);int pad=(int)(14*a.getResources().getDisplayMetrics().density);resultView.setPadding(pad,pad,pad,pad);
-    ImageView illustration=new ImageView(a);int art=g==0?R.drawable.exercise_walk:g==1?R.drawable.exercise_squat:(r==1?R.drawable.exercise_pushup:r==2?R.drawable.exercise_row:r==3?R.drawable.exercise_plank:r==4?R.drawable.exercise_squat:r==5?R.drawable.exercise_pushup:r==6?R.drawable.exercise_row:R.drawable.exercise_squat);illustration.setImageResource(art);illustration.setContentDescription(title);illustration.setAdjustViewBounds(true);illustration.setMaxHeight((int)(170*a.getResources().getDisplayMetrics().density));resultView.addView(illustration,new LinearLayout.LayoutParams(-1,(int)(150*a.getResources().getDisplayMetrics().density)));
+    int art=-1;
+    if(g==0) art=R.drawable.exercise_walk;
+    else if(g==1) art=R.drawable.exercise_squat;
+    else if(r==0) art=R.drawable.exercise_squat;
+    else if(r==3) art=R.drawable.exercise_plank;
+    else if(r==4) art=R.drawable.exercise_squat;
+    else if(r==5) art=R.drawable.exercise_pushup;
+    else if(r==6) art=R.drawable.exercise_row;
+    // Do not show a misleading illustration when no matching exercise artwork exists.
+    if(art!=-1){
+     ImageView illustration=new ImageView(a);illustration.setImageResource(art);illustration.setContentDescription(title);illustration.setAdjustViewBounds(true);illustration.setMaxHeight((int)(170*a.getResources().getDisplayMetrics().density));resultView.addView(illustration,new LinearLayout.LayoutParams(-1,(int)(150*a.getResources().getDisplayMetrics().density)));
+    }
     TextView details=new TextView(a);details.setText(result);details.setTextSize(16);resultView.addView(details);
     ScrollView scroll=new ScrollView(a);scroll.addView(resultView);new AlertDialog.Builder(a).setTitle(title).setView(scroll).setPositiveButton(android.R.string.ok,null).show();
    }catch(Exception e){new AlertDialog.Builder(a).setMessage(t(a,"Enter age 18–100, height 120–230 cm and weight 30–300 kg.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰ سانتی‌متر و وزن ۳۰ تا ۳۰۰ کیلوگرم وارد کنید.")).setPositiveButton(android.R.string.ok,null).show();}
