@@ -1,16 +1,151 @@
 package com.cognitivekernel.androidfit;
-import android.content.*;import android.database.*;import android.database.sqlite.*;import java.util.*;
+
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class WorkoutDb extends SQLiteOpenHelper {
- public WorkoutDb(Context c){super(c,"fit_yar.db",null,1);}
- public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)");d.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY AUTOINCREMENT,plan_id INTEGER NOT NULL,name TEXT NOT NULL,sets INTEGER NOT NULL,reps INTEGER NOT NULL)");d.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT,date_jalali TEXT,plan_name TEXT,exercise_name TEXT,sets INTEGER,reps INTEGER,weight REAL,created_at INTEGER)");}
- public void onUpgrade(SQLiteDatabase d,int o,int n){}
- public long addPlan(String n){if(n==null||n.trim().isEmpty())throw new IllegalArgumentException("Plan name is required");ContentValues v=new ContentValues();v.put("name",n);return getWritableDatabase().insert("plans",null,v);}
- public long addExercise(long p,String n,int s,int r){if(n==null||n.trim().isEmpty()||s<1||r<1)throw new IllegalArgumentException("Exercise name, sets and reps must be valid");ContentValues v=new ContentValues();v.put("plan_id",p);v.put("name",n);v.put("sets",s);v.put("reps",r);return getWritableDatabase().insert("exercises",null,v);}
- public boolean updateExercise(long id,String n,int s,int r){if(n==null||n.trim().isEmpty()||s<1||r<1)throw new IllegalArgumentException("Exercise name, sets and reps must be valid");ContentValues v=new ContentValues();v.put("name",n);v.put("sets",s);v.put("reps",r);return getWritableDatabase().update("exercises",v,"id=?",new String[]{""+id})>0;}
- public void deleteExercise(long id){getWritableDatabase().delete("exercises","id=?",new String[]{""+id});}
- public void deletePlan(long id){SQLiteDatabase d=getWritableDatabase();d.delete("exercises","plan_id=?",new String[]{""+id});d.delete("plans","id=?",new String[]{""+id});}
- public List<String[]> plans(){List<String[]> a=new ArrayList<>();try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name FROM plans ORDER BY name",null)){while(c.moveToNext())a.add(new String[]{c.getString(0),c.getString(1)});}return a;}
- public List<String[]> exercises(long p){List<String[]> a=new ArrayList<>();try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps FROM exercises WHERE plan_id=?",new String[]{""+p})){while(c.moveToNext())a.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3)});}return a;}
- public void log(String date,String plan,String ex,int s,int r,double kg){if(date==null||date.trim().isEmpty()||plan==null||plan.trim().isEmpty()||ex==null||ex.trim().isEmpty()||s<1||r<1||Double.isNaN(kg)||Double.isInfinite(kg)||kg<0)throw new IllegalArgumentException("Workout log values must be valid");ContentValues v=new ContentValues();v.put("date_jalali",date);v.put("plan_name",plan);v.put("exercise_name",ex);v.put("sets",s);v.put("reps",r);v.put("weight",kg);v.put("created_at",System.currentTimeMillis());getWritableDatabase().insert("logs",null,v);}
- public Cursor allLogs(){return getReadableDatabase().rawQuery("SELECT date_jalali,plan_name,exercise_name,sets,reps,weight FROM logs ORDER BY created_at DESC",null);}
+    private static final String DATABASE_NAME = "fit_yar.db";
+    private static final int DATABASE_VERSION = 2;
+
+    public WorkoutDb(Context context) {
+        super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onCreate(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY AUTOINCREMENT,name TEXT NOT NULL)");
+        db.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY AUTOINCREMENT,plan_id INTEGER NOT NULL,name TEXT NOT NULL,sets INTEGER NOT NULL,reps INTEGER NOT NULL)");
+        db.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY AUTOINCREMENT,date_jalali TEXT,plan_name TEXT,exercise_name TEXT,sets INTEGER,reps INTEGER,weight REAL,created_at INTEGER)");
+        createIndexes(db);
+    }
+
+    @Override
+    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion < 2) {
+            createIndexes(db);
+        }
+    }
+
+    private static void createIndexes(SQLiteDatabase db) {
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_exercises_plan_id ON exercises(plan_id)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs(created_at DESC)");
+    }
+
+    public long addPlan(String name) {
+        String validName = requireName(name, "Plan name is required");
+        ContentValues values = new ContentValues();
+        values.put("name", validName);
+        return getWritableDatabase().insertOrThrow("plans", null, values);
+    }
+
+    public boolean updatePlan(long id, String name) {
+        String validName = requireName(name, "Plan name is required");
+        ContentValues values = new ContentValues();
+        values.put("name", validName);
+        return getWritableDatabase().update("plans", values, "id=?", new String[]{Long.toString(id)}) > 0;
+    }
+
+    public long addExercise(long planId, String name, int sets, int reps) {
+        String validName = requireName(name, "Exercise name is required");
+        requireSetsAndReps(sets, reps);
+        ContentValues values = new ContentValues();
+        values.put("plan_id", planId);
+        values.put("name", validName);
+        values.put("sets", sets);
+        values.put("reps", reps);
+        return getWritableDatabase().insertOrThrow("exercises", null, values);
+    }
+
+    public boolean updateExercise(long id, String name, int sets, int reps) {
+        String validName = requireName(name, "Exercise name is required");
+        requireSetsAndReps(sets, reps);
+        ContentValues values = new ContentValues();
+        values.put("name", validName);
+        values.put("sets", sets);
+        values.put("reps", reps);
+        return getWritableDatabase().update("exercises", values, "id=?", new String[]{Long.toString(id)}) > 0;
+    }
+
+    public void deleteExercise(long id) {
+        getWritableDatabase().delete("exercises", "id=?", new String[]{Long.toString(id)});
+    }
+
+    public void deletePlan(long id) {
+        SQLiteDatabase db = getWritableDatabase();
+        db.beginTransaction();
+        try {
+            db.delete("exercises", "plan_id=?", new String[]{Long.toString(id)});
+            db.delete("plans", "id=?", new String[]{Long.toString(id)});
+            db.setTransactionSuccessful();
+        } finally {
+            db.endTransaction();
+        }
+    }
+
+    public List<String[]> plans() {
+        List<String[]> result = new ArrayList<>();
+        try (Cursor cursor = getReadableDatabase().rawQuery("SELECT id,name FROM plans ORDER BY name COLLATE NOCASE", null)) {
+            while (cursor.moveToNext()) {
+                result.add(new String[]{cursor.getString(0), cursor.getString(1)});
+            }
+        }
+        return result;
+    }
+
+    public List<String[]> exercises(long planId) {
+        List<String[]> result = new ArrayList<>();
+        try (Cursor cursor = getReadableDatabase().rawQuery(
+                "SELECT id,name,sets,reps FROM exercises WHERE plan_id=? ORDER BY id",
+                new String[]{Long.toString(planId)})) {
+            while (cursor.moveToNext()) {
+                result.add(new String[]{cursor.getString(0), cursor.getString(1), cursor.getString(2), cursor.getString(3)});
+            }
+        }
+        return result;
+    }
+
+    public void log(String date, String plan, String exercise, int sets, int reps, double weightKg) {
+        String validDate = requireName(date, "Workout date is required");
+        String validPlan = requireName(plan, "Workout plan is required");
+        String validExercise = requireName(exercise, "Workout exercise is required");
+        requireSetsAndReps(sets, reps);
+        if (Double.isNaN(weightKg) || Double.isInfinite(weightKg) || weightKg < 0) {
+            throw new IllegalArgumentException("Weight must be a finite, non-negative number");
+        }
+
+        ContentValues values = new ContentValues();
+        values.put("date_jalali", validDate);
+        values.put("plan_name", validPlan);
+        values.put("exercise_name", validExercise);
+        values.put("sets", sets);
+        values.put("reps", reps);
+        values.put("weight", weightKg);
+        values.put("created_at", System.currentTimeMillis());
+        getWritableDatabase().insertOrThrow("logs", null, values);
+    }
+
+    public Cursor allLogs() {
+        return getReadableDatabase().rawQuery(
+                "SELECT date_jalali,plan_name,exercise_name,sets,reps,weight FROM logs ORDER BY created_at DESC,id DESC",
+                null);
+    }
+
+    private static String requireName(String value, String message) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(message);
+        }
+        return value.trim();
+    }
+
+    private static void requireSetsAndReps(int sets, int reps) {
+        if (sets < 1 || reps < 1) {
+            throw new IllegalArgumentException("Sets and reps must be positive integers");
+        }
+    }
 }
