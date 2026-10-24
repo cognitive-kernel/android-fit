@@ -136,11 +136,13 @@ public class SelectiveBackupTest {
     java.io.File valid = new java.io.File(activity.getCacheDir(), "restore-validation-valid.db");
     java.io.File foreign = new java.io.File(activity.getCacheDir(), "restore-validation-foreign.db");
     java.io.File future = new java.io.File(activity.getCacheDir(), "restore-validation-future.db");
+    java.io.File malformed = new java.io.File(activity.getCacheDir(), "restore-validation-malformed.db");
     try {
-     for (java.io.File file : new java.io.File[]{valid, foreign, future}) if (file.exists()) assertTrue(file.delete());
+     for (java.io.File file : new java.io.File[]{valid, foreign, future, malformed}) if (file.exists()) assertTrue(file.delete());
      createValidationDb(valid, 4, true);
      createValidationDb(foreign, 4, false);
      createValidationDb(future, 99, true);
+     createMalformedV4Db(malformed);
      Method validate = AdvancedFeatures.class.getDeclaredMethod("validateDatabase", java.io.File.class);
      validate.setAccessible(true);
      validate.invoke(activity.advanced, valid);
