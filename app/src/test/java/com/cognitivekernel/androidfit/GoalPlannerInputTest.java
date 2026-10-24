@@ -18,6 +18,7 @@ public class GoalPlannerInputTest {
         assertEquals(72.5, GoalPlanner.parseDecimal("72,5"), 0.0001);
         assertEquals(1234.0, GoalPlanner.parseDecimal("1,234"), 0.0001);
         assertEquals(1234.56, GoalPlanner.parseDecimal("1.234,56"), 0.0001);
+        assertEquals(1234567.89, GoalPlanner.parseDecimal("1.234.567,89"), 0.0001);
     }
 
     @Test public void rejectsNonFiniteAndMalformedDecimalValues() {
@@ -32,6 +33,10 @@ public class GoalPlannerInputTest {
         try {
             GoalPlanner.parseDecimal("12,34,56");
             org.junit.Assert.fail("Malformed number must not be accepted");
+        } catch (NumberFormatException expected) { }
+        try {
+            GoalPlanner.parseDecimal("12.34,5");
+            org.junit.Assert.fail("Malformed thousands grouping must not be accepted");
         } catch (NumberFormatException expected) { }
     }
 
