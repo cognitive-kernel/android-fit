@@ -215,4 +215,29 @@ public class SelectiveBackupTest {
    });
   }
  }
+
+ @Test public void advancedFeaturesPreferTheMainActivityLanguageSetting() throws Exception {
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> {
+    android.content.SharedPreferences primary=activity.getSharedPreferences("fityar_preferences",android.content.Context.MODE_PRIVATE);
+    android.content.SharedPreferences legacy=activity.getSharedPreferences("fit_settings",android.content.Context.MODE_PRIVATE);
+    String oldPrimary=primary.getString("language",null),oldLegacy=legacy.getString("language",null);
+    try {
+     primary.edit().putString("language","en").commit();
+     legacy.edit().putString("language","fa").commit();
+     Method selected=AdvancedFeatures.class.getDeclaredMethod("selectedLanguage");
+     selected.setAccessible(true);
+     assertEquals("en",selected.invoke(activity.advanced));
+     primary.edit().remove("language").commit();
+     assertEquals("fa",selected.invoke(activity.advanced));
+    } catch(Exception ex) { throw new AssertionError("Language preference regression",ex); }
+    finally {
+     android.content.SharedPreferences.Editor p=primary.edit(),l=legacy.edit();
+     if(oldPrimary==null)p.remove("language");else p.putString("language",oldPrimary);
+     if(oldLegacy==null)l.remove("language");else l.putString("language",oldLegacy);
+     p.commit();l.commit();
+    }
+   });
+  }
+ }
 }
