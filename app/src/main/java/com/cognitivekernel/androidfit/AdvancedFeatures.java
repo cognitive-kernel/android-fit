@@ -392,11 +392,28 @@ public final class AdvancedFeatures {
   try(SQLiteDatabase check=SQLiteDatabase.openDatabase(file.getAbsolutePath(),null,SQLiteDatabase.OPEN_READONLY);
       Cursor integrity=check.rawQuery("PRAGMA integrity_check",null)){
    if(!integrity.moveToFirst()||!"ok".equalsIgnoreCase(integrity.getString(0)))throw new IOException("Invalid SQLite database");
+   int versionNumber;
    try(Cursor version=check.rawQuery("PRAGMA user_version",null)){
-    if(!version.moveToFirst()||version.getInt(0)>4)throw new IOException("Backup comes from a newer app version");
+    if(!version.moveToFirst())throw new IOException("Missing SQLite version");
+    versionNumber=version.getInt(0);
+    if(versionNumber<0||versionNumber>4)throw new IOException("Backup comes from an unsupported app version");
    }
-   try(Cursor tables=check.rawQuery("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name IN ('plans','exercises','logs')",null)){
-    if(!tables.moveToFirst()||tables.getInt(0)!=3)throw new IOException("Not a FitYar database");
+   java.util.Map<String,java.util.Set<String>> required=new java.util.LinkedHashMap<>();
+   required.put("plans",new java.util.HashSet<>(java.util.Arrays.asList("id","name")));
+   required.put("exercises",new java.util.HashSet<>(java.util.Arrays.asList("id","plan_id","name","sets","reps")));
+   required.put("logs",new java.util.HashSet<>(java.util.Arrays.asList("id","date_jalali","plan_name","exercise_name","sets","reps","weight","created_at")));
+   if(versionNumber>=4){
+    required.get("logs").addAll(java.util.Arrays.asList("rest_seconds","effort","notes"));
+    required.put("sleep_logs",new java.util.HashSet<>(java.util.Arrays.asList("id","start_at","end_at","duration_minutes")));
+    required.put("vital_logs",new java.util.HashSet<>(java.util.Arrays.asList("id","measured_at","systolic","diastolic","pulse")));
+    required.put("body_metrics",new java.util.HashSet<>(java.util.Arrays.asList("id","measured_at","weight_kg","waist_cm")));
+   }
+   for(java.util.Map.Entry<String,java.util.Set<String>> entry:required.entrySet()){
+    java.util.HashSet<String> actual=new java.util.HashSet<>();
+    try(Cursor columns=check.rawQuery("PRAGMA table_info("+entry.getKey()+")",null)){
+     while(columns.moveToNext())actual.add(columns.getString(1));
+    }
+    if(!actual.containsAll(entry.getValue()))throw new IOException("Incompatible FitYar table schema: "+entry.getKey());
    }
   }catch(android.database.SQLException ex){throw new IOException("Invalid FitYar backup",ex);}
  }

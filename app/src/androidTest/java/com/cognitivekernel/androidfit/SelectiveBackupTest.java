@@ -136,16 +136,19 @@ public class SelectiveBackupTest {
     java.io.File valid = new java.io.File(activity.getCacheDir(), "restore-validation-valid.db");
     java.io.File foreign = new java.io.File(activity.getCacheDir(), "restore-validation-foreign.db");
     java.io.File future = new java.io.File(activity.getCacheDir(), "restore-validation-future.db");
+    java.io.File malformed = new java.io.File(activity.getCacheDir(), "restore-validation-malformed.db");
     try {
-     for (java.io.File file : new java.io.File[]{valid, foreign, future}) if (file.exists()) assertTrue(file.delete());
+     for (java.io.File file : new java.io.File[]{valid, foreign, future, malformed}) if (file.exists()) assertTrue(file.delete());
      createValidationDb(valid, 4, true);
      createValidationDb(foreign, 4, false);
      createValidationDb(future, 99, true);
+     createMalformedV4Db(malformed);
      Method validate = AdvancedFeatures.class.getDeclaredMethod("validateDatabase", java.io.File.class);
      validate.setAccessible(true);
      validate.invoke(activity.advanced, valid);
      assertValidationRejected(validate, activity.advanced, foreign);
      assertValidationRejected(validate, activity.advanced, future);
+     assertValidationRejected(validate, activity.advanced, malformed);
      java.io.File corrupt = new java.io.File(activity.getCacheDir(), "restore-validation-corrupt.db");
      try (java.io.FileOutputStream out = new java.io.FileOutputStream(corrupt)) { out.write("not sqlite".getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
      assertValidationRejected(validate, activity.advanced, corrupt);
@@ -153,7 +156,7 @@ public class SelectiveBackupTest {
     } catch (Exception ex) {
      throw new AssertionError("Legacy SQLite restore validation regression", ex);
     } finally {
-     for (java.io.File file : new java.io.File[]{valid, foreign, future}) if (file.exists()) file.delete();
+     for (java.io.File file : new java.io.File[]{valid, foreign, future, malformed}) if (file.exists()) file.delete();
     }
    });
   }
@@ -165,10 +168,24 @@ public class SelectiveBackupTest {
    if (fitYar) {
     database.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY, name TEXT NOT NULL)");
     database.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY, plan_id INTEGER NOT NULL, name TEXT NOT NULL, sets INTEGER NOT NULL, reps INTEGER NOT NULL)");
-    database.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY, date_jalali TEXT, plan_name TEXT, exercise_name TEXT, sets INTEGER, reps INTEGER, weight REAL, created_at INTEGER)");
+    database.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY, date_jalali TEXT, plan_name TEXT, exercise_name TEXT, sets INTEGER, reps INTEGER, weight REAL, created_at INTEGER, rest_seconds INTEGER NOT NULL DEFAULT 60, effort INTEGER NOT NULL DEFAULT 7, notes TEXT NOT NULL DEFAULT '')");
+    if (version >= 4) {
+     database.execSQL("CREATE TABLE sleep_logs(id INTEGER PRIMARY KEY, start_at INTEGER NOT NULL, end_at INTEGER NOT NULL, duration_minutes INTEGER NOT NULL)");
+     database.execSQL("CREATE TABLE vital_logs(id INTEGER PRIMARY KEY, measured_at INTEGER NOT NULL, systolic INTEGER NOT NULL, diastolic INTEGER NOT NULL, pulse INTEGER NOT NULL)");
+     database.execSQL("CREATE TABLE body_metrics(id INTEGER PRIMARY KEY, measured_at INTEGER NOT NULL, weight_kg REAL, waist_cm REAL)");
+    }
    } else {
     database.execSQL("CREATE TABLE unrelated(id INTEGER PRIMARY KEY)");
    }
+  } finally { database.close(); }
+ }
+ private static void createMalformedV4Db(java.io.File file) {
+  SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(file, null);
+  try {
+   database.setVersion(4);
+   database.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY, name TEXT NOT NULL)");
+   database.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY, plan_id INTEGER NOT NULL, name TEXT NOT NULL, sets INTEGER NOT NULL, reps INTEGER NOT NULL)");
+   database.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY, date_jalali TEXT, plan_name TEXT, exercise_name TEXT, sets INTEGER, reps INTEGER, weight REAL, created_at INTEGER)");
   } finally { database.close(); }
  }
  private static void assertValidationRejected(Method validate, AdvancedFeatures features, java.io.File file) throws Exception {
