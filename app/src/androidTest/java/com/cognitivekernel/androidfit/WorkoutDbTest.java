@@ -33,6 +33,10 @@ public class WorkoutDbTest {
   db.deleteExercise(exercise);assertTrue(db.exercises(plan).isEmpty());
   db.deletePlan(plan);assertTrue(db.plans().isEmpty());
  }
+ @Test public void rejectsExerciseForMissingPlan(){
+  try { db.addExercise(999999L,"Squat",3,10); fail("Expected missing workout plan to be rejected"); }
+  catch(IllegalArgumentException expected) { }
+ }
  @Test public void rejectsInvalidExerciseValues(){
   long plan=db.addPlan("Plan");
   try { db.addExercise(plan,"Squat",0,10);fail("Expected invalid sets to be rejected"); }
