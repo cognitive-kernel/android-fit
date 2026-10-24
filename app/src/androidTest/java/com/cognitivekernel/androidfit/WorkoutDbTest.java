@@ -33,6 +33,11 @@ public class WorkoutDbTest {
   db.deleteExercise(exercise);assertTrue(db.exercises(plan).isEmpty());
   db.deletePlan(plan);assertTrue(db.plans().isEmpty());
  }
+ @Test public void createsWorkoutLookupIndexes(){
+  try(android.database.Cursor c=db.getReadableDatabase().rawQuery("SELECT name FROM sqlite_master WHERE type='index' AND name IN ('idx_exercises_plan_id','idx_logs_created_at')",null)){
+   int count=0;while(c.moveToNext())count++;assertEquals(2,count);
+  }
+ }
  @Test public void rejectsExerciseForMissingPlan(){
   try { db.addExercise(999999L,"Squat",3,10); fail("Expected missing workout plan to be rejected"); }
   catch(IllegalArgumentException expected) { }
