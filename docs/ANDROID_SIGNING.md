@@ -17,9 +17,9 @@ The permanent key has **not yet been configured in GitHub Actions**. Documentati
 
 1. Generate a dedicated keystore locally using Android SDK `keytool`. Use a stable alias, for example `fityar-release`, and record the alias and passwords in a durable place.
 2. Keep a separate backup copy of the keystore. Do not rely on GitHub Actions cache or a single workstation.
-3. Encode the keystore locally as Base64 and save it in GitHub repository **Settings → Secrets and variables → Actions → New repository secret** named `FIT_YAR_RELEASE_KEYSTORE_BASE64`. Add the alias/password as separate Actions secrets (names should be documented in the release workflow).
-4. Configure the release workflow to decode that secret to a temporary file, sign the APK with it, verify the APK with `apksigner verify --print-certs`, and fail closed if any required secret is missing.
-5. Record the new certificate SHA-256 fingerprint below and make CI compare the actual APK fingerprint to this exact value. Do not publish the baseline APK until this check passes.
+3. Encode the keystore locally as Base64 and add these repository Actions secrets under **Settings → Secrets and variables → Actions**: `FIT_YAR_RELEASE_KEYSTORE_BASE64`, `FIT_YAR_RELEASE_KEY_ALIAS`, `FIT_YAR_RELEASE_STORE_PASSWORD`, and `FIT_YAR_RELEASE_KEY_PASSWORD`. Never paste the keystore or passwords into an issue, commit, or chat.
+4. Add the repository Actions variable `FIT_YAR_RELEASE_CERT_SHA256` with the certificate SHA-256 fingerprint (colon-separated or unseparated hex is accepted). The release workflow compares the built APK certificate against this pin and fails closed on missing/mismatched settings.
+5. Use **Actions → FitYar permanent release APK → Run workflow** on `main`, provide a `version_code` greater than the last distributed version and a `version_name`, and download the `fityar-release-*` artifact only if the workflow succeeds. The workflow signs the release variant and verifies the package ID, signature, and certificate fingerprint.
 6. Build the baseline APK, install it on the test phone, verify app launch and backup/restore, then preserve the APK and fingerprint as release records.
 
 ### Permanent release certificate (fill after one-time setup)
