@@ -38,6 +38,18 @@ public class WorkoutDbTest {
    int count=0;while(c.moveToNext())count++;assertEquals(2,count);
   }
  }
+ @Test public void deletingPlanPreservesHistoricalWorkoutLogs(){
+  long plan=db.addPlan("Historical plan");
+  db.log("1405/07/21","Historical plan","Squat",3,8,20);
+  db.deletePlan(plan);
+  assertTrue(db.plans().isEmpty());
+  try(android.database.Cursor c=db.allLogs()){
+   assertTrue(c.moveToFirst());
+   assertEquals("Historical plan",c.getString(1));
+   assertEquals("Squat",c.getString(2));
+   assertFalse(c.moveToNext());
+  }
+ }
  @Test public void rejectsExerciseForMissingPlan(){
   try { db.addExercise(999999L,"Squat",3,10); fail("Expected missing workout plan to be rejected"); }
   catch(IllegalArgumentException expected) { }
