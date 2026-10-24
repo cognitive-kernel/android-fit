@@ -60,9 +60,9 @@ public final class AdvancedFeatures {
    for(int i=0;i<catalog.length();i++){JSONObject item=catalog.optJSONObject(i);if(item!=null&&item.optString("file","").matches("[0-9]+\\.gif"))exercises.add(item);}
   }catch(Exception ignored){}
   if(exercises.isEmpty()){
-   String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row"),s("lib_walk")};
-   String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row"),s("detail_walk")};
-   String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif","walk.gif"};
+   String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row")};
+   String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row")};
+   String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif"};
    new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->showExerciseDetail(names[which],details[which],gifs[which],null)).setNegativeButton(android.R.string.cancel,null).show();return;
   }
   String[] names=new String[exercises.size()];
@@ -78,8 +78,13 @@ public final class AdvancedFeatures {
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){} public void onTextChanged(CharSequence text,int st,int before,int count){adapter.getFilter().filter(text);} public void afterTextChanged(android.text.Editable e){}});
   list.setOnItemClickListener((parent,view,position,id)->{
    String selected=adapter.getItem(position);
-   for(JSONObject item:exercises)if(selected.equals(item.optString("name",item.optString("file")))){
-    showExerciseDetail(selected,"",item.optString("file",""),item.optString("source_id",""));break;
+   for(JSONObject item:exercises){
+    String english=item.optString("name_en",item.optString("name",item.optString("file")));
+    String persian=item.optString("name_fa","");
+    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
+    if(selected.equals(display)){
+     showExerciseDetail(display,"",item.optString("file",""),item.optString("source_id",""));break;
+    }
    }
   });
   new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).show();

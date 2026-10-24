@@ -21,7 +21,6 @@ OUT_JSON = ASSETS / "exercise_catalog.json"
 OUT_CSV = ROOT / "gymvisual-match-report.csv"
 BASE = "https://gymvisual.com/16-animated-gifs"
 IMAGE_ID_RE = re.compile(r"/(\d{3,8})\.(?:gif|jpe?g|png)(?:$|[?])", re.I)
-PRODUCT_ID_RE = re.compile(r"\[(\d{4,8})\]")
 
 
 def clean_title(value):
@@ -42,7 +41,7 @@ def main():
     session.headers["User-Agent"] = "Mozilla/5.0 (compatible; FitYarExerciseCatalog/1.0)"
     catalog = {}
     seen_pages = set()
-    empty_pages = 0
+    pages_without_new_ids = 0
 
     # GymVisual's category pagination may change; stop after several empty pages
     # instead of assuming a fixed number of pages.
@@ -53,7 +52,7 @@ def main():
         response = session.get(BASE, params=params, timeout=45)
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "html.parser")
-        page_matches = 0
+        ids_before_page = len(catalog)
 
         cards = soup.select(".product-miniature, article.product-miniature, .js-product-miniature")
         if not cards:
@@ -82,22 +81,14 @@ def main():
                     previous = catalog.get(file_id)
                     if previous is None or len(title) < len(previous):
                         catalog[file_id] = title
-                    page_matches += 1
 
-            # Retain product IDs only as a fallback when the actual media ID is
-            # not exposed in the card. These IDs will match only if a GIF uses
-            # the same numeric basename, and are never inferred from filenames.
-            if not urls:
-                match = PRODUCT_ID_RE.search(card.get_text(" ", strip=True))
-                if match:
-                    catalog.setdefault(match.group(1), title)
 
-        if page_matches == 0:
-            empty_pages += 1
+        if len(catalog) == ids_before_page:
+            pages_without_new_ids += 1
         else:
-            empty_pages = 0
+            pages_without_new_ids = 0
         print(f"Page {page}: {len(catalog)} media IDs discovered")
-        if page in seen_pages or empty_pages >= 4:
+        if page in seen_pages or pages_without_new_ids >= 2:
             break
         seen_pages.add(page)
         time.sleep(0.25)
