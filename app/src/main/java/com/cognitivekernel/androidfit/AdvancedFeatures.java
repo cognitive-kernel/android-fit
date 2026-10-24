@@ -76,18 +76,27 @@ public final class AdvancedFeatures {
   ListView list=new ListView(a);ArrayAdapter<String> adapter=new ArrayAdapter<>(a,android.R.layout.simple_list_item_1,names);list.setAdapter(adapter);
   LinearLayout content=column();content.addView(search);content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){} public void onTextChanged(CharSequence text,int st,int before,int count){adapter.getFilter().filter(text);} public void afterTextChanged(android.text.Editable e){}});
+  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{
    String selected=adapter.getItem(position);
+   JSONObject match=null;
    for(JSONObject item:exercises){
     String english=item.optString("name_en",item.optString("name",item.optString("file")));
     String persian=item.optString("name_fa","");
     String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
-    if(selected.equals(display)){
-     showExerciseDetail(display,"",item.optString("file",""),item.optString("source_id",""));break;
-    }
+    if(selected.equals(display)){match=item;break;}
+   }
+   if(match!=null){
+    String english=match.optString("name_en",match.optString("name",match.optString("file")));
+    String persian=match.optString("name_fa","");
+    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
+    String gif=match.optString("file","");
+    String sourceId=match.optString("source_id","");
+    libraryDialog.dismiss();
+    showExerciseDetail(display,"",gif,sourceId);
    }
   });
-  new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).show();
+  libraryDialog.show();
  }
  private void showExerciseDetail(String name,String details,String gif,String sourceId){
   LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);
