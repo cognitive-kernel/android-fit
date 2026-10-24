@@ -73,11 +73,7 @@ public final class AdvancedFeatures {
   list.setOnItemClickListener((parent,view,position,id)->{
    String selected=adapter.getItem(position);
    for(JSONObject item:exercises)if(selected.equals(item.optString("name",item.optString("file")))){
-    String details=tr("Equipment: ","تجهیزات: ")+item.optString("equipment",tr("Not specified","ذکر نشده"))+"\n"+
-     tr("Target muscles: ","عضلات هدف: ")+item.optString("target_muscles",tr("Not specified","ذکر نشده"))+"\n"+
-     tr("Body part: ","ناحیهٔ بدن: ")+item.optString("body_part",tr("Not specified","ذکر نشده"))+"\n\n"+
-     item.optString("instructions",tr("Instructions are not available for this movement yet.","راهنمای اجرای این حرکت هنوز ثبت نشده است."));
-    showExerciseDetail(selected,details,item.optString("file",""),item.optString("source_id",""));break;
+    showExerciseDetail(selected,"",item.optString("file",""),item.optString("source_id",""));break;
    }
   });
   new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).show();
@@ -86,7 +82,7 @@ public final class AdvancedFeatures {
   LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);
   l.addView(image,new LinearLayout.LayoutParams(-1,(int)(220*a.getResources().getDisplayMetrics().density)));
   TextView title=new TextView(a);title.setText(name);title.setTextSize(20);l.addView(title);
-  TextView body=new TextView(a);body.setText(details);l.addView(body);
+  if(details!=null&&!details.trim().isEmpty()){TextView body=new TextView(a);body.setText(details);l.addView(body);}
   if(sourceId!=null&&!sourceId.isEmpty()){TextView attribution=new TextView(a);attribution.setText("© Gym visual — https://gymvisual.com/");l.addView(attribution);}
   new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(l).setPositiveButton(android.R.string.ok,null).show();
  }
