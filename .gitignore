@@ -8,3 +8,9 @@ local.properties
 .cxx/
 *.apk
 *.aab
+
+*.keystore
+*.jks
+*.p12
+*.pfx
+keystore.properties

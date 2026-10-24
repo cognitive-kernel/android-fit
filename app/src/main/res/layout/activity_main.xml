@@ -1,2 +1,253 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="20dp"><TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="فیت‌یار" android:textSize="28sp" android:textStyle="bold" android:gravity="right"/><Button android:id="@+id/managePlansButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="مدیریت برنامه‌های تمرینی"/><Button android:id="@+id/logWorkoutButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="ثبت اجرای تمرین"/><Button android:id="@+id/stepsButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="قدم‌شمار"/><Button android:id="@+id/exportButton" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="خروجی سوابق"/><TextView android:id="@+id/statusText" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="اطلاعات روی دستگاه ذخیره می‌شود."/></LinearLayout></ScrollView>
+<ScrollView android:id="@+id/rootContainer" xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F5F7FB"
+    android:fillViewport="true">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:layoutDirection="rtl">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="26dp"
+            android:background="@drawable/bg_hero">
+            <ImageView
+                android:id="@+id/heroIllustration"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="8dp"
+                android:contentDescription="FitYar"
+                android:src="@drawable/ic_launcher_foreground" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/heroTitle"
+                android:text="فیت‌یار"
+                android:textColor="#FFFFFF"
+                android:textSize="32sp"
+                android:textStyle="bold"
+                android:gravity="right"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:id="@+id/heroSubtitle"
+                android:text="قوی‌تر از دیروز؛ هر روز"
+                android:textColor="#DCE9FF"
+                android:textSize="16sp"
+                android:gravity="right"/>
+            <View
+                android:layout_width="52dp"
+                android:layout_height="4dp"
+                android:layout_marginTop="22dp"
+                android:background="#9EF0C5"/>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:id="@+id/heroDescription"
+                android:text="برنامه‌ات را بساز و مسیر پیشرفتت را ثبت کن."
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:gravity="right"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="28dp"
+            android:layout_marginBottom="14dp"
+            android:id="@+id/homePrompt"
+            android:text="امروز چه کاری انجام می‌دهی؟"
+            android:textColor="#17233D"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:gravity="right"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/actionMenuPanel"
+            android:orientation="vertical"
+            android:padding="12dp">
+            <Button
+                android:id="@+id/logWorkoutButton"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:layout_marginBottom="10dp"
+                android:text="ثبت تمرین"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#365CF5"
+                android:textAllCaps="false"
+                android:minHeight="64dp"/>
+            <Button
+                android:id="@+id/managePlansButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="برنامه‌ها و حرکات"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#23345B"
+                android:backgroundTint="#EAF0FF"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
+                android:id="@+id/stepsButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="قدم‌شمار"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#17664D"
+                android:backgroundTint="#E4F8EE"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
+                android:id="@+id/sleepButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="ثبت خواب"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#23345B"
+                android:backgroundTint="#EAF0FF"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
+                android:id="@+id/vitalsButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="فشار خون و ضربان قلب"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#14563F"
+                android:backgroundTint="#E2F6EC"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
+                android:id="@+id/bodyMetricsButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="ثبت وزن و دور کمر"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#23345B"
+                android:backgroundTint="#EAF0FF"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
+                android:id="@+id/reportButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="گزارش عملکرد و نمودار"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#5367D9"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button android:id="@+id/stepGoalButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="هدف قدم‌ها" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
+            <Button android:id="@+id/personalPlanButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="ساخت برنامه شخصی" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/goalNutritionButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="برنامه هدف، عضله‌سازی و تغذیه" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#F0E8FA" />
+            <Button android:id="@+id/historyButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="تاریخچه و پیشرفت" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/libraryButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="کتابخانه تصویری حرکات" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
+            <Button android:id="@+id/coachButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="مربی آفلاین" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/weeklyGoalButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="هدف هفتگی" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
+            <Button android:id="@+id/reminderButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="یادآور تمرین" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
+            <Button android:id="@+id/backupButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="پشتیبان‌گیری" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
+            <Button android:id="@+id/restoreButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="بازیابی پشتیبان / دیتابیس" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
+            <Button
+                android:id="@+id/exportButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="خروجی و ذخیره سوابق"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#5A3E13"
+                android:backgroundTint="#FFF2D9"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layoutDirection="ltr"
+            android:layout_marginTop="12dp">
+            <Button
+                android:id="@+id/settingsButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="تنظیمات"
+                android:textAllCaps="false" />
+            <Button
+                android:id="@+id/darkModeButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="حالت تاریک"
+                android:textAllCaps="false" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/stepsCountText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:padding="20dp"
+            android:background="@drawable/bg_status_card"
+            android:text="قدم‌های امروز&#10;۰ قدم"
+            android:textColor="#17664D"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+        <ProgressBar
+            android:id="@+id/stepProgressBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="12dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp"
+            android:max="100"
+            android:progress="0" />
+        <TextView
+            android:id="@+id/statusText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:padding="18dp"
+            android:background="@drawable/bg_status_card"
+            android:text="اطلاعات تمرین روی دستگاه شما ذخیره می‌شود."
+            android:textColor="#53617A"
+            android:textSize="14sp"
+            android:gravity="right"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:layout_marginBottom="8dp"
+            android:id="@+id/footerText"
+            android:text="فیت‌یار  •  همراه تمرین‌های روزانه"
+            android:textColor="#8A94A8"
+            android:textSize="12sp"
+            android:gravity="center"/>
+    </LinearLayout>
+</ScrollView>
