@@ -26,16 +26,37 @@ public final class GoalPlanner {
    out.append(ch);
   }
   String normalized=out.toString().trim();
-  // Android keyboards follow the device locale: accept a comma decimal for
-  // one- or two-digit fractional parts, while preserving common 1,234 grouping.
-  if(normalized.indexOf('.')<0) {
-   int comma=normalized.indexOf(',');
-   if(comma>=0&&comma==normalized.lastIndexOf(',')) {
+  // Accept common decimal/grouping conventions without silently turning
+  // malformed repeated separators into a different number.
+  int dot=normalized.lastIndexOf('.');
+  int comma=normalized.lastIndexOf(',');
+  if(dot>=0&&comma>=0) {
+   if(comma>dot) {
+    String integerPart=normalized.substring(0,comma).replace(".","");
+    if(!integerPart.matches("[+-]?\\d+")||!normalized.substring(comma+1).matches("\\d{1,2}"))
+     throw new NumberFormatException("Malformed localized decimal");
+    normalized=integerPart+"."+normalized.substring(comma+1);
+   } else {
+    String integerPart=normalized.substring(0,dot);
+    String grouping=integerPart.startsWith("+")||integerPart.startsWith("-")?integerPart.substring(1):integerPart;
+    if(grouping.contains(",")&&!grouping.matches("\\d{1,3}(,\\d{3})+"))
+     throw new NumberFormatException("Malformed thousands grouping");
+    normalized=normalized.replace(",","");
+   }
+  } else if(comma>=0) {
+   if(comma!=normalized.indexOf(',')) {
+    if(!normalized.matches("[+-]?\\d{1,3}(,\\d{3})+"))
+     throw new NumberFormatException("Malformed localized number");
+    normalized=normalized.replace(",","");
+   } else {
     int fractionalDigits=normalized.length()-comma-1;
-    if(fractionalDigits==1||fractionalDigits==2) normalized=normalized.substring(0,comma)+"."+normalized.substring(comma+1);
-    else normalized=normalized.replace(",", "");
-   } else normalized=normalized.replace(",", "");
-  } else normalized=normalized.replace(",", "");
+    if(fractionalDigits==1||fractionalDigits==2)
+     normalized=normalized.substring(0,comma)+"."+normalized.substring(comma+1);
+    else if(fractionalDigits==3&&normalized.substring(0,comma).replaceFirst("^[+-]","").length()<=3)
+     normalized=normalized.replace(",","");
+    else throw new NumberFormatException("Malformed localized decimal");
+   }
+  }
   return normalized;
  }
  static int parseInteger(String value){return Integer.parseInt(normalizeDigits(value));}
