@@ -44,7 +44,7 @@ public class MainActivityTest {
   String previous=prefs.getString("language","fa");
   prefs.edit().putString("language","en").commit();
   try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-   scenario.onActivity(activity -> assertEquals("Manage workout plans",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString()));
+   scenario.onActivity(activity -> assertEquals("Plans & exercises",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString()));
   } finally { prefs.edit().putString("language",previous).commit(); }
  }
 
@@ -54,7 +54,7 @@ public class MainActivityTest {
   String previous=prefs.getString("language","fa");
   prefs.edit().putString("language","fa").commit();
   try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-   scenario.onActivity(activity -> assertEquals("مدیریت برنامه‌های تمرینی",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString()));
+   scenario.onActivity(activity -> assertEquals("برنامه‌ها و حرکات",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString()));
   } finally { prefs.edit().putString("language",previous).commit(); }
  }
 
