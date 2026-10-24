@@ -174,6 +174,62 @@ jobs:
             echo "::warning::No matching signing key was found in the Actions cache or configured secret. Production APK signing remains blocked."
           fi
 
+  release-key-corrected-apk:
+    # Candidate-key APK from the exercise-library feature branch for device testing.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Restore candidate release keystore
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "${FIT_YAR_RELEASE_KEYSTORE_BASE64:-}" || { echo "::error::Release keystore secret is missing."; exit 1; }
+          mkdir -p "$HOME/.android"
+          printf '%s' "$FIT_YAR_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/fityar-release-test.jks"
+          test -s "$HOME/.android/fityar-release-test.jks" || { echo "::error::Decoded keystore is empty."; exit 1; }
+      - name: Build and verify feature APK with candidate key
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
+          FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
+          FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export FIT_YAR_SIGNING_KEYSTORE="$HOME/.android/fityar-release-test.jks"
+          test -n "${FIT_YAR_RELEASE_KEY_ALIAS:-}" || { echo "::error::Release key alias secret is missing."; exit 1; }
+          test -n "${FIT_YAR_RELEASE_KEY_PASSWORD:-}" || { echo "::error::Release key password secret is missing."; exit 1; }
+          test -n "${FIT_YAR_RELEASE_STORE_PASSWORD:-}" || { echo "::error::Release store password secret is missing."; exit 1; }
+          keytool -list -v -keystore "$FIT_YAR_SIGNING_KEYSTORE" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" | grep -E 'Alias name:|SHA1:|SHA256:|Valid from:'
+          gradle -PFIT_YAR_VERSION_CODE=106 -PFIT_YAR_VERSION_NAME=1.1.10 assembleDebug
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='106'"
+          mkdir -p artifacts
+          cp "$APK" artifacts/fityar-corrected-release-key-v106.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-corrected-release-key-v106.apk | tee artifacts/signature.txt
+          sha256sum artifacts/fityar-corrected-release-key-v106.apk > artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fityar-corrected-release-key-v106
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
   signed-apk:
     # Signing/update work is intentionally deferred until the original key is recovered.
     # Enable this job by setting repository variable ENABLE_SIGNED_APK=true.
