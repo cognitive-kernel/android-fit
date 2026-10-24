@@ -32,7 +32,11 @@ public final class GoalPlanner {
   int comma=normalized.lastIndexOf(',');
   if(dot>=0&&comma>=0) {
    if(comma>dot) {
-    String integerPart=normalized.substring(0,comma).replace(".","");
+    String rawInteger=normalized.substring(0,comma);
+    String unsignedInteger=rawInteger.startsWith("+")||rawInteger.startsWith("-")?rawInteger.substring(1):rawInteger;
+    if(unsignedInteger.contains(".")&&!unsignedInteger.matches("\\d{1,3}(\\.\\d{3})+"))
+     throw new NumberFormatException("Malformed thousands grouping");
+    String integerPart=rawInteger.replace(".","");
     if(!integerPart.matches("[+-]?\\d+")||!normalized.substring(comma+1).matches("\\d{1,2}"))
      throw new NumberFormatException("Malformed localized decimal");
     normalized=integerPart+"."+normalized.substring(comma+1);
