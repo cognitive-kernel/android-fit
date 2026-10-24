@@ -65,7 +65,13 @@ public final class AdvancedFeatures {
    String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif","walk.gif"};
    new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->showExerciseDetail(names[which],details[which],gifs[which],null)).setNegativeButton(android.R.string.cancel,null).show();return;
   }
-  String[] names=new String[exercises.size()];for(int i=0;i<exercises.size();i++)names[i]=exercises.get(i).optString("name",exercises.get(i).optString("file"));
+  String[] names=new String[exercises.size()];
+   for(int i=0;i<exercises.size();i++){
+    JSONObject item=exercises.get(i);
+    String english=item.optString("name_en",item.optString("name",item.optString("file")));
+    String persian=item.optString("name_fa","");
+    names[i]="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
+   }
   EditText search=new EditText(a);search.setSingleLine(true);search.setHint(tr("Search exercises","جست‌وجوی حرکت"));
   ListView list=new ListView(a);ArrayAdapter<String> adapter=new ArrayAdapter<>(a,android.R.layout.simple_list_item_1,names);list.setAdapter(adapter);
   LinearLayout content=column();content.addView(search);content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
