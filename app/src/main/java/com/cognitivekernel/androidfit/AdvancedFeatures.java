@@ -292,13 +292,29 @@ public final class AdvancedFeatures {
    ArrayList<String> ids=new ArrayList<>();
    HashSet<String> seenSectionIds=new HashSet<>();
    for(int i=0;i<sections.length();i++){
-    JSONObject section=sections.optJSONObject(i);if(section==null)continue;String id=section.optString("id","");
-    if(Arrays.asList("workouts","health","steps","preferences").contains(id)&&!seenSectionIds.add(id))
-     throw new IOException("Duplicate backup section: "+id);
-    if("workouts".equals(id)&&section.opt("plans") instanceof JSONArray&&section.opt("exercises") instanceof JSONArray&&section.opt("logs") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Workout plans & logs","برنامه‌ها و سوابق تمرین"));}
-    else if("health".equals(id)&&section.opt("sleep_logs") instanceof JSONArray&&section.opt("vital_logs") instanceof JSONArray&&section.opt("body_metrics") instanceof JSONArray){valid.add(section);ids.add(id);labels.add(tr("Health records","سوابق سلامت"));}
-    else if("steps".equals(id)&&section.opt("step_counter") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(tr("Step counter history","سوابق قدم‌شمار"));}
-    else if("preferences".equals(id)&&section.opt("fityar_preferences") instanceof JSONObject&&section.opt("fit_settings") instanceof JSONObject){valid.add(section);ids.add(id);labels.add(tr("App preferences","تنظیمات برنامه"));}
+    JSONObject section=sections.optJSONObject(i);
+    if(section==null)throw new IOException("Backup section must be an object");
+    String id=section.optString("id","");
+    if(!Arrays.asList("workouts","health","steps","preferences").contains(id))continue;
+    if(!seenSectionIds.add(id))throw new IOException("Duplicate backup section: "+id);
+    boolean shapeValid;
+    String label;
+    switch(id){
+     case "workouts":
+      shapeValid=section.opt("plans") instanceof JSONArray&&section.opt("exercises") instanceof JSONArray&&section.opt("logs") instanceof JSONArray;
+      label=tr("Workout plans & logs","برنامه‌ها و سوابق تمرین");break;
+     case "health":
+      shapeValid=section.opt("sleep_logs") instanceof JSONArray&&section.opt("vital_logs") instanceof JSONArray&&section.opt("body_metrics") instanceof JSONArray;
+      label=tr("Health records","سوابق سلامت");break;
+     case "steps":
+      shapeValid=section.opt("step_counter") instanceof JSONObject;
+      label=tr("Step counter history","سوابق قدم‌شمار");break;
+     default:
+      shapeValid=section.opt("fityar_preferences") instanceof JSONObject&&section.opt("fit_settings") instanceof JSONObject;
+      label=tr("App preferences","تنظیمات برنامه");break;
+    }
+    if(!shapeValid)throw new IOException("Malformed backup section: "+id);
+    valid.add(section);ids.add(id);labels.add(label);
    }
    if(valid.isEmpty())throw new IOException("No supported backup sections");
    boolean[] chosen=new boolean[valid.size()];Arrays.fill(chosen,true);
