@@ -223,12 +223,12 @@ public class SelectiveBackupTest {
     android.content.SharedPreferences legacy=activity.getSharedPreferences("fit_settings",android.content.Context.MODE_PRIVATE);
     String oldPrimary=primary.getString("language",null),oldLegacy=legacy.getString("language",null);
     try {
-     primary.edit().putString("language","en").commit();
-     legacy.edit().putString("language","fa").commit();
+     primary.edit().putString("language","fa").commit();
+     legacy.edit().putString("language","en").commit();
      Method selected=AdvancedFeatures.class.getDeclaredMethod("selectedLanguage");
      selected.setAccessible(true);
      assertEquals("en",selected.invoke(activity.advanced));
-     primary.edit().remove("language").commit();
+     legacy.edit().remove("language").commit();
      assertEquals("fa",selected.invoke(activity.advanced));
     } catch(Exception ex) { throw new AssertionError("Language preference regression",ex); }
     finally {
