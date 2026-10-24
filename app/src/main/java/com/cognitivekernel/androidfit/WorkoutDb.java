@@ -36,6 +36,15 @@ public class WorkoutDb extends SQLiteOpenHelper {
         if(name==null||name.trim().isEmpty()) throw new IllegalArgumentException("Plan name is required");
         ContentValues v=new ContentValues(); v.put("name",name.trim()); return getWritableDatabase().insertOrThrow("plans",null,v);
     }
+    public boolean updatePlan(long id, String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Plan name is required");
+        }
+        ContentValues values = new ContentValues();
+        values.put("name", name.trim());
+        return getWritableDatabase().update("plans", values, "id=?", new String[]{String.valueOf(id)}) > 0;
+    }
+
     public long addExercise(long planId,String name,int sets,int reps) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
         ContentValues v=new ContentValues(); v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps); return getWritableDatabase().insertOrThrow("exercises",null,v);
