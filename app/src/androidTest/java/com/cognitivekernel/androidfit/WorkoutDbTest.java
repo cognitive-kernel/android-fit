@@ -15,6 +15,14 @@ public class WorkoutDbTest {
  private WorkoutDb db;
  @Before public void setUp(){context=ApplicationProvider.getApplicationContext();context.deleteDatabase("fit_yar.db");db=new WorkoutDb(context);}
  @After public void tearDown(){db.close();context.deleteDatabase("fit_yar.db");}
+ @Test public void updatesPlanNameAndRejectsBlankNames(){
+  long plan=db.addPlan("  Upper body  ");
+  assertTrue(db.updatePlan(plan,"  Push day  "));
+  assertEquals("Push day",db.plans().get(0)[1]);
+  assertFalse(db.updatePlan(-1,"Missing plan"));
+  try { db.updatePlan(plan,"   ");fail("Expected blank plan name to be rejected"); }
+  catch(IllegalArgumentException expected) { }
+ }
  @Test public void createsListsAndDeletesPlansAndExercises(){
   long plan=db.addPlan("Upper body");assertTrue(plan>0);
   long exercise=db.addExercise(plan,"Bench press",3,10);assertTrue(exercise>0);
