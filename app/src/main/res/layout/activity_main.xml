@@ -170,7 +170,7 @@
             <Button android:id="@+id/weeklyGoalButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="هدف هفتگی" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
             <Button android:id="@+id/reminderButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="یادآور تمرین" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
             <Button android:id="@+id/backupButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="پشتیبان‌گیری" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
-            <Button android:id="@+id/restoreButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="بازیابی پشتیبان" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
+            <Button android:id="@+id/restoreButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="بازیابی پشتیبان / دیتابیس" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
             <Button
                 android:id="@+id/exportButton"
                 android:layout_width="match_parent"
