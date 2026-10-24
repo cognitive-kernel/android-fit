@@ -19,7 +19,8 @@ public final class AdvancedFeatures {
  private static final int MAX_BACKUP_BYTES=25*1024*1024;
  public AdvancedFeatures(Activity activity, WorkoutDb database){a=activity;db=database;}
  private String s(String key){int id=a.getResources().getIdentifier(key,"string",a.getPackageName());return id==0?key:a.getString(id);}
- private String tr(String en,String fa){return a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa").equals("en")?en:fa;}
+ private String selectedLanguage(){String language=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getString("language",null);if(language==null)language=a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa");return "en".equalsIgnoreCase(language)?"en":"fa";}
+ private String tr(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
  private EditText field(String hint,String value,int type){EditText e=new EditText(a);e.setHint(hint);if(value!=null)e.setText(value);e.setInputType(type);return e;}
  private static int parseLocalizedInt(String value){return GoalPlanner.parseInteger(value);}
  private static double parseLocalizedDouble(String value){return GoalPlanner.parseDecimal(value);}
@@ -147,7 +148,7 @@ public final class AdvancedFeatures {
    }catch(Exception ex){message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, and weight 30–300 kg.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰ سانتی‌متر و وزن ۳۰ تا ۳۰۰ کیلوگرم وارد کنید."));}
   }).setNegativeButton(android.R.string.cancel,null).show();
  }
- private String tg(String en,String fa){return a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa").equals("en")?en:fa;}
+ private String tg(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
 
  public void showCoach(){
   int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
