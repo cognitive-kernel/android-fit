@@ -26,6 +26,8 @@ public class WorkoutDb extends SQLiteOpenHelper {
         ensureColumn(db,"logs","rest_seconds","INTEGER NOT NULL DEFAULT 60");
         ensureColumn(db,"logs","effort","INTEGER NOT NULL DEFAULT 7");
         ensureColumn(db,"logs","notes","TEXT NOT NULL DEFAULT ''");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_exercises_plan_id ON exercises(plan_id)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs(created_at DESC)");
     }
     private void ensureColumn(SQLiteDatabase db,String table,String column,String definition) {
         boolean found=false;
