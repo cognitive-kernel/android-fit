@@ -411,6 +411,11 @@ public final class AdvancedFeatures {
    restoreTable(database,"sleep_logs",section.getJSONArray("sleep_logs"));restoreTable(database,"vital_logs",section.getJSONArray("vital_logs"));restoreTable(database,"body_metrics",section.getJSONArray("body_metrics"));
   }else if("preferences".equals(id)){
    restorePreferences("fityar_preferences",section.getJSONObject("fityar_preferences"));restorePreferences("fit_settings",section.getJSONObject("fit_settings"));
+  }else if("steps".equals(id)){
+   // Never restore a live service state; an imported history must remain paused.
+   restorePreferences("step_counter",section.getJSONObject("step_counter"));
+   a.getSharedPreferences("step_counter",Context.MODE_PRIVATE).edit()
+    .putBoolean("running",false).putBoolean("paused",false).apply();
   }else throw new IOException("Unknown section");
  }
  private void restoreTable(SQLiteDatabase database,String table,JSONArray rows)throws Exception{
