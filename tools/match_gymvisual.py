@@ -47,8 +47,7 @@ def main():
     for gif in gifs:
         name = catalog.get(gif.stem)
         if name:
-            entries.append({"source":"GymVisual","source_id":gif.stem,"name":name,
-                "file":gif.name,"body_part":"","equipment":"","target_muscles":"","instructions":""})
+            entries.append({"source":"GymVisual","source_id":gif.stem,"name":name,"file":gif.name})
             report.append([gif.name, gif.stem, name, "MATCH"])
         else:
             report.append([gif.name, "", "", "UNMATCHED"])
@@ -60,7 +59,7 @@ def main():
         writer.writerows(report)
     print(f"Numeric GIFs: {len(gifs)}; exact matches: {len(entries)}; unmatched: {len(gifs)-len(entries)}")
     print(f"Generated {OUT_JSON.relative_to(ROOT)} and {OUT_CSV.relative_to(ROOT)}")
-    print("Equipment/muscles/instructions remain blank until verified metadata is available.")
+    print("Name-only catalog generated; no unverified exercise details are added.")
 
 if __name__ == "__main__":
     main()
