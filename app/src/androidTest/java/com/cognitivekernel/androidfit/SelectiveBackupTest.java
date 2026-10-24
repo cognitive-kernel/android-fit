@@ -130,6 +130,55 @@ public class SelectiveBackupTest {
  }
 
 
+ @Test public void legacyDatabaseRestoreValidationRejectsForeignAndFutureDatabases() throws Exception {
+  try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+   scenario.onActivity(activity -> {
+    java.io.File valid = new java.io.File(activity.getCacheDir(), "restore-validation-valid.db");
+    java.io.File foreign = new java.io.File(activity.getCacheDir(), "restore-validation-foreign.db");
+    java.io.File future = new java.io.File(activity.getCacheDir(), "restore-validation-future.db");
+    try {
+     for (java.io.File file : new java.io.File[]{valid, foreign, future}) if (file.exists()) assertTrue(file.delete());
+     createValidationDb(valid, 4, true);
+     createValidationDb(foreign, 4, false);
+     createValidationDb(future, 99, true);
+     Method validate = AdvancedFeatures.class.getDeclaredMethod("validateDatabase", java.io.File.class);
+     validate.setAccessible(true);
+     validate.invoke(activity.advanced, valid);
+     assertValidationRejected(validate, activity.advanced, foreign);
+     assertValidationRejected(validate, activity.advanced, future);
+     java.io.File corrupt = new java.io.File(activity.getCacheDir(), "restore-validation-corrupt.db");
+     try (java.io.FileOutputStream out = new java.io.FileOutputStream(corrupt)) { out.write("not sqlite".getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
+     assertValidationRejected(validate, activity.advanced, corrupt);
+     assertTrue(corrupt.delete());
+    } catch (Exception ex) {
+     throw new AssertionError("Legacy SQLite restore validation regression", ex);
+    } finally {
+     for (java.io.File file : new java.io.File[]{valid, foreign, future}) if (file.exists()) file.delete();
+    }
+   });
+  }
+ }
+ private static void createValidationDb(java.io.File file, int version, boolean fitYar) {
+  SQLiteDatabase database = SQLiteDatabase.openOrCreateDatabase(file, null);
+  try {
+   database.setVersion(version);
+   if (fitYar) {
+    database.execSQL("CREATE TABLE plans(id INTEGER PRIMARY KEY, name TEXT NOT NULL)");
+    database.execSQL("CREATE TABLE exercises(id INTEGER PRIMARY KEY, plan_id INTEGER NOT NULL, name TEXT NOT NULL, sets INTEGER NOT NULL, reps INTEGER NOT NULL)");
+    database.execSQL("CREATE TABLE logs(id INTEGER PRIMARY KEY, date_jalali TEXT, plan_name TEXT, exercise_name TEXT, sets INTEGER, reps INTEGER, weight REAL, created_at INTEGER)");
+   } else {
+    database.execSQL("CREATE TABLE unrelated(id INTEGER PRIMARY KEY)");
+   }
+  } finally { database.close(); }
+ }
+ private static void assertValidationRejected(Method validate, AdvancedFeatures features, java.io.File file) throws Exception {
+  try {
+   validate.invoke(features, file);
+   fail("Expected invalid or unsupported SQLite backup to be rejected: " + file.getName());
+  } catch (java.lang.reflect.InvocationTargetException expected) {
+   assertTrue("Expected IOException, got " + expected.getCause(), expected.getCause() instanceof java.io.IOException);
+  }
+ }
  private static void restorePrefs(android.content.SharedPreferences prefs,java.util.Map<String,?> values) {
   android.content.SharedPreferences.Editor editor=prefs.edit().clear();
   for(java.util.Map.Entry<String,?> entry:values.entrySet()){
