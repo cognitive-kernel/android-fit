@@ -51,14 +51,51 @@ public final class AdvancedFeatures {
  }
 
  public void showLibrary(){
-  String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row"),s("lib_walk")};
-  String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row"),s("detail_walk")};
-  String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif","walk.gif"};
-  new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->{
-   LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gifs[which]);image.setContentDescription(names[which]);int imageHeight=(int)(180*a.getResources().getDisplayMetrics().density);l.addView(image,new LinearLayout.LayoutParams(-1,imageHeight));
-   TextView title=new TextView(a);title.setText(names[which]);title.setTextSize(20);l.addView(title);TextView body=new TextView(a);body.setText(details[which]);l.addView(body);
-   new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(l).setPositiveButton(android.R.string.ok,null).show();
-  }).setNegativeButton(android.R.string.cancel,null).show();
+  final ArrayList<JSONObject> exercises=new ArrayList<>();
+  try(java.io.InputStream in=a.getAssets().open("exercises/exercise_catalog.json");
+      java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream()){
+   byte[] buffer=new byte[4096];int count;
+   while((count=in.read(buffer))!=-1)bytes.write(buffer,0,count);
+   JSONArray catalog=new JSONArray(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
+   for(int i=0;i<catalog.length();i++){JSONObject item=catalog.optJSONObject(i);if(item!=null&&item.optString("file","").matches("[0-9]+\\.gif"))exercises.add(item);}
+  }catch(Exception ignored){}
+  if(exercises.isEmpty()){
+   String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row")};
+   String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row")};
+   String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif"};
+   new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->showExerciseDetail(names[which],details[which],gifs[which],null)).setNegativeButton(android.R.string.cancel,null).show();return;
+  }
+  String[] names=new String[exercises.size()];
+   for(int i=0;i<exercises.size();i++){
+    JSONObject item=exercises.get(i);
+    String english=item.optString("name_en",item.optString("name",item.optString("file")));
+    String persian=item.optString("name_fa","");
+    names[i]="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
+   }
+  EditText search=new EditText(a);search.setSingleLine(true);search.setHint(tr("Search exercises","جست‌وجوی حرکت"));
+  ListView list=new ListView(a);ArrayAdapter<String> adapter=new ArrayAdapter<>(a,android.R.layout.simple_list_item_1,names);list.setAdapter(adapter);
+  LinearLayout content=column();content.addView(search);content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
+  search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){} public void onTextChanged(CharSequence text,int st,int before,int count){adapter.getFilter().filter(text);} public void afterTextChanged(android.text.Editable e){}});
+  list.setOnItemClickListener((parent,view,position,id)->{
+   String selected=adapter.getItem(position);
+   for(JSONObject item:exercises){
+    String english=item.optString("name_en",item.optString("name",item.optString("file")));
+    String persian=item.optString("name_fa","");
+    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
+    if(selected.equals(display)){
+     showExerciseDetail(display,"",item.optString("file",""),item.optString("source_id",""));break;
+    }
+   }
+  });
+  new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ private void showExerciseDetail(String name,String details,String gif,String sourceId){
+  LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);
+  l.addView(image,new LinearLayout.LayoutParams(-1,(int)(220*a.getResources().getDisplayMetrics().density)));
+  TextView title=new TextView(a);title.setText(name);title.setTextSize(20);l.addView(title);
+  if(details!=null&&!details.trim().isEmpty()){TextView body=new TextView(a);body.setText(details);l.addView(body);}
+  if(sourceId!=null&&!sourceId.isEmpty()){TextView attribution=new TextView(a);attribution.setText("© Gym visual — https://gymvisual.com/");l.addView(attribution);}
+  new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(l).setPositiveButton(android.R.string.ok,null).show();
  }
 
  public void buildPersonalPlan(){

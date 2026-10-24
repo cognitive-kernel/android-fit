@@ -15,7 +15,7 @@ import static org.junit.Assert.assertTrue;
 public class ExerciseGifAssetsTest {
     @Test public void allBundledExerciseGifsDecodeAndAnimate() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        String[] files = {"squat.gif", "pushup.gif", "lunge.gif", "plank.gif", "row.gif", "walk.gif"};
+        String[] files = {"squat.gif", "pushup.gif", "lunge.gif", "plank.gif", "row.gif"};
         for (String file : files) {
             try (InputStream stream = context.getAssets().open("exercises/" + file)) {
                 Movie movie = Movie.decodeStream(stream);
