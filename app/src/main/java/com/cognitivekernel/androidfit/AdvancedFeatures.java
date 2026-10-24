@@ -83,13 +83,13 @@ public final class AdvancedFeatures {
    for(JSONObject item:exercises){
     String english=item.optString("name_en",item.optString("name",item.optString("file")));
     String persian=item.optString("name_fa","");
-    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
+    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
     if(selected.equals(display)){match=item;break;}
    }
    if(match!=null){
     String english=match.optString("name_en",match.optString("name",match.optString("file")));
     String persian=match.optString("name_fa","");
-    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?english:persian);
+    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
     String gif=match.optString("file","");
     String sourceId=match.optString("source_id","");
     libraryDialog.dismiss();
