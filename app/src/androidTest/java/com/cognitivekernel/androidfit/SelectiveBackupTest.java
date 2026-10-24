@@ -190,9 +190,9 @@ public class SelectiveBackupTest {
      assertFalse(stepPrefs.has("paused"));
      android.content.SharedPreferences stepPreferences = activity.getSharedPreferences("step_counter", android.content.Context.MODE_PRIVATE);
      stepPreferences.edit().putInt("session_steps",999).putBoolean("running",true).putBoolean("paused",false).apply();
-     Method restorePreferences = AdvancedFeatures.class.getDeclaredMethod("restorePreferences",String.class,JSONObject.class);
-     restorePreferences.setAccessible(true);
-     restorePreferences.invoke(activity.advanced,"step_counter",stepPrefs);
+     Method restoreSteps = AdvancedFeatures.class.getDeclaredMethod("restoreSection",JSONObject.class,String.class);
+     restoreSteps.setAccessible(true);
+     restoreSteps.invoke(activity.advanced,steps,"steps");
      assertEquals(125,stepPreferences.getInt("session_steps",0));
      assertFalse(stepPreferences.getBoolean("running",false));
      assertFalse(stepPreferences.getBoolean("paused",false));
