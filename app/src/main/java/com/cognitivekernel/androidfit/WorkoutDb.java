@@ -47,7 +47,11 @@ public class WorkoutDb extends SQLiteOpenHelper {
 
     public long addExercise(long planId,String name,int sets,int reps) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
-        ContentValues v=new ContentValues(); v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps); return getWritableDatabase().insertOrThrow("exercises",null,v);
+        SQLiteDatabase database=getWritableDatabase();
+        try(Cursor cursor=database.rawQuery("SELECT 1 FROM plans WHERE id=?",new String[]{String.valueOf(planId)})) {
+            if(!cursor.moveToFirst()) throw new IllegalArgumentException("Workout plan does not exist");
+        }
+        ContentValues v=new ContentValues(); v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps); return database.insertOrThrow("exercises",null,v);
     }
     public boolean updateExercise(long id,String name,int sets,int reps) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
