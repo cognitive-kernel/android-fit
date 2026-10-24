@@ -73,9 +73,9 @@ public final class AdvancedFeatures {
   list.setOnItemClickListener((parent,view,position,id)->{
    String selected=adapter.getItem(position);
    for(JSONObject item:exercises)if(selected.equals(item.optString("name",item.optString("file")))){
-    String details=tr("Equipment: ","تجهیزات: ")+item.optString("equipment",tr("Not specified","ذکر نشده"))+"\\n"+
-     tr("Target muscles: ","عضلات هدف: ")+item.optString("target_muscles",tr("Not specified","ذکر نشده"))+"\\n"+
-     tr("Body part: ","ناحیهٔ بدن: ")+item.optString("body_part",tr("Not specified","ذکر نشده"))+"\\n\\n"+
+    String details=tr("Equipment: ","تجهیزات: ")+item.optString("equipment",tr("Not specified","ذکر نشده"))+"\n"+
+     tr("Target muscles: ","عضلات هدف: ")+item.optString("target_muscles",tr("Not specified","ذکر نشده"))+"\n"+
+     tr("Body part: ","ناحیهٔ بدن: ")+item.optString("body_part",tr("Not specified","ذکر نشده"))+"\n\n"+
      item.optString("instructions",tr("Instructions are not available for this movement yet.","راهنمای اجرای این حرکت هنوز ثبت نشده است."));
     showExerciseDetail(selected,details,item.optString("file",""),item.optString("source_id",""));break;
    }
