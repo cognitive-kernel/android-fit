@@ -16,6 +16,7 @@ The GitHub Actions workflow runs these checks on the latest commit:
    - Detailed workout metadata and health-log persistence.
    - Additive migration from historical database schemas v1, v2, and v3 without losing records.
    - Selective backup export and restoration of workout data without overwriting unrelated health records.
+   - Legacy SQLite backup validation: valid FitYar schema accepted; corrupt, unrelated, and newer-version databases rejected.
 
 ## Local commands
 
