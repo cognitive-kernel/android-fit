@@ -94,7 +94,7 @@ public final class AdvancedFeatures {
     String sourceId=match.optString("source_id","");
     libraryDialog.dismiss();
     libraryDialog.cancel();
-    showExerciseDetail(display,"",gif,sourceId);
+    showExerciseDetail(display,"",gif,sourceId,true);
    }
   });
   libraryDialog.show();
@@ -152,13 +152,16 @@ public final class AdvancedFeatures {
   return result;
  }
 
- private void showExerciseDetail(String name,String details,String gif,String sourceId){
+ private void showExerciseDetail(String name,String details,String gif,String sourceId){showExerciseDetail(name,details,gif,sourceId,false);}
+ private void showExerciseDetail(String name,String details,String gif,String sourceId,boolean returnToLibrary){
   LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);
   l.addView(image,new LinearLayout.LayoutParams(-1,(int)(220*a.getResources().getDisplayMetrics().density)));
   TextView title=new TextView(a);title.setText(name);title.setTextSize(20);l.addView(title);
   if(details!=null&&!details.trim().isEmpty()){TextView body=new TextView(a);body.setText(details);l.addView(body);}
   if(sourceId!=null&&!sourceId.isEmpty()){TextView attribution=new TextView(a);attribution.setText("© Gym visual — https://gymvisual.com/");l.addView(attribution);}
-  new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(l).setPositiveButton(android.R.string.ok,null).show();
+  AlertDialog detailDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(l).setPositiveButton(android.R.string.ok,null).create();
+  if(returnToLibrary)detailDialog.setOnDismissListener(dialog->{if(!a.isFinishing()&&!a.isDestroyed())showLibrary();});
+  detailDialog.show();
  }
 
  public void buildPersonalPlan(){
