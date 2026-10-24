@@ -19,7 +19,7 @@ public final class AdvancedFeatures {
  private static final int MAX_BACKUP_BYTES=25*1024*1024;
  public AdvancedFeatures(Activity activity, WorkoutDb database){a=activity;db=database;}
  private String s(String key){int id=a.getResources().getIdentifier(key,"string",a.getPackageName());return id==0?key:a.getString(id);}
- private String selectedLanguage(){String language=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getString("language",null);if(language==null)language=a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa");return "en".equalsIgnoreCase(language)?"en":"fa";}
+ private String selectedLanguage(){String language=a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language",null);if(language==null)language=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getString("language","fa");return "en".equalsIgnoreCase(language)?"en":"fa";}
  private String tr(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
  private EditText field(String hint,String value,int type){EditText e=new EditText(a);e.setHint(hint);if(value!=null)e.setText(value);e.setInputType(type);return e;}
  private static int parseLocalizedInt(String value){return GoalPlanner.parseInteger(value);}
