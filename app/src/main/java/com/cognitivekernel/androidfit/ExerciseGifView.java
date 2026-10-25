@@ -84,23 +84,6 @@ public final class ExerciseGifView extends View {
         return file;
     }
 
-    private static void trimCache(Context context, File keepFile) {
-        File root = new File(context.getCacheDir(), "exercise-gifs");
-        File[] files = root.listFiles(File::isFile);
-        if (files == null || files.length == 0) return;
-        long total = 0;
-        for (File file : files) total += file.length();
-        final long maxBytes = 128L * 1024L * 1024L;
-        if (total <= maxBytes) return;
-        java.util.Arrays.sort(files, (a, b) -> Long.compare(a.lastModified(), b.lastModified()));
-        for (File file : files) {
-            if (total <= maxBytes) break;
-            if (file.equals(keepFile)) continue;
-            long length = file.length();
-            if (file.delete()) total -= length;
-        }
-    }
-
     private void downloadIfNeeded(Context context) {
         if (Boolean.TRUE.equals(IN_FLIGHT.putIfAbsent(assetName, Boolean.TRUE))) return;
         DOWNLOADS.execute(() -> {
@@ -146,7 +129,6 @@ public final class ExerciseGifView extends View {
                     trimCache(context, target);
                 }
                 loadFailed = movie == null;
-                if (movie != null) trimCache(context, target);
             } catch (Exception ignored) {
                 loadFailed = true;
             } finally {
