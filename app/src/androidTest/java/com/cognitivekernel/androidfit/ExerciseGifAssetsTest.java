@@ -38,7 +38,7 @@ public class ExerciseGifAssetsTest {
                 String[] fields = line.split("\\t", -1);
                 assertTrue("Catalogue row must have filename, name and source ID", fields.length == 3);
                 assertTrue("GIF filename must not be empty", !fields[0].trim().isEmpty());
-                assertTrue("GIF filename must be a basename", !fields[0].contains("/") && !fields[0].contains("\\\\"));
+                assertTrue("GIF filename must be a basename", !fields[0].contains("/") && fields[0].indexOf((char) 92) < 0);
                 assertTrue("Catalogue entry must reference a GIF", fields[0].toLowerCase(java.util.Locale.ROOT).endsWith(".gif"));
                 assertTrue("English name must not be empty", !fields[1].trim().isEmpty());
                 count++;
