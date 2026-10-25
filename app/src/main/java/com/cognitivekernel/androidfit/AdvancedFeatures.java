@@ -123,16 +123,22 @@ public final class AdvancedFeatures {
  }
 
  private static final class ExerciseLibraryRow{
-  final String englishName,file,sourceId,exerciseType,bodyPart,equipment,gender;
-  private volatile String persianName;
+  final String englishName,file,sourceId,gender;
+  private volatile String persianName,exerciseType,bodyPart,equipment;
   ExerciseLibraryRow(String englishName,String persianNameUnused,String file,String sourceId){
    this.englishName=englishName;this.file=file;this.sourceId=sourceId;
-   this.exerciseType=classifyExerciseType(englishName);
-   this.bodyPart=classifyBodyPart(englishName);
-   this.equipment=classifyEquipment(englishName);
    String lower=englishName.toLowerCase(Locale.ROOT);
    this.gender=containsAny(lower,"(female)"," female","female ")? "Female":
     (containsAny(lower,"(male)"," male","male ")?"Male":"All");
+  }
+  String exerciseType(){
+   String value=exerciseType;if(value==null){value=classifyExerciseType(englishName);exerciseType=value;}return value;
+  }
+  String bodyPart(){
+   String value=bodyPart;if(value==null){value=classifyBodyPart(englishName);bodyPart=value;}return value;
+  }
+  String equipment(){
+   String value=equipment;if(value==null){value=classifyEquipment(englishName);equipment=value;}return value;
   }
   String persianName(){
    String value=persianName;
@@ -370,27 +376,38 @@ public final class AdvancedFeatures {
   previewPanel.addView(selectedGif,new LinearLayout.LayoutParams(-1,(int)(132*density)));
   content.addView(previewPanel,new LinearLayout.LayoutParams(-1,(int)(168*density)));
 
+  final java.util.concurrent.atomic.AtomicInteger filterGeneration=new java.util.concurrent.atomic.AtomicInteger();
+  final boolean[] dialogDismissed={false};
   Runnable filterRows=()->{
    String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
    String type=EXERCISE_TYPES[typeSpinner.getSelectedItemPosition()<0?0:typeSpinner.getSelectedItemPosition()];
    String body=BODY_PARTS[bodySpinner.getSelectedItemPosition()<0?0:bodySpinner.getSelectedItemPosition()];
    String equipment=EQUIPMENT_TYPES[equipmentSpinner.getSelectedItemPosition()<0?0:equipmentSpinner.getSelectedItemPosition()];
    String gender=GENDER_TYPES[genderSpinner.getSelectedItemPosition()<0?0:genderSpinner.getSelectedItemPosition()];
+   int generation=filterGeneration.incrementAndGet();
 
    if(query.isEmpty()&&"All".equals(type)&&"All".equals(body)&&"All".equals(equipment)&&"All".equals(gender)){
     adapter.setRows(exercises);
     return;
    }
-   ArrayList<ExerciseLibraryRow> filtered=new ArrayList<>();
-   for(ExerciseLibraryRow row:exercises){
-    if(!"All".equals(type)&&!type.equals(row.exerciseType))continue;
-    if(!"All".equals(body)&&!body.equals(row.bodyPart))continue;
-    if(!"All".equals(equipment)&&!equipment.equals(row.equipment))continue;
-    if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
-    if(!query.isEmpty()&&!row.matchesSearch(query))continue;
-    filtered.add(row);
-   }
-   adapter.setRows(filtered);
+
+   // Filter potentially thousands of bundled GIF records off the UI thread.
+   LIBRARY_EXECUTOR.execute(()->{
+    ArrayList<ExerciseLibraryRow> filtered=new ArrayList<>();
+    for(int i=0;i<exercises.size();i++){
+     if(generation!=filterGeneration.get())return;
+     ExerciseLibraryRow row=exercises.get(i);
+     if(!"All".equals(type)&&!type.equals(row.exerciseType()))continue;
+     if(!"All".equals(body)&&!body.equals(row.bodyPart()))continue;
+     if(!"All".equals(equipment)&&!equipment.equals(row.equipment()))continue;
+     if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
+     if(!query.isEmpty()&&!row.matchesSearch(query))continue;
+     filtered.add(row);
+    }
+    new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+     if(!dialogDismissed[0]&&generation==filterGeneration.get())adapter.setRows(filtered);
+    });
+   });
   };
 
   android.widget.AdapterView.OnItemSelectedListener filterListener=new android.widget.AdapterView.OnItemSelectedListener(){
@@ -427,7 +444,7 @@ public final class AdvancedFeatures {
    selectedGif.setContentDescription(selected.displayName("en".equals(selectedLanguage())));
    selectedGif.setAssetName(selected.file);
   });
-  libraryDialog.setOnDismissListener(dialog->filterHandler.removeCallbacks(filterRows));
+  libraryDialog.setOnDismissListener(dialog->{dialogDismissed[0]=true;filterGeneration.incrementAndGet();filterHandler.removeCallbacks(filterRows);});
   libraryDialog.setOnShowListener(dialog->{
    android.view.Window window=libraryDialog.getWindow();
    if(window!=null){
