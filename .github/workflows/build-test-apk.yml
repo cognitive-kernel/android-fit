@@ -17,6 +17,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
@@ -30,21 +31,79 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            platform-tools
-            platforms;android-36
-            build-tools;36.0.0
+          packages: platform-tools
+
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Restore cached original signing key
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fit-yar-debug-signing-key-v2
+
+      - name: Verify and restore original signing key
+        shell: bash
+        env:
+          FIT_YAR_DEBUG_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_DEBUG_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
+          KEY="$HOME/.android/debug.keystore"
+          valid_key() {
+            [ -f "$1" ] && keytool -list -v -keystore "$1" -storepass android -alias androiddebugkey 2>/dev/null | grep -Fq "$EXPECTED_SHA256"
+          }
+          if ! valid_key "$KEY"; then
+            rm -f "$KEY"
+            for candidate in "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" "${ANDROID_KEYSTORE_BASE64:-}" "${KEYSTORE_BASE64:-}"; do
+              [ -n "$candidate" ] || continue
+              TEMP_KEY="$(mktemp)"
+              if printf '%s' "$candidate" | base64 --decode > "$TEMP_KEY" 2>/dev/null && valid_key "$TEMP_KEY"; then
+                mv "$TEMP_KEY" "$KEY"
+                break
+              fi
+              rm -f "$TEMP_KEY"
+            done
+          fi
+          if ! valid_key "$KEY"; then
+            echo "::error::The original signing key was not found. Refusing to publish an APK that could fail to update the installed app."
+            exit 1
+          fi
+          keytool -list -v -keystore "$KEY" -storepass android -alias androiddebugkey | grep -E 'SHA1:|SHA256:|Valid from:'
+
+      - name: Save verified signing key
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fit-yar-debug-signing-key-v2
 
       - name: Build test APK
+        shell: bash
         run: |
+          set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew assembleDebug
+          ./gradlew --no-daemon assembleDebug
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          test -s "$APK"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose --print-certs "$APK" | tee signature.txt
+          grep -F "Signer #1 certificate SHA-256 digest: 578264315217b79651a86f3607c6ec5a9c0a1785d461aad576a4cbeca4d36447" signature.txt
+          mkdir -p artifacts
+          cp "$APK" artifacts/android-fit-test.apk
+          cp signature.txt artifacts/signature.txt
+          sha256sum artifacts/android-fit-test.apk > artifacts/SHA256SUMS.txt
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: AndroidFit-test-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: artifacts/*
           if-no-files-found: error
           retention-days: 14
 
@@ -53,7 +112,11 @@ jobs:
         with:
           tag_name: test-apk
           name: AndroidFit Test APK
+          body: "Test APK signed only after verifying the registered certificate. SHA-256 is included in the assets."
           prerelease: true
           make_latest: false
           overwrite_files: true
-          files: app/build/outputs/apk/debug/*.apk
+          files: |
+            artifacts/android-fit-test.apk
+            artifacts/signature.txt
+            artifacts/SHA256SUMS.txt
