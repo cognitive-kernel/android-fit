@@ -23,11 +23,31 @@ tasks.register('prepareCoreExerciseGifs') {
         outputDir.mkdirs()
         coreGifAliases.each { sourceName, aliasName ->
             def source = new File(sourceDir, sourceName)
-            if (!source.isFile()) throw new GradleException("Missing core exercise GIF: $sourceName")
-            copy {
-                from source
-                into outputDir
-                rename { aliasName }
+            def target = new File(outputDir, aliasName)
+            if (source.isFile()) {
+                copy {
+                    from source
+                    into outputDir
+                    rename { aliasName }
+                }
+            } else {
+                // Sparse CI checkouts intentionally omit the full GIF catalogue.
+                // Fetch only the six small offline core GIFs needed by the APK.
+                def encoded = java.net.URLEncoder.encode(sourceName, 'UTF-8').replace('+', '%20')
+                def url = new URL("https://raw.githubusercontent.com/cognitive-kernel/android-fit/c3f658cf3329ece6d4231044c3d4e3ed72c54805/app/src/main/assets/exercises/" + encoded)
+                def connection = url.openConnection()
+                connection.setConnectTimeout(10000)
+                connection.setReadTimeout(20000)
+                connection.getInputStream().withCloseable { input ->
+                    target.withOutputStream { output -> input.transferTo(output) }
+                }
+            }
+            if (!target.isFile() || target.length() < 6) throw new GradleException("Missing or empty core exercise GIF: $sourceName")
+            def header = new byte[6]
+            target.withInputStream { input ->
+                if (input.read(header) != 6 || !(new String(header, 'US-ASCII').startsWith('GIF87a') || new String(header, 'US-ASCII').startsWith('GIF89a'))) {
+                    throw new GradleException("Invalid GIF data for core exercise: $sourceName")
+                }
             }
         }
     }
