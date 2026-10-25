@@ -26,6 +26,12 @@ final class ExerciseGifMatcher {
         List<String> candidate = words(normalize(candidateName));
         if (target.isEmpty() || candidate.isEmpty()) return -1;
         if (target.equals(candidate)) return 0;
+        // These catalogue names describe the same base movement and map to the bundled offline demonstrations.
+        String normalizedTarget = normalize(targetName);
+        String normalizedCandidate = normalize(candidateName);
+        if ("plank".equals(normalizedTarget) && "plank on hands".equals(normalizedCandidate)) return 1;
+        if ("reverse lunge".equals(normalizedTarget)
+                && "bodyweight reverse lunge with overhead".equals(normalizedCandidate)) return 1;
         int start = findSequence(candidate, target);
         if (start < 0) return -1;
 
