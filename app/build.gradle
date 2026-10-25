@@ -1,5 +1,8 @@
 plugins { id 'com.android.application' }
-def stableDebugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
+def stableDebugKeystore = file(System.getenv('FIT_YAR_SIGNING_KEYSTORE') ?: (System.getProperty("user.home") + "/.android/debug.keystore"))
+def stableDebugStorePassword = System.getenv('FIT_YAR_RELEASE_STORE_PASSWORD') ?: "android"
+def stableDebugKeyAlias = System.getenv('FIT_YAR_RELEASE_KEY_ALIAS') ?: "androiddebugkey"
+def stableDebugKeyPassword = System.getenv('FIT_YAR_RELEASE_KEY_PASSWORD') ?: "android"
 
 android {
     namespace 'com.cognitivekernel.androidfit'
@@ -7,9 +10,9 @@ android {
     signingConfigs {
         stableDebug {
             storeFile stableDebugKeystore
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
+            storePassword stableDebugStorePassword
+            keyAlias stableDebugKeyAlias
+            keyPassword stableDebugKeyPassword
         }
     }
     buildTypes {
