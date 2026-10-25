@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
+import androidx.test.espresso.RootMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
@@ -52,9 +53,9 @@ public class SmartGoalPlanSelectionTest {
             scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
             Espresso.onView(withText("سطح فعالیت روزانه")).perform(scrollTo()).check(matches(isDisplayed()));
             Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(scrollTo(), click());
-            Espresso.onView(withText("فعالیت کم")).perform(click());
+            Espresso.onView(withText("فعالیت کم")).inRoot(RootMatchers.isPlatformPopup()).perform(click());
             Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(scrollTo(), click());
-            Espresso.onView(withText("فعالیت متوسط")).perform(click());
+            Espresso.onView(withText("فعالیت متوسط")).inRoot(RootMatchers.isPlatformPopup()).perform(click());
             Espresso.onView(withText("فعالیت متوسط")).check(matches(isDisplayed()));
         } finally {
             prefs.edit().putString("language", previous).commit();
