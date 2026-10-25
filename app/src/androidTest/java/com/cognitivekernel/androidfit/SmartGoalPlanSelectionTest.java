@@ -14,6 +14,7 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
 
 @RunWith(AndroidJUnit4.class)
 public class SmartGoalPlanSelectionTest {
@@ -50,9 +51,11 @@ public class SmartGoalPlanSelectionTest {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
             Espresso.onView(withText("سطح فعالیت روزانه")).perform(scrollTo()).check(matches(isDisplayed()));
-            Espresso.onView(withText("فعالیت کم")).perform(scrollTo(), click());
+            Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(scrollTo(), click());
+            Espresso.onView(withText("فعالیت کم")).perform(click());
+            Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(scrollTo(), click());
             Espresso.onView(withText("فعالیت متوسط")).perform(click());
-            Espresso.onView(withText("فعالیت متوسط")).perform(scrollTo()).check(matches(isDisplayed()));
+            Espresso.onView(withText("فعالیت متوسط")).check(matches(isDisplayed()));
         } finally {
             prefs.edit().putString("language", previous).commit();
         }
