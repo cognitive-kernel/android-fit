@@ -51,50 +51,88 @@ public final class AdvancedFeatures {
  }
 
  public void showLibrary(){
-  final ArrayList<JSONObject> exercises=new ArrayList<>();
-  try(java.io.InputStream in=a.getAssets().open("exercises/exercise_catalog.json");
-      java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream()){
-   byte[] buffer=new byte[4096];int count;
-   while((count=in.read(buffer))!=-1)bytes.write(buffer,0,count);
-   JSONArray catalog=new JSONArray(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
-   for(int i=0;i<catalog.length();i++){JSONObject item=catalog.optJSONObject(i);if(item!=null&&item.optString("file","").matches("[0-9]+\\.gif"))exercises.add(item);}
-  }catch(Exception ignored){}
-  if(exercises.isEmpty()){
-   String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row")};
-   String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row")};
-   String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif"};
-   new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->showExerciseDetail(names[which],details[which],gifs[which],null)).setNegativeButton(android.R.string.cancel,null).show();return;
+  // Loading and translating a large catalog on the UI thread freezes the menu once
+  // thousands of exercises are bundled. Parse and prepare rows off the main thread.
+  final ProgressDialog loading = new ProgressDialog(a);
+  loading.setTitle(s("exercise_library"));
+  loading.setMessage(tr("Loading exercise library…","در حال بارگذاری کتابخانه حرکات…"));
+  loading.setIndeterminate(true);
+  loading.setCancelable(false);
+  loading.show();
+
+  final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
+  final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
+  worker.execute(() -> {
+   final ArrayList<ExerciseLibraryRow> rows = new ArrayList<>();
+   String loadError = null;
+   try(java.io.InputStream in=a.getAssets().open("exercises/exercise_catalog.json");
+       java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream()){
+    byte[] buffer=new byte[16384];int count;
+    while((count=in.read(buffer))!=-1)bytes.write(buffer,0,count);
+    JSONArray catalog=new JSONArray(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
+    for(int i=0;i<catalog.length();i++){
+     JSONObject item=catalog.optJSONObject(i);
+     if(item==null)continue;
+     String file=item.optString("file","");
+     if(!file.matches("(?i)[a-z0-9._-]+\\.gif"))continue;
+     String english=item.optString("name_en",item.optString("name",file));
+     String persian=item.optString("name_fa","");
+     String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
+     rows.add(new ExerciseLibraryRow(display,english,file,item.optString("source_id","")));
+    }
+   }catch(Exception ex){loadError=ex.getClass().getSimpleName();}
+   final String error=loadError;
+   main.post(() -> {
+    worker.shutdown();
+    if(a.isFinishing() || (Build.VERSION.SDK_INT>=17 && a.isDestroyed())){loading.dismiss();return;}
+    loading.dismiss();
+    if(error!=null) {
+     message(s("error"),tr("Could not load the exercise catalog.","بارگذاری فهرست حرکات انجام نشد."));
+     return;
+    }
+    if(rows.isEmpty()){
+     String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row")};
+     String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row")};
+     String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif"};
+     new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->showExerciseDetail(names[which],details[which],gifs[which],null)).setNegativeButton(android.R.string.cancel,null).show();
+     return;
+    }
+    showLoadedExerciseLibrary(rows);
+   });
+  });
+ }
+
+ private static final class ExerciseLibraryRow {
+  final String displayName, englishName, file, sourceId;
+  ExerciseLibraryRow(String displayName,String englishName,String file,String sourceId){
+   this.displayName=displayName;this.englishName=englishName;this.file=file;this.sourceId=sourceId;
   }
-  String[] names=new String[exercises.size()];
-   for(int i=0;i<exercises.size();i++){
-    JSONObject item=exercises.get(i);
-    String english=item.optString("name_en",item.optString("name",item.optString("file")));
-    String persian=item.optString("name_fa","");
-    names[i]="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
-   }
-  EditText search=new EditText(a);search.setSingleLine(true);search.setHint(tr("Search exercises","جست‌وجوی حرکت"));
-  ListView list=new ListView(a);ArrayAdapter<String> adapter=new ArrayAdapter<>(a,android.R.layout.simple_list_item_1,names);list.setAdapter(adapter);
-  LinearLayout content=column();content.addView(search);content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
-  search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){} public void onTextChanged(CharSequence text,int st,int before,int count){adapter.getFilter().filter(text);} public void afterTextChanged(android.text.Editable e){}});
+  @Override public String toString(){return displayName;}
+ }
+
+ private void showLoadedExerciseLibrary(ArrayList<ExerciseLibraryRow> exercises){
+  EditText search=new EditText(a);
+  search.setSingleLine(true);
+  search.setHint(tr("Search exercises","جست‌وجوی حرکت"));
+  ListView list=new ListView(a);
+  // ArrayAdapter filters its backing collection on a worker thread. Rows retain their
+  // original GIF filename, so duplicate translated names never select the wrong GIF.
+  ArrayAdapter<ExerciseLibraryRow> adapter=new ArrayAdapter<ExerciseLibraryRow>(a,android.R.layout.simple_list_item_1,exercises);
+  list.setAdapter(adapter);
+  LinearLayout content=column();
+  content.addView(search);
+  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
+  search.addTextChangedListener(new android.text.TextWatcher(){
+   public void beforeTextChanged(CharSequence s,int st,int count,int after){}
+   public void onTextChanged(CharSequence text,int st,int before,int count){adapter.getFilter().filter(text);}
+   public void afterTextChanged(android.text.Editable e){}
+  });
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{
-   String selected=adapter.getItem(position);
-   JSONObject match=null;
-   for(JSONObject item:exercises){
-    String english=item.optString("name_en",item.optString("name",item.optString("file")));
-    String persian=item.optString("name_fa","");
-    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
-    if(selected.equals(display)){match=item;break;}
-   }
-   if(match!=null){
-    String english=match.optString("name_en",match.optString("name",match.optString("file")));
-    String persian=match.optString("name_fa","");
-    String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
-    String gif=match.optString("file","");
-    String sourceId=match.optString("source_id","");
-    // Keep the library dialog alive underneath the GIF detail dialog.
-    // This preserves the current list, filter text, and scroll position.
-    showExerciseDetail(display,"",gif,sourceId,false);
+   ExerciseLibraryRow selected=adapter.getItem(position);
+   if(selected!=null){
+    // Leave the library dialog visible underneath details; this preserves query and scroll.
+    showExerciseDetail(selected.displayName,"",selected.file,selected.sourceId,false);
    }
   });
   libraryDialog.show();
