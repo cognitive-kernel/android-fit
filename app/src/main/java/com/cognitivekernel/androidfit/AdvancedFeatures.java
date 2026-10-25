@@ -123,12 +123,14 @@ public final class AdvancedFeatures {
  }
 
  private static final class ExerciseLibraryRow{
-  final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment;
+  final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment,gender;
   ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId){
    this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
    this.exerciseType=classifyExerciseType(englishName);
    this.bodyPart=classifyBodyPart(englishName);
    this.equipment=classifyEquipment(englishName);
+   String lower=englishName.toLowerCase(Locale.ROOT);
+   this.gender=containsAny(lower,"(male)"," male","male ","(female)"," female","female ")?(containsAny(lower,"(female)"," female","female ")?"Female":"Male"):"All";
   }
   String displayName(boolean english){return english?englishName:persianName;}
   @Override public String toString(){return englishName+" "+persianName;}
@@ -222,7 +224,9 @@ public final class AdvancedFeatures {
 
  private static final String[] EXERCISE_TYPES={"All","Strength","Aerobic","Stretching"};
  private static final String[] BODY_PARTS={"All","Back","Boxing","Calves","Cardio","Chest","Face","Feet","Forearms","Full body","Hands","Hips","Neck","Pilates","Plyometrics","Shoulders","Stretching","Thighs","Upper Arms","Waist","Weightlifting","Weightlifts","Yoga"};
- private static final String[] EQUIPMENT_TYPES={"All","Assisted","Band","Barbell","Battling Rope","Body weight","Bosu ball","Cable","Dumbbell","EZ Barbell","Hammer","Kettlebell","Leverage machine","Medicine Ball","Olympic barbell","Pilates Machine","Power Sled","Resistance Band","Roll","Rollball","Rope","Sled machine","Smith machine","Stability ball","Stick","Suspension","Trap bar","Vibrate Plate","Weighted"};
+ private static final String[] EQUIPMENT_TYPES={"All","Assisted","Band","Barbell","Battling Rope","Body weight","Bosu ball","Cable","Dumbbell","EZ Barbell","Hammer","Kettlebell","Leverage machine","Medicine Ball","Olympic barbell","Pilates Machine","Power Sled","Resistance Band","Roll","Rollball","Rope","Sled machine","Smith machine","Stability ball","Stick","Suspension","Trap bar","Vibrate Plate","Weighted","Wheel roller"};
+
+ private static final String[] GENDER_TYPES={"All","Male","Female"};
 
  private String categoryLabel(String key){
   if("All".equals(key))return tr("All","همه");
@@ -278,6 +282,9 @@ public final class AdvancedFeatures {
   if("Trap bar".equals(key))return tr("Trap bar","هالتر شش‌ضلعی");
   if("Vibrate Plate".equals(key))return tr("Vibrate Plate","صفحه لرزشی");
   if("Weighted".equals(key))return tr("Weighted","با وزنه");
+  if("Wheel roller".equals(key))return tr("Wheel roller","چرخ تمرین شکم");
+  if("Male".equals(key))return tr("Male","آقایان");
+  if("Female".equals(key))return tr("Female","بانوان");
   return key;
  }
 
@@ -307,6 +314,7 @@ public final class AdvancedFeatures {
   Spinner typeSpinner=makeCategorySpinner(EXERCISE_TYPES,tr("Exercise type","نوع حرکت"));
   Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body part","عضو بدن"));
   Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Equipment type","وسیله"));
+  Spinner genderSpinner=makeCategorySpinner(GENDER_TYPES,tr("Gender","جنسیت"));
   ListView list=new ListView(a);
   ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(exercises);
   LinearLayout content=column();
@@ -314,17 +322,20 @@ public final class AdvancedFeatures {
   content.addView(typeSpinner);
   content.addView(bodySpinner);
   content.addView(equipmentSpinner);
+  content.addView(genderSpinner);
   content.addView(list,new LinearLayout.LayoutParams(-1,(int)(390*a.getResources().getDisplayMetrics().density)));
   Runnable filterRows=()->{
    String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
    String type=EXERCISE_TYPES[typeSpinner.getSelectedItemPosition()];
    String body=BODY_PARTS[bodySpinner.getSelectedItemPosition()];
    String equipment=EQUIPMENT_TYPES[equipmentSpinner.getSelectedItemPosition()];
+   String gender=GENDER_TYPES[genderSpinner.getSelectedItemPosition()];
    ArrayList<ExerciseLibraryRow> filtered=new ArrayList<>();
    for(ExerciseLibraryRow row:exercises){
     if(!"All".equals(type)&&!type.equals(row.exerciseType))continue;
     if(!"All".equals(body)&&!body.equals(row.bodyPart))continue;
     if(!"All".equals(equipment)&&!equipment.equals(row.equipment))continue;
+    if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
     if(!query.isEmpty()&&!row.englishName.toLowerCase(Locale.ROOT).contains(query)&&!row.persianName.toLowerCase(Locale.ROOT).contains(query))continue;
     filtered.add(row);
    }
@@ -337,6 +348,7 @@ public final class AdvancedFeatures {
   typeSpinner.setOnItemSelectedListener(filterListener);
   bodySpinner.setOnItemSelectedListener(filterListener);
   equipmentSpinner.setOnItemSelectedListener(filterListener);
+  genderSpinner.setOnItemSelectedListener(filterListener);
   search.addTextChangedListener(new android.text.TextWatcher(){
    public void beforeTextChanged(CharSequence s,int st,int count,int after){}
    public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}
