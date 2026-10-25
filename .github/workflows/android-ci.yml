@@ -8,8 +8,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: android-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
-  cancel-in-progress: false
+  # Keep only the newest run for a branch/PR; parallel emulator runs have made ADB unstable.
+  group: android-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   unit-tests-and-lint:
