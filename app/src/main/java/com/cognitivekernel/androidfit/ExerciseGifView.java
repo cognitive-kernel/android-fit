@@ -36,6 +36,12 @@ public final class ExerciseGifView extends View {
     private static final long MAX_CACHE_BYTES = 128L * 1024L * 1024L;
     private static final ExecutorService DOWNLOADS = Executors.newFixedThreadPool(2);
     private static final ConcurrentHashMap<String, Boolean> IN_FLIGHT = new ConcurrentHashMap<>();
+    private static volatile boolean animationPlaybackEnabled = true;
+
+    /** Disables continuous frame invalidation in instrumentation tests so Espresso can synchronize. */
+    static void setAnimationPlaybackEnabledForTests(boolean enabled) {
+        animationPlaybackEnabled = enabled;
+    }
 
     private volatile Movie movie;
     private final long startedAt;
@@ -249,6 +255,6 @@ public final class ExerciseGifView extends View {
         current.setTime((int) ((SystemClock.uptimeMillis() - startedAt) % duration));
         current.draw(canvas, 0, 0);
         canvas.restore();
-        postInvalidateOnAnimation();
+        if (animationPlaybackEnabled) postInvalidateOnAnimation();
     }
 }
