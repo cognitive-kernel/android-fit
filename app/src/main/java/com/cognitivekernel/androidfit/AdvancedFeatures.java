@@ -545,7 +545,8 @@ public final class AdvancedFeatures {
   l.addView(label(tg("Nutrition preference","ترجیح غذایی")));l.addView(diet);
   l.addView(label(tg("Sex for calorie estimate","جنسیت برای تخمین کالری")));l.addView(sex);
   l.addView(days);l.addView(minutes);l.addView(age);l.addView(height);l.addView(weight);
-  new AlertDialog.Builder(a).setTitle(tg("Smart goal, training & nutrition planner","برنامه‌ریز هوشمند هدف، تمرین و تغذیه")).setView(l).setPositiveButton(tg("Build and save plan","ساخت و ذخیره برنامه"),(d,w)->{
+  ScrollView plannerScroll=new ScrollView(a);plannerScroll.addView(l);
+  new AlertDialog.Builder(a).setTitle(tg("Smart goal, training & nutrition planner","برنامه‌ریز هوشمند هدف، تمرین و تغذیه")).setView(plannerScroll).setPositiveButton(tg("Build and save plan","ساخت و ذخیره برنامه"),(d,w)->{
    long planId=-1;
    try{
     int years=parseLocalizedInt(age.getText().toString());
