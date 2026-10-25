@@ -105,7 +105,7 @@ public final class ExerciseGifView extends View {
                 connection.setRequestProperty("User-Agent", "FitYar-Exercise-Library");
                 connection.connect();
                 if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) throw new IllegalStateException("GIF not found");
-                temporary = File.createTempFile("exercise-", ".gif", parent);
+                temporary = File.createTempFile("exercise-", ".download", parent);
                 try (InputStream in = connection.getInputStream(); FileOutputStream out = new FileOutputStream(temporary)) {
                     byte[] buffer = new byte[16384];
                     int count;
@@ -142,12 +142,12 @@ public final class ExerciseGifView extends View {
         File[] files = root.listFiles();
         if (files == null) return;
         long total = 0;
-        for (File file : files) if (file.isFile()) total += file.length();
+        for (File file : files) if (file.isFile() && file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".gif")) total += file.length();
         if (total <= MAX_CACHE_BYTES) return;
         java.util.Arrays.sort(files, (left, right) -> Long.compare(left.lastModified(), right.lastModified()));
         for (File file : files) {
             if (total <= MAX_CACHE_BYTES) break;
-            if (!file.isFile() || file.equals(keep)) continue;
+            if (!file.isFile() || !file.getName().toLowerCase(java.util.Locale.ROOT).endsWith(".gif") || file.equals(keep)) continue;
             long size = file.length();
             if (file.delete()) total -= size;
         }
