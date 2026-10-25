@@ -22,12 +22,6 @@ jobs:
           sparse-checkout: |
             /**
             !/app/src/main/assets/exercises/*.gif
-            /app/src/main/assets/exercises/Air Squat (VERSION 2)_[471413].gif
-            /app/src/main/assets/exercises/Push-up_[288113].gif
-            /app/src/main/assets/exercises/Bodyweight Reverse Lunge with Overhead..._[655113].gif
-            /app/src/main/assets/exercises/Plank on Hands_[515913].gif
-            /app/src/main/assets/exercises/Band Bent Over Wide Grip Row (male)_[445213].gif
-            /app/src/main/assets/exercises/Briskly Walking_[300413].gif
           sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
@@ -55,12 +49,6 @@ jobs:
           sparse-checkout: |
             /**
             !/app/src/main/assets/exercises/*.gif
-            /app/src/main/assets/exercises/Air Squat (VERSION 2)_[471413].gif
-            /app/src/main/assets/exercises/Push-up_[288113].gif
-            /app/src/main/assets/exercises/Bodyweight Reverse Lunge with Overhead..._[655113].gif
-            /app/src/main/assets/exercises/Plank on Hands_[515913].gif
-            /app/src/main/assets/exercises/Band Bent Over Wide Grip Row (male)_[445213].gif
-            /app/src/main/assets/exercises/Briskly Walking_[300413].gif
           sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
@@ -124,12 +112,6 @@ jobs:
           sparse-checkout: |
             /**
             !/app/src/main/assets/exercises/*.gif
-            /app/src/main/assets/exercises/Air Squat (VERSION 2)_[471413].gif
-            /app/src/main/assets/exercises/Push-up_[288113].gif
-            /app/src/main/assets/exercises/Bodyweight Reverse Lunge with Overhead..._[655113].gif
-            /app/src/main/assets/exercises/Plank on Hands_[515913].gif
-            /app/src/main/assets/exercises/Band Bent Over Wide Grip Row (male)_[445213].gif
-            /app/src/main/assets/exercises/Briskly Walking_[300413].gif
           sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
@@ -221,12 +203,6 @@ jobs:
           sparse-checkout: |
             /**
             !/app/src/main/assets/exercises/*.gif
-            /app/src/main/assets/exercises/Air Squat (VERSION 2)_[471413].gif
-            /app/src/main/assets/exercises/Push-up_[288113].gif
-            /app/src/main/assets/exercises/Bodyweight Reverse Lunge with Overhead..._[655113].gif
-            /app/src/main/assets/exercises/Plank on Hands_[515913].gif
-            /app/src/main/assets/exercises/Band Bent Over Wide Grip Row (male)_[445213].gif
-            /app/src/main/assets/exercises/Briskly Walking_[300413].gif
           sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
@@ -292,12 +268,6 @@ jobs:
           sparse-checkout: |
             /**
             !/app/src/main/assets/exercises/*.gif
-            /app/src/main/assets/exercises/Air Squat (VERSION 2)_[471413].gif
-            /app/src/main/assets/exercises/Push-up_[288113].gif
-            /app/src/main/assets/exercises/Bodyweight Reverse Lunge with Overhead..._[655113].gif
-            /app/src/main/assets/exercises/Plank on Hands_[515913].gif
-            /app/src/main/assets/exercises/Band Bent Over Wide Grip Row (male)_[445213].gif
-            /app/src/main/assets/exercises/Briskly Walking_[300413].gif
           sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
