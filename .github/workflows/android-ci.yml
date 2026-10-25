@@ -78,7 +78,7 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
             # Emulator runners can occasionally report "offline" after the boot action.
             # Wait for both ADB connectivity and Android's completed-boot property before install.
             ready=false
