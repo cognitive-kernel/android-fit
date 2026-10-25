@@ -485,7 +485,7 @@ public final class AdvancedFeatures {
     double cm=parseLocalizedDouble(height.getText().toString()),kg=parseLocalizedDouble(weight.getText().toString());
     int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());
     if(years<18||years>100||cm<120||cm>230||kg<30||kg>300||n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
-    int g=goal.getSelectedItemPosition(),r=region.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition(),lvl=level.getSelectedItemPosition(),eq=equipment.getSelectedItemPosition(),veg=diet.getSelectedItemPosition()==1;
+    int g=goal.getSelectedItemPosition(),r=region.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition(),lvl=level.getSelectedItemPosition(),eq=equipment.getSelectedItemPosition();boolean veg=diet.getSelectedItemPosition()==1;
     double bmi=kg/((cm/100.0)*(cm/100.0));
     double bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161);
     double maintenance=bmr*(act==0?1.35:act==1?1.55:1.725);
