@@ -33,6 +33,7 @@ public final class ExerciseGifView extends View {
     private static final String CATALOG_COMMIT = "c3f658cf3329ece6d4231044c3d4e3ed72c54805";
     private static final String RAW_BASE = "https://raw.githubusercontent.com/cognitive-kernel/android-fit/"
             + CATALOG_COMMIT + "/app/src/main/assets/exercises/";
+    private static final long MAX_CACHE_BYTES = 128L * 1024L * 1024L;
     private static final ExecutorService DOWNLOADS = Executors.newFixedThreadPool(2);
     private static final ConcurrentHashMap<String, Boolean> IN_FLIGHT = new ConcurrentHashMap<>();
 
@@ -58,6 +59,7 @@ public final class ExerciseGifView extends View {
             if (cached.isFile()) {
                 try (InputStream in = new FileInputStream(cached)) {
                     decoded = Movie.decodeStream(in);
+                    if (decoded != null) cached.setLastModified(System.currentTimeMillis());
                 } catch (Exception ignored) { }
             }
         }
@@ -119,6 +121,7 @@ public final class ExerciseGifView extends View {
                 if (!temporary.renameTo(target)) throw new IllegalStateException("Cannot save GIF");
                 try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
                 loadFailed = movie == null;
+                if (movie != null) trimCache(context, target);
             } catch (Exception ignored) {
                 loadFailed = true;
             } finally {
@@ -132,6 +135,22 @@ public final class ExerciseGifView extends View {
                 });
             }
         });
+    }
+
+    private static void trimCache(Context context, File keep) {
+        File root = new File(context.getCacheDir(), "exercise-gifs");
+        File[] files = root.listFiles();
+        if (files == null) return;
+        long total = 0;
+        for (File file : files) if (file.isFile()) total += file.length();
+        if (total <= MAX_CACHE_BYTES) return;
+        java.util.Arrays.sort(files, (left, right) -> Long.compare(left.lastModified(), right.lastModified()));
+        for (File file : files) {
+            if (total <= MAX_CACHE_BYTES) break;
+            if (!file.isFile() || file.equals(keep)) continue;
+            long size = file.length();
+            if (file.delete()) total -= size;
+        }
     }
 
     private void showFullScreen() {
