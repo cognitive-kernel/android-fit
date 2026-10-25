@@ -123,16 +123,91 @@ public final class AdvancedFeatures {
  }
 
  private static final class ExerciseLibraryRow{
-  final String englishName,persianName,file,sourceId;
+  final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment;
   ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId){
    this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
+   this.exerciseType=classifyExerciseType(englishName);
+   this.bodyPart=classifyBodyPart(englishName);
+   this.equipment=classifyEquipment(englishName);
   }
   String displayName(boolean english){return english?englishName:persianName;}
   @Override public String toString(){return englishName+" "+persianName;}
  }
 
+ private static String classifyExerciseType(String name){
+  String n=name.toLowerCase(Locale.ROOT);
+  if(containsAny(n,"stretch","mobility","flexibility","warm-up","warm up","cool-down","cool down","prasarita","vajrasana","pose","yoga"))return "Stretching";
+  if(containsAny(n,"sprint","jog","run ","running","jump rope","jumping jack","burpee","mountain climber","high knees","skipping","cardio","aerobic","cycling","bike","treadmill","shadow boxing"))return "Aerobic";
+  return "Strength";
+ }
+
+ private static String classifyBodyPart(String name){
+  String n=name.toLowerCase(Locale.ROOT);
+  if(containsAny(n,"yoga","vajrasana","prasarita","pilates"))return containsAny(n,"pilates")?"Pilates":"Yoga";
+  if(containsAny(n,"boxing","punch","jab ","hook punch"))return "Boxing";
+  if(containsAny(n,"neck","cervical"))return "Neck";
+  if(containsAny(n,"forearm","wrist","radial deviator","ulnar deviator"))return "Forearms";
+  if(containsAny(n,"finger","hand grip","wrist circles","wrist roller","hand "))return "Hands";
+  if(containsAny(n,"ankle","toe ","toes","foot","feet","plantar"))return "Feet";
+  if(containsAny(n,"calf","calves","calf raise"))return "Calves";
+  if(containsAny(n,"shoulder","deltoid","rotator cuff","lateral raise","front raise","rear delt"))return "Shoulders";
+  if(containsAny(n,"triceps","biceps","upper arm","preacher curl","hammer curl","arm curl","pushdown","push down"))return "Upper Arms";
+  if(containsAny(n,"chest","pectoral","pec deck","bench press","push-up","push up","pushup","chest fly"))return "Chest";
+  if(containsAny(n,"lat ","lat pulldown","pulldown","pull-up","pull up","pullup","chin-up","chin up","deadlift","back extension","back row","seated row","bent over row","renegade row","face pull","shrug","trapezius","rhomboid"))return "Back";
+  if(containsAny(n,"hip","glute","gluteal","butt","thrust","abductor","adductor","clamshell"))return "Hips";
+  if(containsAny(n,"squat","lunge","leg press","leg extension","leg curl","hamstring","quadriceps","quad ","thigh","step-up","step up","split squat","leg raise","knee extension"))return "Thighs";
+  if(containsAny(n,"abdominal","ab crunch","crunch","sit-up","sit up","plank","oblique","waist","russian twist","bicycle crunch","hollow body","wipers","woodchop","wood chop"))return "Waist";
+  if(containsAny(n,"jump","hop","plyometric","box drill","cone drill","zigzag","zig zag","agility","sprint"))return "Plyometrics";
+  if(containsAny(n,"full body","thruster","clean and press","burpee","turkish get-up","turkish get up"))return "Full body";
+  if(containsAny(n,"snatch","clean and jerk","weightlifting","power clean","jerk"))return "Weightlifting";
+  if(containsAny(n,"stretch","mobility","flexibility"))return "Stretching";
+  if(containsAny(n,"cardio","running","run ","jog","cycling","bike","treadmill","jump rope","jumping jack","high knees"))return "Cardio";
+  if(containsAny(n,"face","jaw"))return "Face";
+  return "Full body";
+ }
+
+ private static String classifyEquipment(String name){
+  String n=name.toLowerCase(Locale.ROOT);
+  if(containsAny(n,"ez-bar","ez bar","ez-barbell"))return "EZ Barbell";
+  if(containsAny(n,"smith machine","smith"))return "Smith machine";
+  if(containsAny(n,"kettlebell","kettle bell"))return "Kettlebell";
+  if(containsAny(n,"dumbbell","dumbell","db "))return "Dumbbell";
+  if(containsAny(n,"barbell","barbell","olympic bar","straight bar","ez bar","ez-bar"))return "Barbell";
+  if(containsAny(n,"trap bar","hex bar"))return "Trap bar";
+  if(containsAny(n,"cable","pulley","pushdown","push down"))return "Cable";
+  if(containsAny(n,"resistance band","theraband","mini band","loop band"))return "Resistance Band";
+  if(containsAny(n,"band"))return "Band";
+  if(containsAny(n,"medicine ball","med ball"))return "Medicine Ball";
+  if(containsAny(n,"stability ball","swiss ball","exercise ball","physio ball"))return "Stability ball";
+  if(containsAny(n,"bosu"))return "Bosu ball";
+  if(containsAny(n,"battle rope","battling rope"))return "Battling Rope";
+  if(containsAny(n,"rope","jump rope","skipping rope"))return "Rope";
+  if(containsAny(n,"power sled"))return "Power Sled";
+  if(containsAny(n,"sled"))return "Sled machine";
+  if(containsAny(n,"suspension","trx"))return "Suspension";
+  if(containsAny(n,"foam roll","foam roller","roller"))return "Roll";
+  if(containsAny(n,"rollball","massage ball"))return "Rollball";
+  if(containsAny(n,"leverage machine","leg press machine","machine","machine press","pec deck"))return "Leverage machine";
+  if(containsAny(n,"stick","dowel"))return "Stick";
+  if(containsAny(n,"vibration plate","vibrate plate"))return "Vibrate Plate";
+  if(containsAny(n,"weighted","weight vest","weighted vest"))return "Weighted";
+  if(containsAny(n,"hammer"))return "Hammer";
+  if(containsAny(n,"pilates"))return "Pilates Machine";
+  if(containsAny(n,"assisted"))return "Assisted";
+  if(containsAny(n,"weightlift","snatch","clean and jerk"))return "Olympic barbell";
+  if(containsAny(n,"bodyweight","body weight","push-up","push up","pushup","pull-up","pull up","pullup","squat","lunge","plank","stretch","jump","run","walk","sit-up","sit up","crunch"))return "Body weight";
+  return "Body weight";
+ }
+
+ private static boolean containsAny(String value,String... terms){
+  for(String term:terms)if(value.contains(term))return true;
+  return false;
+ }
+
  private final class ExerciseLibraryAdapter extends ArrayAdapter<ExerciseLibraryRow>{
-  ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> rows){super(a,android.R.layout.simple_list_item_1,rows);}
+  private final ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
+  ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> initial){super(a,android.R.layout.simple_list_item_1,new ArrayList<>());setRows(initial);}
+  void setRows(List<ExerciseLibraryRow> values){rows.clear();rows.addAll(values);clear();addAll(values);}
   @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
    TextView text=convertView instanceof TextView?(TextView)convertView:new TextView(a);
    int padding=(int)(16*a.getResources().getDisplayMetrics().density);
@@ -145,6 +220,82 @@ public final class AdvancedFeatures {
   }
  }
 
+ private static final String[] EXERCISE_TYPES={"All","Strength","Aerobic","Stretching"};
+ private static final String[] BODY_PARTS={"All","Back","Boxing","Calves","Cardio","Chest","Face","Feet","Forearms","Full body","Hands","Hips","Neck","Pilates","Plyometrics","Shoulders","Stretching","Thighs","Upper Arms","Waist","Weightlifting","Weightlifts","Yoga"};
+ private static final String[] EQUIPMENT_TYPES={"All","Assisted","Band","Barbell","Battling Rope","Body weight","Bosu ball","Cable","Dumbbell","EZ Barbell","Hammer","Kettlebell","Leverage machine","Medicine Ball","Olympic barbell","Pilates Machine","Power Sled","Resistance Band","Roll","Rollball","Rope","Sled machine","Smith machine","Stability ball","Stick","Suspension","Trap bar","Vibrate Plate","Weighted"};
+
+ private String categoryLabel(String key){
+  if("All".equals(key))return tr("All","همه");
+  if("Strength".equals(key))return tr("Strength","قدرتی");
+  if("Aerobic".equals(key))return tr("Aerobic","هوازی");
+  if("Stretching".equals(key))return tr("Stretching","کشش و انعطاف");
+  if("Back".equals(key))return tr("Back","پشت");
+  if("Boxing".equals(key))return tr("Boxing","بوکس");
+  if("Calves".equals(key))return tr("Calves","ساق پا");
+  if("Cardio".equals(key))return tr("Cardio","قلبی‌عروقی");
+  if("Chest".equals(key))return tr("Chest","سینه");
+  if("Face".equals(key))return tr("Face","صورت");
+  if("Feet".equals(key))return tr("Feet","پا و کف پا");
+  if("Forearms".equals(key))return tr("Forearms","ساعد");
+  if("Full body".equals(key))return tr("Full body","کل بدن");
+  if("Hands".equals(key))return tr("Hands","دست‌ها");
+  if("Hips".equals(key))return tr("Hips","لگن و باسن");
+  if("Neck".equals(key))return tr("Neck","گردن");
+  if("Pilates".equals(key))return tr("Pilates","پیلاتس");
+  if("Plyometrics".equals(key))return tr("Plyometrics","پلایومتریک");
+  if("Shoulders".equals(key))return tr("Shoulders","سرشانه");
+  if("Thighs".equals(key))return tr("Thighs","ران");
+  if("Upper Arms".equals(key))return tr("Upper Arms","بازو");
+  if("Waist".equals(key))return tr("Waist","شکم و کمر");
+  if("Weightlifting".equals(key))return tr("Weightlifting","وزنه‌برداری");
+  if("Weightlifts".equals(key))return tr("Weightlifts","حرکات وزنه‌برداری");
+  if("Yoga".equals(key))return tr("Yoga","یوگا");
+  if("Assisted".equals(key))return tr("Assisted","با کمک");
+  if("Band".equals(key))return tr("Band","کش");
+  if("Barbell".equals(key))return tr("Barbell","هالتر");
+  if("Battling Rope".equals(key))return tr("Battling Rope","طناب بتل");
+  if("Body weight".equals(key))return tr("Body weight","وزن بدن");
+  if("Bosu ball".equals(key))return tr("Bosu ball","توپ بوسو");
+  if("Cable".equals(key))return tr("Cable","سیم‌کش");
+  if("Dumbbell".equals(key))return tr("Dumbbell","دمبل");
+  if("EZ Barbell".equals(key))return tr("EZ Barbell","هالتر خمیده");
+  if("Hammer".equals(key))return tr("Hammer","چکشی");
+  if("Kettlebell".equals(key))return tr("Kettlebell","کتل‌بل");
+  if("Leverage machine".equals(key))return tr("Leverage machine","دستگاه اهرمی");
+  if("Medicine Ball".equals(key))return tr("Medicine Ball","توپ پزشکی");
+  if("Olympic barbell".equals(key))return tr("Olympic barbell","هالتر المپیکی");
+  if("Pilates Machine".equals(key))return tr("Pilates Machine","دستگاه پیلاتس");
+  if("Power Sled".equals(key))return tr("Power Sled","سورتمه قدرتی");
+  if("Resistance Band".equals(key))return tr("Resistance Band","کش مقاومتی");
+  if("Roll".equals(key))return tr("Roll","فوم رول");
+  if("Rollball".equals(key))return tr("Rollball","توپ ماساژ");
+  if("Rope".equals(key))return tr("Rope","طناب");
+  if("Sled machine".equals(key))return tr("Sled machine","دستگاه سورتمه");
+  if("Smith machine".equals(key))return tr("Smith machine","دستگاه اسمیت");
+  if("Stability ball".equals(key))return tr("Stability ball","توپ تعادلی");
+  if("Stick".equals(key))return tr("Stick","چوب");
+  if("Suspension".equals(key))return tr("Suspension","تی‌آر‌ایکس و تعلیقی");
+  if("Trap bar".equals(key))return tr("Trap bar","هالتر شش‌ضلعی");
+  if("Vibrate Plate".equals(key))return tr("Vibrate Plate","صفحه لرزشی");
+  if("Weighted".equals(key))return tr("Weighted","با وزنه");
+  return key;
+ }
+
+ private Spinner makeCategorySpinner(String[] values,String hint){
+  String[] labels=new String[values.length];
+  for(int i=0;i<values.length;i++)labels[i]=categoryLabel(values[i]);
+  Spinner spinner=new Spinner(a);
+  spinner.setAdapter(new ArrayAdapter<String>(a,android.R.layout.simple_spinner_dropdown_item,labels){
+   @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
+    TextView view=(TextView)super.getView(position,convertView,parent);
+    view.setText(labels[position]);view.setSingleLine(true);view.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    return view;
+   }
+  });
+  spinner.setPrompt(hint);
+  return spinner;
+ }
+
  private void showLoadedExerciseLibrary(ArrayList<ExerciseLibraryRow> exercises){
   if(exercises==null||exercises.isEmpty()){
    message(s("exercise_library"),tr("No GIF exercises were found in the exercise assets.","هیچ فایل GIF در پوشه حرکات پیدا نشد."));
@@ -153,15 +304,42 @@ public final class AdvancedFeatures {
   EditText search=new EditText(a);
   search.setSingleLine(true);
   search.setHint(tr("Search in Persian or English","جست‌وجو به فارسی یا انگلیسی"));
+  Spinner typeSpinner=makeCategorySpinner(EXERCISE_TYPES,tr("Exercise type","نوع حرکت"));
+  Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body part","عضو بدن"));
+  Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Equipment type","وسیله"));
   ListView list=new ListView(a);
   ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(exercises);
-  list.setAdapter(adapter);
   LinearLayout content=column();
   content.addView(search);
-  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
+  content.addView(typeSpinner);
+  content.addView(bodySpinner);
+  content.addView(equipmentSpinner);
+  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(390*a.getResources().getDisplayMetrics().density)));
+  Runnable filterRows=()->{
+   String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
+   String type=EXERCISE_TYPES[typeSpinner.getSelectedItemPosition()];
+   String body=BODY_PARTS[bodySpinner.getSelectedItemPosition()];
+   String equipment=EQUIPMENT_TYPES[equipmentSpinner.getSelectedItemPosition()];
+   ArrayList<ExerciseLibraryRow> filtered=new ArrayList<>();
+   for(ExerciseLibraryRow row:exercises){
+    if(!"All".equals(type)&&!type.equals(row.exerciseType))continue;
+    if(!"All".equals(body)&&!body.equals(row.bodyPart))continue;
+    if(!"All".equals(equipment)&&!equipment.equals(row.equipment))continue;
+    if(!query.isEmpty()&&!row.englishName.toLowerCase(Locale.ROOT).contains(query)&&!row.persianName.toLowerCase(Locale.ROOT).contains(query))continue;
+    filtered.add(row);
+   }
+   adapter.setRows(filtered);
+  };
+  android.widget.AdapterView.OnItemSelectedListener filterListener=new android.widget.AdapterView.OnItemSelectedListener(){
+   public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){filterRows.run();}
+   public void onNothingSelected(android.widget.AdapterView<?> parent){}
+  };
+  typeSpinner.setOnItemSelectedListener(filterListener);
+  bodySpinner.setOnItemSelectedListener(filterListener);
+  equipmentSpinner.setOnItemSelectedListener(filterListener);
   search.addTextChangedListener(new android.text.TextWatcher(){
    public void beforeTextChanged(CharSequence s,int st,int count,int after){}
-   public void onTextChanged(CharSequence text,int st,int before,int count){adapter.getFilter().filter(text);}
+   public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}
    public void afterTextChanged(android.text.Editable e){}
   });
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
