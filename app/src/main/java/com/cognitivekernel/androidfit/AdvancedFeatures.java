@@ -577,6 +577,13 @@ public final class AdvancedFeatures {
       else if(ex[0].equals(tg("Row","پارویی")))ex[0]=tg("Backpack row","پارویی با کوله‌پشتی");
      }
     }
+    ArrayList<String[]> uniqueMovements=new ArrayList<>();
+    HashSet<String> finalMovementKeys=new HashSet<>();
+    for(String[] movement:movementList){
+     String key=movement[0].toLowerCase(Locale.ROOT).replaceAll("\\s+"," ").trim();
+     if(finalMovementKeys.add(key))uniqueMovements.add(movement);
+    }
+    movementList=uniqueMovements;
     int setsBase=lvl==0?2:lvl==1?3:4;
     int repsBase=g==0?12:g==1?10:8;
     String planName=tg("Smart plan","برنامه هوشمند")+" - "+goal.getSelectedItem()+" - "+area;
