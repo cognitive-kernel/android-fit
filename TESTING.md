@@ -17,6 +17,8 @@ The GitHub Actions workflow runs these checks on the latest commit:
    - Additive migration from historical database schemas v1, v2, and v3 without losing records.
    - Selective backup export and restoration of workout data without overwriting unrelated health records.
    - Legacy SQLite backup validation: valid FitYar schema accepted; corrupt, unrelated, and newer-version databases rejected.
+   - Conservative exercise GIF matching: exact matches and safe equipment/position variants are accepted; unrelated variants are rejected.
+   - All six bundled core GIFs decode and animate; the bundled GymVisual index contains 6,500+ entries.
 
 ## Local commands
 
@@ -37,7 +39,7 @@ The app exports a versioned UTF-8 JSON backup. The user can select workout plans
 
 ## Update-safety rule
 
-Do not uninstall the existing app to bypass a signature conflict. Before installing an APK over an existing FitYar installation, compare its signer certificate with the installed version and confirm the new version code is not lower. The CI key is not the same as some older automatically signed artifacts; see [ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md). Never replace or regenerate the registered key silently.
+Do not uninstall the existing app to bypass a signature conflict. Before installing an APK over an existing FitYar installation, compare its signer certificate with the installed version and confirm the new version code is not lower. The CI key is not the same as some older automatically signed artifacts; see [ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md). Never replace or regenerate the registered key silently. The GymVisual catalogue is indexed locally but its 6,500+ GIFs are fetched on demand from the pinned source commit and cached; only six core GIFs are bundled in the APK.
 
 
 ## آزمون دستی روی گوشی واقعی (نسخهٔ آزمایشی مستقل)
@@ -45,7 +47,10 @@ Do not uninstall the existing app to bypass a signature conflict. Before install
 این چک‌لیست برای APK با شناسهٔ بستهٔ `com.cognitivekernel.androidfit.test2` است؛ این نسخه در کنار نسخهٔ اصلی نصب می‌شود و نتیجهٔ آن، سازگاری امضای APK اصلی یا مهاجرت داده‌های برنامهٔ اصلی را ثابت نمی‌کند.
 
 1. **نصب و شروع:** APK را نصب کنید، برنامه را باز کنید و صفحهٔ اصلی را در حالت فارسی و انگلیسی بررسی کنید.
-2. **GIFها:** کتابخانهٔ حرکات را باز کنید؛ هر شش حرکت اسکوات، شنا، لانج، پلانک، پارویی و راه‌رفتن را جداگانه باز کنید. بررسی کنید تصویر حرکت می‌کند، تصویر بریده یا خالی نیست و بدون اینترنت هم نمایش داده می‌شود.
+2. **GIFهای پایه و کتابخانه:** شش GIF پایهٔ اسکوات، شنا، لانج، پلانک، پارویی و راه‌رفتن باید بدون اینترنت پخش شوند. فهرست GymVisual باید بیش از ۶۵۰۰ حرکت را بدون فیلتر نشان دهد؛ فیلترهای نوع حرکت، عضو بدن، وسیله، جنسیت و جست‌وجوی فارسی/انگلیسی باید فهرست را در همان پنجره به‌روز کنند.
+3. **دانلود و cache:** با اینترنت یک GIF از کاتالوگ را باز کنید؛ نمایش «در حال بارگذاری» باید به GIF متحرک تبدیل شود. سپس اینترنت را خاموش کنید و همان GIF cacheشده را دوباره باز کنید. GIFهای دانلودنشده در حالت آفلاین باید پیام روشن بدهند، نه تصویر اشتباه.
+4. **بزرگ‌نمایی:** روی GIF محلی و GIF دانلودشده بزنید؛ نمایش تمام‌صفحه باید نسبت تصویر را حفظ کند. لمس GIF بزرگ یا × باید به جزئیات همان حرکت برگرداند.
+5. **تطبیق برنامه:** برای هر حرکت برنامه دکمهٔ نمایش GIF را بزنید. فقط حرکت دقیق یا گونهٔ مرتبط نمایش داده شود؛ اگر تطبیق مطمئن نیست، باید پیام عدم تطبیق نشان داده شود.
 3. **ثبت تمرین:** یک برنامه و تمرین آزمایشی بسازید، یک رکورد ثبت کنید، برنامه را ببندید و دوباره باز کنید؛ رکورد باید باقی بماند.
 4. **پشتیبان‌گیری انتخابی و بازیابی:** در بخش پشتیبان‌گیری ابتدا فقط «برنامه‌ها و سوابق تمرین» را انتخاب کنید و فایل JSON بسازید؛ بررسی کنید فایل فقط بخش انتخاب‌شده را دارد. یک برنامه و رکورد آزمایشی تازه بسازید، فایل را بازیابی کنید و تأیید کنید داده‌های تمرین به وضعیت زمان پشتیبان برمی‌گردند ولی سوابق سلامت، قدم‌شمار و تنظیمات تغییر نمی‌کنند. سپس همین آزمون را جداگانه برای «سوابق سلامت»، «سوابق قدم‌شمار» و «تنظیمات برنامه» انجام دهید. در صفحهٔ بازیابی نیز فقط یک بخش از فایل چندبخشی را انتخاب کنید و تأیید کنید بقیهٔ بخش‌ها دست‌نخورده می‌مانند. آزمون جایگزینی داده‌ها را فقط در نسخهٔ آزمایشی انجام دهید.
 5. **فایل نامعتبر، لغو و پشتیبان قدیمی:** فایل خالی، JSON ناقص و فایل با نسخهٔ پشتیبان ناشناخته را انتخاب کنید؛ برنامه نباید داده‌های موجود را پاک کند. در انتخاب فایل و تأیید بازیابی نیز لغو را آزمایش کنید. برای فایل قدیمی SQLite، تأیید جایگزینی کل پایگاه داده باید پیش از هر تغییر نمایش داده شود و با لغو، اطلاعات فعلی بدون تغییر بماند.
