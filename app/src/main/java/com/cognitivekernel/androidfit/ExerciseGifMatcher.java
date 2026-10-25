@@ -29,7 +29,7 @@ final class ExerciseGifMatcher {
         // These catalogue names describe the same base movement and map to the bundled offline demonstrations.
         String normalizedTarget = normalize(targetName);
         String normalizedCandidate = normalize(candidateName);
-        if ("plank".equals(normalizedTarget) && "plank on hands".equals(normalizedCandidate)) return 1;
+        if ("plank".equals(normalizedTarget) && "bodyweight front plank to downward dog".equals(normalizedCandidate)) return 1;
         if ("reverse lunge".equals(normalizedTarget)
                 && "bodyweight reverse lunge with overhead".equals(normalizedCandidate)) return 1;
         int start = findSequence(candidate, target);
