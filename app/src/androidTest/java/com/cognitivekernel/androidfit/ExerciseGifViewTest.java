@@ -41,8 +41,7 @@ public class ExerciseGifViewTest {
             });
             Espresso.onView(isAssignableFrom(ExerciseGifView.class))
                     .inRoot(RootMatchers.isDialog()).check(matches(isDisplayed())).perform(click());
-            Espresso.onView(withContentDescription("Close enlarged GIF")).check(
-                    matches(androidx.test.espresso.matcher.ViewMatchers.doesNotExist()));
+            Espresso.onView(withText("×")).check(doesNotExist());
         }
     }
 }
