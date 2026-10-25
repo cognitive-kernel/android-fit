@@ -268,12 +268,12 @@ jobs:
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='109'"
           mkdir -p artifacts
-          cp "$APK" artifacts/fityar-large-library-v109.apk
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v109.apk | tee artifacts/signature.txt
-          sha256sum artifacts/fityar-large-library-v109.apk > artifacts/SHA256SUMS.txt
+          cp "$APK" artifacts/fityar-candidate-v109.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-candidate-v109.apk | tee artifacts/signature.txt
+          sha256sum artifacts/fityar-candidate-v109.apk > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: fityar-large-library-v109
+          name: fityar-candidate-v109
           path: artifacts/*
           if-no-files-found: error
           retention-days: 14
