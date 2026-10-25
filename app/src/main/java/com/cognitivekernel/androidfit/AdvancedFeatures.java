@@ -92,9 +92,9 @@ public final class AdvancedFeatures {
     String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
     String gif=match.optString("file","");
     String sourceId=match.optString("source_id","");
-    libraryDialog.dismiss();
-    libraryDialog.cancel();
-    showExerciseDetail(display,"",gif,sourceId,true);
+    // Keep the library dialog alive underneath the GIF details.
+    // Dismissing/recreating it loses scroll/search state and forces repeated reopening.
+    showExerciseDetail(display,"",gif,sourceId,false);
    }
   });
   libraryDialog.show();
