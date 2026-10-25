@@ -110,7 +110,7 @@ public final class AdvancedFeatures {
   if("Air Squat (VERSION 2)".equalsIgnoreCase(english))return "squat.gif";
   if("Push-up".equalsIgnoreCase(english))return "pushup.gif";
   if("Bodyweight Reverse Lunge with Overhead...".equalsIgnoreCase(english))return "lunge.gif";
-  if("Plank on Hands".equalsIgnoreCase(english))return "plank.gif";
+  if("Bodyweight Front Plank to Downward Dog".equalsIgnoreCase(english))return "plank.gif";
   if("Band Bent Over Wide Grip Row (male)".equalsIgnoreCase(english))return "row.gif";
   if("Briskly Walking".equalsIgnoreCase(english))return "walk.gif";
   return "";
