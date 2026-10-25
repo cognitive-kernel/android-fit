@@ -478,17 +478,13 @@ public final class AdvancedFeatures {
   for(String[] pair:map)if(pair[0].equals(name))return pair[1];
   return "";
  }
- private static String normalizeExerciseName(String value){return value==null?"":value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]","");}
  private ExerciseLibraryRow findMatchingExerciseGif(List<ExerciseLibraryRow> rows,String movementName){
   String query=canonicalMovementQuery(movementName);if(query.isEmpty())return null;
-  String target=normalizeExerciseName(query);
   ExerciseLibraryRow best=null;int bestScore=Integer.MAX_VALUE;
   for(ExerciseLibraryRow row:rows){
-   String candidate=normalizeExerciseName(row.englishName);
-   if(candidate.equals(target))return row;
-   if(candidate.startsWith(target)&&candidate.length()-target.length()<=12){
-    int score=candidate.length()-target.length();if(score<bestScore){best=row;bestScore=score;}
-   }
+   int score=ExerciseGifMatcher.score(query,row.englishName);
+   if(score==0)return row;
+   if(score>0&&score<bestScore){best=row;bestScore=score;}
   }
   return best;
  }
