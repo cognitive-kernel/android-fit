@@ -540,6 +540,7 @@ public final class AdvancedFeatures {
   l.addView(label(tg("Main goal","هدف اصلی")));l.addView(goal);
   l.addView(label(tg("Target muscle area (choose one or more)","ناحیه هدف (یک یا چند مورد را انتخاب کنید)")));l.addView(regionGroup);
   l.addView(label(tg("Training experience","سطح آمادگی")));l.addView(level);
+  l.addView(label(tg("Daily activity level","سطح فعالیت روزانه")));l.addView(activity);
   l.addView(label(tg("Available equipment","تجهیزات در دسترس")));l.addView(equipment);
   l.addView(label(tg("Nutrition preference","ترجیح غذایی")));l.addView(diet);
   l.addView(label(tg("Sex for calorie estimate","جنسیت برای تخمین کالری")));l.addView(sex);
@@ -555,7 +556,7 @@ public final class AdvancedFeatures {
     ArrayList<Integer> selectedRegions=new ArrayList<>();for(int i=0;i<regionChecks.length;i++)if(regionChecks[i].isChecked())selectedRegions.add(i);if(selectedRegions.isEmpty())throw new IllegalArgumentException("Select at least one body area");
     double bmi=kg/((cm/100.0)*(cm/100.0));
     double bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161);
-    double maintenance=bmr*(act==0?1.35:act==1?1.55:1.725);
+    double maintenance=bmr*activityMultiplier(act);
     double target=g==0?(bmi<18.5?maintenance:Math.max(1200,maintenance-300)):g==1?maintenance:maintenance+200;
     target=Math.max(1200,target);
     double protein=kg*(g==2?1.8:1.5);
@@ -657,6 +658,11 @@ public final class AdvancedFeatures {
  static int setsForSessionDuration(int baseSets,int minutes){
   int extra=minutes>=120?2:minutes>=75?1:0;
   return Math.min(5,Math.max(1,baseSets)+extra);
+ }
+ static double activityMultiplier(int activity){
+  if(activity<=0)return 1.35;
+  if(activity==1)return 1.55;
+  return 1.725;
  }
  private String tg(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
 
