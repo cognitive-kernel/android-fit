@@ -17,6 +17,8 @@ public class ExerciseGifMatcherTest {
         assertTrue(ExerciseGifMatcher.score("Reverse Lunge", "Bodyweight Reverse Lunge") > 0);
         assertTrue(ExerciseGifMatcher.score("Reverse Lunge", "Bodyweight Reverse Lunge with Overhead...") > 0);
         assertTrue(ExerciseGifMatcher.score("Plank", "Bodyweight Front Plank to Downward Dog") > 0);
+        assertTrue(ExerciseGifMatcher.score("Incline Bench Press", "Dumbbell Incline Bench Press") > 0);
+        assertTrue(ExerciseGifMatcher.score("Bent Over Row", "Dumbbell Bent Over Row") > 0);
     }
 
     @Test public void differentMovementVariantsAreRejected() {
