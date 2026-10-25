@@ -28,6 +28,11 @@ jobs:
           distribution: temurin
           java-version: "17"
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
@@ -51,8 +56,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew --no-daemon -PFIT_YAR_TEST_INSTALL=true assembleDebug
+          gradle --no-daemon -PFIT_YAR_TEST_INSTALL=true assembleDebug
           APK="app/build/outputs/apk/debug/app-debug.apk"
           test -s "$APK"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit.test2'"
