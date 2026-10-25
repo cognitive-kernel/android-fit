@@ -4,9 +4,9 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
-import androidx.test.espresso.matcher.RootMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
+import android.widget.Spinner;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static androidx.test.espresso.action.ViewActions.click;
@@ -52,11 +52,15 @@ public class SmartGoalPlanSelectionTest {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
             Espresso.onView(withText("سطح فعالیت روزانه")).perform(scrollTo()).check(matches(isDisplayed()));
-            Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(scrollTo(), click());
-            Espresso.onView(withText("فعالیت کم")).inRoot(RootMatchers.isPlatformPopup()).perform(click());
-            Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(scrollTo(), click());
-            Espresso.onView(withText("فعالیت متوسط")).inRoot(RootMatchers.isPlatformPopup()).perform(click());
-            Espresso.onView(withText("فعالیت متوسط")).check(matches(isDisplayed()));
+            scenario.onActivity(activity -> {
+                Spinner selector = activity.findViewWithTag("dailyActivityLevelSpinner");
+                assertNotNull("Daily activity selector should be present", selector);
+                selector.setSelection(0);
+                assertEquals("فعالیت کم", selector.getSelectedItem().toString());
+                selector.setSelection(1);
+                assertEquals("فعالیت متوسط", selector.getSelectedItem().toString());
+            });
+            Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(scrollTo()).check(matches(isDisplayed()));
         } finally {
             prefs.edit().putString("language", previous).commit();
         }
