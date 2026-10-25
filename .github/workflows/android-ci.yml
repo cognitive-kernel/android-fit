@@ -77,7 +77,31 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
-          script: gradle connectedDebugAndroidTest
+          script: |
+            set -euo pipefail
+            # Emulator runners can occasionally report "offline" after the boot action.
+            # Wait for both ADB connectivity and Android's completed-boot property before install.
+            ready=false
+            for attempt in 1 2 3 4 5 6; do
+              state="$(adb devices | awk '$1 == "emulator-5554" { print $2 }')"
+              if [ "$state" = "device" ]; then
+                boot_completed="$(timeout 15s adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+                if [ "$boot_completed" = "1" ]; then
+                  ready=true
+                  break
+                fi
+              fi
+              echo "Emulator not fully ready (attempt $attempt/6; ADB state: ${state:-missing}); reconnecting..."
+              adb reconnect offline || true
+              sleep 5
+            done
+            if [ "$ready" != true ]; then
+              adb devices -l || true
+              echo "::error::Emulator never reached the ready state; not attempting APK installation."
+              exit 1
+            fi
+            adb -s emulator-5554 shell getprop sys.boot_completed
+            gradle connectedDebugAndroidTest --no-daemon
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
