@@ -23,7 +23,7 @@ public class SmartGoalPlanSelectionTest {
         String previous = prefs.getString("language", "fa");
         prefs.edit().putString("language", "fa").commit();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            scenario.onActivity(activity -> activity.advanced.buildGoalPlan());
+            scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
 
             Espresso.onView(withText("کل بدن")).check(matches(isChecked()));
             Espresso.onView(withText("سرشانه")).perform(click());
