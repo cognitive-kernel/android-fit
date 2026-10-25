@@ -51,53 +51,75 @@ public final class AdvancedFeatures {
  }
 
  public void showLibrary(){
-  // Loading and translating a large catalog on the UI thread freezes the menu once
-  // thousands of exercises are bundled. Parse and prepare rows off the main thread.
-  final ProgressDialog loading = new ProgressDialog(a);
-  loading.setTitle(s("exercise_library"));
-  loading.setMessage(tr("Loading exercise library…","در حال بارگذاری کتابخانه حرکات…"));
-  loading.setIndeterminate(true);
-  loading.setCancelable(false);
-  loading.show();
+  // Open the dialog immediately. Listing thousands of bundled GIFs and preparing
+  // localized rows happens on a worker thread, never on Android's UI thread.
+  final ArrayList<ExerciseLibraryRow> empty = new ArrayList<>();
+  final ExerciseLibraryAdapter adapter = new ExerciseLibraryAdapter(empty);
+  final EditText search = new EditText(a);
+  search.setSingleLine(true);
+  search.setHint(tr("Search exercises in English or Persian","جست‌وجو به فارسی یا انگلیسی"));
+  final TextView status = new TextView(a);
+  status.setText(tr("Preparing exercise list…","در حال آماده‌سازی فهرست حرکات…"));
+  status.setPadding(0,(int)(6*a.getResources().getDisplayMetrics().density),0,(int)(8*a.getResources().getDisplayMetrics().density));
+  final ListView list = new ListView(a);
+  list.setFastScrollEnabled(true);
+  list.setAdapter(adapter);
+  LinearLayout content = column();
+  content.addView(search);
+  content.addView(status);
+  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
+  final AlertDialog libraryDialog = new AlertDialog.Builder(a)
+      .setTitle(s("exercise_library")).setView(content)
+      .setNegativeButton(android.R.string.cancel,null).create();
+  list.setOnItemClickListener((parent,view,position,id)->{
+   ExerciseLibraryRow selected=adapter.getItem(position);
+   if(selected!=null)showExerciseDetail(selected.displayName,"",selected.file,selected.sourceId,false);
+  });
+  search.addTextChangedListener(new android.text.TextWatcher(){
+   public void beforeTextChanged(CharSequence text,int start,int count,int after){}
+   public void onTextChanged(CharSequence text,int start,int before,int count){adapter.getFilter().filter(text);}
+   public void afterTextChanged(android.text.Editable text){}
+  });
+  libraryDialog.show();
 
   final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
   final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
-  worker.execute(() -> {
-   final ArrayList<ExerciseLibraryRow> rows = new ArrayList<>();
-   String loadError = null;
-   try(java.io.InputStream in=a.getAssets().open("exercises/exercise_catalog.json");
-       java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream()){
-    byte[] buffer=new byte[16384];int count;
-    while((count=in.read(buffer))!=-1)bytes.write(buffer,0,count);
-    JSONArray catalog=new JSONArray(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
-    for(int i=0;i<catalog.length();i++){
-     JSONObject item=catalog.optJSONObject(i);
-     if(item==null)continue;
-     String file=item.optString("file","");
-     if(!file.matches("(?i)[a-z0-9._-]+\\.gif"))continue;
-     String english=item.optString("name_en",item.optString("name",file));
-     String persian=item.optString("name_fa","");
-     String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
-     rows.add(new ExerciseLibraryRow(display,english,file,item.optString("source_id","")));
+  libraryDialog.setOnDismissListener(dialog->worker.shutdownNow());
+  worker.execute(()->{
+   final ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
+   String error=null;
+   try{
+    // The GIF filenames are the source of truth; exercise_catalog.json is optional.
+    String[] files=a.getAssets().list("exercises");
+    if(files!=null){
+     for(String file:files){
+      if(file==null||!file.toLowerCase(Locale.ROOT).endsWith(".gif"))continue;
+      String english=file.replaceFirst("(?i)\\.gif$","")
+          .replaceFirst("_\\[(\\d+)\\]$","")
+          .replaceFirst("\\s*\\[(\\d+)\\]$","")
+          .replace('_',' ').replaceAll("\\s+"," ").trim();
+      if(english.isEmpty())continue;
+      String sourceId="";
+      java.util.regex.Matcher idMatcher=java.util.regex.Pattern.compile("\\[(\\d+)\\]\\.gif$",java.util.regex.Pattern.CASE_INSENSITIVE).matcher(file);
+      if(idMatcher.find())sourceId=idMatcher.group(1);
+      String display="en".equals(selectedLanguage())?english:persianExerciseName(english);
+      rows.add(new ExerciseLibraryRow(display,english,file,sourceId));
+     }
     }
-   }catch(Exception ex){loadError=ex.getClass().getSimpleName();}
-   final String error=loadError;
-   main.post(() -> {
+    final java.text.Collator collator=java.text.Collator.getInstance("en".equals(selectedLanguage())?Locale.ENGLISH:new Locale("fa"));
+    rows.sort((left,right)->collator.compare(left.displayName,right.displayName));
+   }catch(Exception ex){error=ex.getClass().getSimpleName();}
+   final String loadError=error;
+   main.post(()->{
     worker.shutdown();
-    if(a.isFinishing() || (Build.VERSION.SDK_INT>=17 && a.isDestroyed())){loading.dismiss();return;}
-    loading.dismiss();
-    if(error!=null) {
-     message(s("error"),tr("Could not load the exercise catalog.","بارگذاری فهرست حرکات انجام نشد."));
+    if(a.isFinishing()||(Build.VERSION.SDK_INT>=17&&a.isDestroyed())||!libraryDialog.isShowing())return;
+    if(loadError!=null){
+     status.setText(tr("Could not read exercise GIF files: ","خواندن فایل‌های حرکات انجام نشد: ")+loadError);
      return;
     }
-    if(rows.isEmpty()){
-     String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row")};
-     String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row")};
-     String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif"};
-     new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->showExerciseDetail(names[which],details[which],gifs[which],null)).setNegativeButton(android.R.string.cancel,null).show();
-     return;
-    }
-    showLoadedExerciseLibrary(rows);
+    adapter.setRows(rows);
+    status.setText(rows.size()==0?tr("No exercise GIFs found.","فایل GIF حرکتی پیدا نشد."):tr(rows.size()+" exercises · search by English or Persian","تعداد حرکات: "+rows.size()+" · جست‌وجو فارسی یا انگلیسی"));
+    if(search.getText().length()>0)adapter.getFilter().filter(search.getText());
    });
   });
  }
@@ -107,35 +129,59 @@ public final class AdvancedFeatures {
   ExerciseLibraryRow(String displayName,String englishName,String file,String sourceId){
    this.displayName=displayName;this.englishName=englishName;this.file=file;this.sourceId=sourceId;
   }
-  @Override public String toString(){return displayName;}
  }
 
- private void showLoadedExerciseLibrary(ArrayList<ExerciseLibraryRow> exercises){
-  EditText search=new EditText(a);
-  search.setSingleLine(true);
-  search.setHint(tr("Search exercises","جست‌وجوی حرکت"));
-  ListView list=new ListView(a);
-  // ArrayAdapter filters its backing collection on a worker thread. Rows retain their
-  // original GIF filename, so duplicate translated names never select the wrong GIF.
-  ArrayAdapter<ExerciseLibraryRow> adapter=new ArrayAdapter<ExerciseLibraryRow>(a,android.R.layout.simple_list_item_1,exercises);
-  list.setAdapter(adapter);
-  LinearLayout content=column();
-  content.addView(search);
-  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*a.getResources().getDisplayMetrics().density)));
-  search.addTextChangedListener(new android.text.TextWatcher(){
-   public void beforeTextChanged(CharSequence s,int st,int count,int after){}
-   public void onTextChanged(CharSequence text,int st,int before,int count){adapter.getFilter().filter(text);}
-   public void afterTextChanged(android.text.Editable e){}
-  });
-  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
-  list.setOnItemClickListener((parent,view,position,id)->{
-   ExerciseLibraryRow selected=adapter.getItem(position);
-   if(selected!=null){
-    // Leave the library dialog visible underneath details; this preserves query and scroll.
-    showExerciseDetail(selected.displayName,"",selected.file,selected.sourceId,false);
+ private final class ExerciseLibraryAdapter extends android.widget.BaseAdapter {
+  private final ArrayList<ExerciseLibraryRow> allRows=new ArrayList<>();
+  private final ArrayList<ExerciseLibraryRow> visibleRows=new ArrayList<>();
+  private final android.widget.Filter filter=new android.widget.Filter(){
+   @Override protected FilterResults performFiltering(CharSequence constraint){
+    ArrayList<ExerciseLibraryRow> matches=new ArrayList<>();
+    String query=normalizeSearch(constraint==null?"":constraint.toString());
+    if(query.isEmpty())matches.addAll(allRows);
+    else for(ExerciseLibraryRow row:allRows){
+     if(normalizeSearch(row.displayName).contains(query)||normalizeSearch(row.englishName).contains(query)||normalizeSearch(row.file).contains(query))matches.add(row);
+    }
+    FilterResults results=new FilterResults();results.values=matches;results.count=matches.size();return results;
    }
-  });
-  libraryDialog.show();
+   @Override protected void publishResults(CharSequence constraint,FilterResults results){
+    visibleRows.clear();
+    if(results.values instanceof ArrayList)visibleRows.addAll((ArrayList<ExerciseLibraryRow>)results.values);
+    notifyDataSetChanged();
+   }
+  };
+  ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> rows){setRows(rows);}
+  void setRows(ArrayList<ExerciseLibraryRow> rows){allRows.clear();allRows.addAll(rows);visibleRows.clear();visibleRows.addAll(rows);notifyDataSetChanged();}
+  @Override public int getCount(){return visibleRows.size();}
+  @Override public ExerciseLibraryRow getItem(int position){return position>=0&&position<visibleRows.size()?visibleRows.get(position):null;}
+  @Override public long getItemId(int position){return position;}
+  @Override public android.widget.Filter getFilter(){return filter;}
+  @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
+   View row=convertView;
+   if(row==null)row=LayoutInflater.from(a).inflate(android.R.layout.simple_list_item_2,parent,false);
+   TextView primary=row.findViewById(android.R.id.text1);
+   TextView secondary=row.findViewById(android.R.id.text2);
+   ExerciseLibraryRow item=getItem(position);
+   if(item!=null){
+    primary.setText(item.displayName);primary.setTextSize(16);
+    secondary.setText("en".equals(selectedLanguage())?"":item.englishName);
+    secondary.setVisibility("en".equals(selectedLanguage())?View.GONE:View.VISIBLE);
+    secondary.setTextSize(12);
+    if("en".equals(selectedLanguage())){
+     primary.setTextDirection(View.TEXT_DIRECTION_LTR);
+     primary.setGravity(android.view.Gravity.CENTER_VERTICAL|android.view.Gravity.START);
+    }else{
+     primary.setTextDirection(View.TEXT_DIRECTION_RTL);
+     primary.setGravity(android.view.Gravity.CENTER_VERTICAL|android.view.Gravity.END);
+     secondary.setTextDirection(View.TEXT_DIRECTION_LTR);
+    }
+   }
+   return row;
+  }
+  private String normalizeSearch(String value){
+   return value.toLowerCase(Locale.ROOT).replace('ي','ی').replace('ك','ک')
+       .replaceAll("[\\u064B-\\u065F\\u0670]","").trim();
+  }
  }
 
  private String persianExerciseName(String english){
