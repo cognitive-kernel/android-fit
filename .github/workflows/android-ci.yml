@@ -10,7 +10,7 @@ permissions:
 concurrency:
   # Keep only the newest run for a branch/PR; parallel emulator runs have made ADB unstable.
   group: android-ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   unit-tests-and-lint:
