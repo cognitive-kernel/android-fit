@@ -15,9 +15,9 @@ import static org.junit.Assert.assertTrue;
 public class ExerciseGifAssetsTest {
     @Test public void allBundledExerciseGifsDecodeAndAnimate() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        String[] files = {"squat.gif", "pushup.gif", "lunge.gif", "plank.gif", "row.gif"};
+        String[] files = {"squat.gif", "pushup.gif", "lunge.gif", "plank.gif", "row.gif", "walk.gif"};
         for (String file : files) {
-            try (InputStream stream = context.getAssets().open("exercises/" + file)) {
+            try (InputStream stream = context.getAssets().open("core_exercises/" + file)) {
                 Movie movie = Movie.decodeStream(stream);
                 assertNotNull("Could not decode " + file, movie);
                 assertTrue(file + " should have a valid width", movie.width() > 0);
