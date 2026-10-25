@@ -8,6 +8,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.assertion.ViewAssertions.doesNotExist;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isAssignableFrom;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
@@ -27,7 +28,7 @@ public class ExerciseGifViewTest {
             });
             Espresso.onView(withText("×")).inRoot(RootMatchers.isDialog())
                     .check(matches(isDisplayed())).perform(click());
-            Espresso.onView(withText("×")).check(matches(androidx.test.espresso.matcher.ViewMatchers.doesNotExist()));
+            Espresso.onView(withText("×")).check(doesNotExist());
         }
     }
 
