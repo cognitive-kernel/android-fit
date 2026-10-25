@@ -23,4 +23,9 @@ public class AdvancedFeaturesPlanDurationTest {
         assertEquals(5, AdvancedFeatures.setsForSessionDuration(4, 120));
         assertEquals(5, AdvancedFeatures.setsForSessionDuration(4, 180));
     }
+    @Test public void activityLevelChangesEstimatedMaintenanceMultiplier() {
+        assertEquals(1.35, AdvancedFeatures.activityMultiplier(0), 0.0001);
+        assertEquals(1.55, AdvancedFeatures.activityMultiplier(1), 0.0001);
+        assertEquals(1.725, AdvancedFeatures.activityMultiplier(2), 0.0001);
+    }
 }
