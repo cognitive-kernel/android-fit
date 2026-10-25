@@ -22,6 +22,9 @@ android {
             if (providers.gradleProperty('FIT_YAR_TEST_INSTALL').orNull == 'true') {
                 applicationIdSuffix '.test2'
                 versionNameSuffix '-test'
+            } else if (providers.gradleProperty('FIT_YAR_FRESH_INSTALL').orNull == 'true') {
+                applicationIdSuffix '.fresh'
+                versionNameSuffix '-fresh'
             }
             // Use the user's existing debug key when present. CI tests may use
             // Gradle's temporary default key, but signed-artifact CI requires the registered certificate.
