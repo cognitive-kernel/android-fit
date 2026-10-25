@@ -11,12 +11,8 @@ final class ExerciseGifMatcher {
     private static final Set<String> PREFIX_VARIANTS = new HashSet<>(Arrays.asList(
             "male", "female", "barbell", "dumbbell", "band", "cable", "machine", "smith",
             "bodyweight", "weighted", "kettlebell", "pvc", "plate", "rope", "standing",
-            "seated", "lying", "prone", "supine", "kneeling", "bent", "over", "wide",
-            "close", "grip", "low", "high", "incline", "decline", "front", "rear", "back",
-            "reverse", "single", "one", "two", "alternate", "alternating", "arm", "arms",
-            "leg", "legs", "hand", "hands", "elbow", "elbows", "foot", "feet", "toe", "heel",
-            "side", "each", "parallel", "raised", "deep", "partial", "half", "straight",
-            "air", "assisted", "supported", "version", "v2", "v3", "v4", "2", "3", "4"
+            "seated", "lying", "prone", "supine", "kneeling", "air", "assisted", "supported",
+            "version", "v2", "v3", "v4", "2", "3", "4"
     ));
     private static final Set<String> SUFFIX_VARIANTS = new HashSet<>(Arrays.asList(
             "male", "female", "version", "v2", "v3", "v4", "2", "3", "4"
