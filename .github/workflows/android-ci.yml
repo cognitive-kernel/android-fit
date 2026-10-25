@@ -81,6 +81,16 @@ jobs:
             echo "Android SDK installation failed after 3 attempts."
             exit 1
           fi
+      - name: Enable KVM access when the runner exposes it
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+          else
+            echo "::warning::/dev/kvm is unavailable; emulator may need software acceleration."
+          fi
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
