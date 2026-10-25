@@ -416,8 +416,9 @@ public final class AdvancedFeatures {
 
  private void showExerciseDetail(String name,String details,String gif,String sourceId){showExerciseDetail(name,details,gif,sourceId,false);}
  private void showExerciseDetail(String name,String details,String gif,String sourceId,boolean returnToLibrary){
-  LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);
+  LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name+" — "+tg("tap GIF to enlarge","برای بزرگ‌نمایی گیف را لمس کنید"));
   l.addView(image,new LinearLayout.LayoutParams(-1,(int)(220*a.getResources().getDisplayMetrics().density)));
+  TextView gifHint=new TextView(a);gifHint.setText(tg("Tap the GIF to enlarge. Tap the enlarged GIF or × to return here.","برای بزرگ‌نمایی گیف را لمس کنید؛ برای بازگشت، گیف بزرگ یا × را بزنید."));gifHint.setTextSize(13);gifHint.setGravity(Gravity.CENTER);l.addView(gifHint);
   TextView title=new TextView(a);title.setText(name);title.setTextSize(20);l.addView(title);
   if(details!=null&&!details.trim().isEmpty()){TextView body=new TextView(a);body.setText(details);l.addView(body);}
   if(sourceId!=null&&!sourceId.isEmpty()){TextView attribution=new TextView(a);attribution.setText("© Gym visual — https://gymvisual.com/");l.addView(attribution);}
