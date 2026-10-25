@@ -13,6 +13,8 @@ public class ExerciseGifMatcherTest {
     @Test public void relevantEquipmentAndGenderVariantsAreAllowed() {
         assertTrue(ExerciseGifMatcher.score("Overhead Press", "Barbell Seated Overhead Press (male)") > 0);
         assertTrue(ExerciseGifMatcher.score("Biceps Curl", "Band Biceps Curl (female)") > 0);
+        assertTrue(ExerciseGifMatcher.score("Squat", "Air Squat (VERSION 2)") > 0);
+        assertTrue(ExerciseGifMatcher.score("Reverse Lunge", "Bodyweight Reverse Lunge with Overhead...") > 0);
     }
 
     @Test public void differentMovementVariantsAreRejected() {
