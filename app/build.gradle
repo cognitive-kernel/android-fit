@@ -1,5 +1,8 @@
 plugins { id 'com.android.application' }
-def stableDebugKeystore = file(System.getProperty("user.home") + "/.android/debug.keystore")
+def stableDebugKeystore = file(System.getenv('FIT_YAR_SIGNING_KEYSTORE') ?: (System.getProperty("user.home") + "/.android/debug.keystore"))
+def stableDebugStorePassword = System.getenv('FIT_YAR_RELEASE_STORE_PASSWORD') ?: "android"
+def stableDebugKeyAlias = System.getenv('FIT_YAR_RELEASE_KEY_ALIAS') ?: "androiddebugkey"
+def stableDebugKeyPassword = System.getenv('FIT_YAR_RELEASE_KEY_PASSWORD') ?: "android"
 
 android {
     namespace 'com.cognitivekernel.androidfit'
@@ -7,9 +10,9 @@ android {
     signingConfigs {
         stableDebug {
             storeFile stableDebugKeystore
-            storePassword "android"
-            keyAlias "androiddebugkey"
-            keyPassword "android"
+            storePassword stableDebugStorePassword
+            keyAlias stableDebugKeyAlias
+            keyPassword stableDebugKeyPassword
         }
     }
     buildTypes {
@@ -29,8 +32,8 @@ android {
         applicationId 'com.cognitivekernel.androidfit'
         minSdk 23
         targetSdk 36
-        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('106').toInteger()
-        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.10')
+        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('107').toInteger()
+        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.11')
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     compileOptions {
