@@ -91,27 +91,20 @@ public final class AdvancedFeatures {
  }
 
  private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
-  ArrayList<String> files=new ArrayList<>();
-  collectExerciseGifFiles(context.getAssets(),"exercises",files);
-  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(files.size());
-  java.util.regex.Pattern idPattern=java.util.regex.Pattern.compile("(?:_\\[?(\\d{3,8})\\]?|\\s+\\[?(\\d{3,8})\\]?)$");
-  for(String assetPath:files){
-   String file=assetPath.substring("exercises/".length());
-   String title=file.substring(0,file.length()-4);
-   java.util.regex.Matcher matcher=idPattern.matcher(title);
-   String sourceId="";
-   if(matcher.find()){
-    sourceId=matcher.group(1)!=null?matcher.group(1):matcher.group(2);
-    title=title.substring(0,matcher.start());
+  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
+  try(BufferedReader reader=new BufferedReader(new InputStreamReader(context.getAssets().open("exercise_catalog.tsv"),"UTF-8"))){
+   String line;
+   while((line=reader.readLine())!=null){
+    String[] fields=line.split("\\t",3);
+    if(fields.length<2)continue;
+    String file=fields[0].trim(),english=fields[1].trim(),sourceId=fields.length>2?fields[2].trim():"";
+    if(file.isEmpty()||english.isEmpty()||!file.toLowerCase(Locale.ROOT).endsWith(".gif"))continue;
+    rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
    }
-   String english=title.replace('_',' ').replaceAll("\\s+"," ").trim();
-   if(english.isEmpty())continue;
-   rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
   }
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
   return rows;
  }
-
  private static void collectExerciseGifFiles(android.content.res.AssetManager assets,String directory,ArrayList<String> output)throws IOException{
   String[] entries=assets.list(directory);
   if(entries==null)return;
