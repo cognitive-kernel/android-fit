@@ -28,6 +28,25 @@ public class ExerciseGifAssetsTest {
             }
         }
     }
+    @Test public void catalogueRowsHaveSafeGifNamesAndThreeColumns() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        int count = 0;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                context.getAssets().open("exercise_catalog.tsv"), "UTF-8"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] fields = line.split("\\t", -1);
+                assertTrue("Catalogue row must have filename, name and source ID", fields.length == 3);
+                assertTrue("GIF filename must not be empty", !fields[0].trim().isEmpty());
+                assertTrue("GIF filename must be a basename", !fields[0].contains("/") && !fields[0].contains("\\\\"));
+                assertTrue("Catalogue entry must reference a GIF", fields[0].toLowerCase(java.util.Locale.ROOT).endsWith(".gif"));
+                assertTrue("English name must not be empty", !fields[1].trim().isEmpty());
+                count++;
+            }
+        }
+        assertTrue("Catalogue should include thousands of GIFs", count >= 6500);
+    }
+
     @Test public void fullGymVisualCatalogueIndexIsBundled() throws Exception {
         Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
         int count = 0;
