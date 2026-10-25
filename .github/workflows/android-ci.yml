@@ -226,7 +226,7 @@ jobs:
           mkdir -p "$HOME/.android"
           printf '%s' "$FIT_YAR_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/fityar-release-test.jks"
           test -s "$HOME/.android/fityar-release-test.jks" || { echo "::error::Decoded keystore is empty."; exit 1; }
-      - name: Build and verify feature APK with candidate key
+      - name: Build production Release APK with candidate permanent key
         shell: bash
         env:
           FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
@@ -238,22 +238,28 @@ jobs:
           test -n "${FIT_YAR_RELEASE_KEY_ALIAS:-}" || { echo "::error::Release key alias secret is missing."; exit 1; }
           test -n "${FIT_YAR_RELEASE_KEY_PASSWORD:-}" || { echo "::error::Release key password secret is missing."; exit 1; }
           test -n "${FIT_YAR_RELEASE_STORE_PASSWORD:-}" || { echo "::error::Release store password secret is missing."; exit 1; }
-          keytool -list -v -keystore "$FIT_YAR_SIGNING_KEYSTORE" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" | grep -E 'Alias name:|SHA1:|SHA256:|Valid from:'
-          gradle -PFIT_YAR_VERSION_CODE=109 -PFIT_YAR_VERSION_NAME=1.1.13 assembleDebug
-          APK="app/build/outputs/apk/debug/app-debug.apk"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='109'"
+          gradle -PFIT_YAR_VERSION_CODE=109 -PFIT_YAR_VERSION_NAME=1.1.13 assembleRelease
+          UNSIGNED="$(find app/build/outputs/apk/release -maxdepth 1 -name '*unsigned*.apk' -print -quit)"
+          if [ -z "$UNSIGNED" ]; then
+            UNSIGNED="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"
+          fi
+          test -n "$UNSIGNED" || { echo "::error::Release APK was not produced."; exit 1; }
           mkdir -p artifacts
-          cp "$APK" artifacts/fityar-large-library-v109.apk
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v109.apk | tee artifacts/signature.txt
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt"
+          "$APKSIGNER" sign --ks "$FIT_YAR_SIGNING_KEYSTORE" --ks-key-alias "$FIT_YAR_RELEASE_KEY_ALIAS" --ks-pass env:FIT_YAR_RELEASE_STORE_PASSWORD --key-pass env:FIT_YAR_RELEASE_KEY_PASSWORD --out artifacts/fityar-release-v1.1.13.apk "$UNSIGNED"
+          "$AAPT" dump badging artifacts/fityar-release-v1.1.13.apk | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$AAPT" dump badging artifacts/fityar-release-v1.1.13.apk | grep -F "versionCode='109'"
+          "$AAPT" dump badging artifacts/fityar-release-v1.1.13.apk | grep -F "versionName='1.1.13'"
+          "$APKSIGNER" verify --verbose --print-certs artifacts/fityar-release-v1.1.13.apk | tee artifacts/signature.txt
           grep -F "Signer #1 certificate SHA-256 digest: 61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a" artifacts/signature.txt
-          sha256sum artifacts/fityar-large-library-v109.apk > artifacts/SHA256SUMS.txt
+          sha256sum artifacts/fityar-release-v1.1.13.apk > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: fityar-large-library-v109
+          name: fityar-release-v1.1.13
           path: artifacts/*
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
 
   signed-apk:
     # Signing/update work is intentionally deferred until the original key is recovered.
