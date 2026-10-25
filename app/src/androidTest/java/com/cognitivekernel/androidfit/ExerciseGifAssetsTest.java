@@ -24,6 +24,9 @@ public class ExerciseGifAssetsTest {
                 assertNotNull("Could not decode " + file, movie);
                 assertTrue(file + " should have a valid width", movie.width() > 0);
                 assertTrue(file + " should have a valid height", movie.height() > 0);
+                if ("plank.gif".equals(file)) {
+                    assertTrue("plank.gif should contain animation frames", movie.duration() > 0);
+                }
             }
         }
     }
