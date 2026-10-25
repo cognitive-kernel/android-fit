@@ -597,13 +597,7 @@ public final class AdvancedFeatures {
       else if(ex[0].equals(tg("Row","پارویی")))ex[0]=tg("Backpack row","پارویی با کوله‌پشتی");
      }
     }
-    ArrayList<String[]> uniqueMovements=new ArrayList<>();
-    HashSet<String> finalMovementKeys=new HashSet<>();
-    for(String[] movement:movementList){
-     String key=movement[0].toLowerCase(Locale.ROOT).replaceAll("\\s+"," ").trim();
-     if(finalMovementKeys.add(key))uniqueMovements.add(movement);
-    }
-    movementList=uniqueMovements;
+    movementList=deduplicateMovementRows(movementList);
     int setsBase=lvl==0?2:lvl==1?3:4;
     setsBase=setsForSessionDuration(setsBase,mins);
     int repsBase=g==0?12:g==1?10:8;
@@ -650,6 +644,17 @@ public final class AdvancedFeatures {
     new AlertDialog.Builder(a).setTitle(tg("Your saved training & nutrition plan","برنامه ذخیره‌شده تمرین و تغذیه")).setView(resultScroll).setPositiveButton(android.R.string.ok,null).show();
    }catch(Exception ex){if(planId>0){try{db.deletePlan(planId);}catch(Exception ignored){}}message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, weight 30–300 kg, 1–7 training days and 10–180 minutes per session.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰، وزن ۳۰ تا ۳۰۰ کیلوگرم، ۱ تا ۷ روز تمرین و ۱۰ تا ۱۸۰ دقیقه برای هر جلسه وارد کنید."));}
   }).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ static ArrayList<String[]> deduplicateMovementRows(List<String[]> movements){
+  ArrayList<String[]> unique=new ArrayList<>();
+  HashSet<String> seen=new HashSet<>();
+  if(movements==null)return unique;
+  for(String[] movement:movements){
+   if(movement==null||movement.length==0||movement[0]==null)continue;
+   String key=movement[0].toLowerCase(Locale.ROOT).replaceAll("\\s+"," ").trim();
+   if(!key.isEmpty()&&seen.add(key))unique.add(movement.clone());
+  }
+  return unique;
  }
  static int movementLimitForSession(int minutes,int totalMovements,int selectedRegionCount,boolean fullBody){
   if(totalMovements<=0)return 0;
