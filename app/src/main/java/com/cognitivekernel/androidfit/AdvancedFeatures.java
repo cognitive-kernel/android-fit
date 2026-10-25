@@ -476,10 +476,7 @@ public final class AdvancedFeatures {
   row.addView(field,new LinearLayout.LayoutParams(0,-2,1f));
  }
 
- private static String persianExerciseName(String english){
-  if(english==null||english.trim().isEmpty())return "";
-  String value=english.toLowerCase(Locale.ROOT);
-  String[][] words={
+ private static final String[][] EXERCISE_NAME_TRANSLATIONS={
    {"ez-bar","هالتر خمیده"},{"smith machine","دستگاه اسمیت"},{"lat pulldown","لت از بالا"},{"pull down","لت از بالا"},{"pulldown","لت از بالا"},{"leg press","پرس پا"},{"chest press","پرس سینه"},{"shoulder press","پرس سرشانه"},{"leg extension","جلو پا دستگاه"},{"leg curl","پشت پا دستگاه"},{"hamstring curl","پشت پا"},{"hip thrust","هیپ تراست"},{"cable crossover","کراس اور کابل"},{"reverse fly","فلای معکوس"},{"face pull","فیس پول"},{"calf raise","ساق پا"},{"wrist curl","مچ‌جمع"},{"triceps pushdown","پشت بازو سیم‌کش"},{"bent over","خم‌شده"},{"bent-over","خم‌شده"},{"single leg","تک‌پا"},{"single arm","تک‌دست"},{"medicine ball","توپ پزشکی"},{"stability ball","توپ تعادلی"},{"version","نسخه"},{"male","آقایان"},{"female","بانوان"},{"with","با"},{"without","بدون"},
    {"dumbbell","دمبل"},{"barbell","هالتر"},{"kettlebell","کتل‌بل"},{"cable","کابل"},{"machine","دستگاه"},{"band","کش"},
    {"bodyweight","وزن بدن"},{"weight","وزنه"},{"plate","صفحه"},{"medicine ball","توپ پزشکی"},{"stability ball","توپ تعادلی"},
@@ -508,7 +505,20 @@ public final class AdvancedFeatures {
    {"drill","تمرین"},{"exercise","حرکت"},{"workout","تمرین"},{"the",""},{"and","و"},{"to","به"},{"from","از"},{"on","روی"},
    {"in","در"},{"at","در"},{"with","با"},{"of",""},{"for","برای"},{"a",""},{"an",""},{"male","آقایان"},{"version","نسخه"}
   };
-  for(String[] pair:words)value=value.replaceAll("(?<![a-z])"+java.util.regex.Pattern.quote(pair[0])+"(?![a-z])",java.util.regex.Matcher.quoteReplacement(pair[1]));
+ 
+ private static final java.util.regex.Pattern[] EXERCISE_NAME_PATTERNS=buildExerciseNamePatterns();
+ private static java.util.regex.Pattern[] buildExerciseNamePatterns(){
+  java.util.regex.Pattern[] result=new java.util.regex.Pattern[EXERCISE_NAME_TRANSLATIONS.length];
+  for(int i=0;i<result.length;i++){
+   result[i]=java.util.regex.Pattern.compile("(?<![a-z])"+java.util.regex.Pattern.quote(EXERCISE_NAME_TRANSLATIONS[i][0])+"(?![a-z])");
+  }
+  return result;
+ }
+ private static String persianExerciseName(String english){
+  if(english==null||english.trim().isEmpty())return "";
+  String value=english.toLowerCase(Locale.ROOT);
+
+  for(int i=0;i<EXERCISE_NAME_TRANSLATIONS.length;i++)value=EXERCISE_NAME_PATTERNS[i].matcher(value).replaceAll(java.util.regex.Matcher.quoteReplacement(EXERCISE_NAME_TRANSLATIONS[i][1]));
   value=value.replaceAll("[()]", " ").replaceAll("[,/]", "،").replaceAll("\\s+"," ").trim();
   StringBuilder out=new StringBuilder();
   for(String token:value.split(" ")){
