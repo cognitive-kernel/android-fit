@@ -530,6 +530,7 @@ public final class AdvancedFeatures {
   Spinner sex=spinner(new String[]{tg("Male","مرد"),tg("Female","زن")});
   Spinner activity=spinner(new String[]{tg("Low activity","فعالیت کم"),tg("Moderate activity","فعالیت متوسط"),tg("High activity","فعالیت زیاد")});
    activity.setContentDescription(tg("Daily activity level","سطح فعالیت روزانه"));
+   activity.setTag("dailyActivityLevelSpinner");
   Spinner level=spinner(new String[]{tg("Beginner","مبتدی"),tg("Intermediate","متوسط"),tg("Advanced","پیشرفته")});
   Spinner equipment=spinner(new String[]{tg("Bodyweight only","فقط وزن بدن"),tg("Home equipment","تجهیزات خانگی"),tg("Full gym","باشگاه کامل")});
   Spinner diet=spinner(new String[]{tg("Balanced / mixed diet","رژیم متعادل / همه‌چیزخوار"),tg("Vegetarian","گیاه‌خواری")});
