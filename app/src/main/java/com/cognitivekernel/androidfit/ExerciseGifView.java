@@ -45,9 +45,14 @@ public final class ExerciseGifView extends View {
         super(context);
         this.assetName = assetName == null ? "" : assetName;
         Movie decoded = null;
-        try (InputStream in = context.getAssets().open("exercises/" + this.assetName)) {
+        try (InputStream in = context.getAssets().open("core_exercises/" + this.assetName)) {
             decoded = Movie.decodeStream(in);
         } catch (Exception ignored) { }
+        if (decoded == null) {
+            try (InputStream in = context.getAssets().open("exercises/" + this.assetName)) {
+                decoded = Movie.decodeStream(in);
+            } catch (Exception ignored) { }
+        }
         if (decoded == null) {
             File cached = cachedFile(context, this.assetName);
             if (cached.isFile()) {
