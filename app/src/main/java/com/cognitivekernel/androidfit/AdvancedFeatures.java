@@ -457,10 +457,27 @@ public final class AdvancedFeatures {
 
 
  /** Goal-specific exercise and nutrition guide based on age, height, weight and activity. */
+ private String regionLabel(int region){
+  switch(region){case 1:return tg("Shoulders","سرشانه");case 2:return tg("Arms","بازو");case 3:return tg("Abs / core","شکم و میان‌تنه");case 4:return tg("Legs & glutes","پا و باسن");case 5:return tg("Chest","سینه");case 6:return tg("Back","پشت و زیربغل");default:return tg("Full body","کل بدن");}
+ }
+ private String[][] movementsForRegion(int region){
+  switch(region){
+   case 1:return new String[][]{{tg("Overhead press","پرس سرشانه"),"3","10"},{tg("Lateral raise","نشر جانب"),"3","12"},{tg("Rear-delt raise","نشر خم"),"2","12"},{tg("Shoulder external rotation","چرخش خارجی شانه"),"2","12"}};
+   case 2:return new String[][]{{tg("Biceps curl","جلو بازو"),"3","10"},{tg("Hammer curl","جلو بازو چکشی"),"3","10"},{tg("Triceps extension","پشت بازو"),"3","12"},{tg("Close-grip push-up","شنا دست جمع"),"2","8"}};
+   case 3:return new String[][]{{tg("Plank","پلانک"),"3","30"},{tg("Dead bug","ددباگ"),"3","10"},{tg("Reverse crunch","کرانچ معکوس"),"3","12"},{tg("Bird dog","برد داگ"),"2","10"}};
+   case 4:return new String[][]{{tg("Squat","اسکوات"),"3","10"},{tg("Reverse lunge","لانج معکوس"),"3","10"},{tg("Hip hinge","هیپ‌هینج"),"3","10"},{tg("Glute bridge","پل باسن"),"3","12"},{tg("Calf raise","ساق پا"),"2","15"}};
+   case 5:return new String[][]{{tg("Push-up","شنا سوئدی"),"3","10"},{tg("Chest press","پرس سینه"),"3","10"},{tg("Incline press","پرس بالاسینه"),"3","10"},{tg("Chest fly","فلای سینه"),"2","12"}};
+   case 6:return new String[][]{{tg("Row","پارویی"),"3","10"},{tg("Lat pulldown / band pulldown","لت از بالا / لت با کش"),"3","10"},{tg("Face pull / band pull-apart","فیس پول / بازکردن کش"),"3","12"},{tg("Back extension","بازکردن پشت"),"2","12"}};
+   default:return new String[][]{{tg("Squat","اسکوات"),"3","10"},{tg("Push-up","شنا سوئدی"),"3","8"},{tg("Row","پارویی"),"3","10"},{tg("Hip hinge","هیپ‌هینج"),"3","10"},{tg("Plank","پلانک"),"3","30"}};
+  }
+ }
  public void buildGoalPlan(){
   LinearLayout l=column();
   Spinner goal=spinner(new String[]{tg("Weight loss","کاهش وزن"),tg("Fitness & body composition","فیتنس و تناسب اندام"),tg("Muscle building","عضله‌سازی")});
-  Spinner region=spinner(new String[]{tg("Full body","کل بدن"),tg("Shoulders","سرشانه"),tg("Arms","بازو"),tg("Abs / core","شکم و میان‌تنه"),tg("Legs & glutes","پا و باسن"),tg("Chest","سینه"),tg("Back","پشت و زیربغل")});
+  String[] regionLabels={tg("Full body","کل بدن"),tg("Shoulders","سرشانه"),tg("Arms","بازو"),tg("Abs / core","شکم و میان‌تنه"),tg("Legs & glutes","پا و باسن"),tg("Chest","سینه"),tg("Back","پشت و زیربغل")};
+  CheckBox[] regionChecks=new CheckBox[regionLabels.length];
+  LinearLayout regionGroup=column();
+  for(int i=0;i<regionLabels.length;i++){final int index=i;regionChecks[i]=new CheckBox(a);regionChecks[i].setText(regionLabels[i]);regionChecks[i].setChecked(i==0);regionGroup.addView(regionChecks[i]);regionChecks[i].setOnCheckedChangeListener((button,checked)->{if(index==0&&checked){for(int j=1;j<regionChecks.length;j++)regionChecks[j].setChecked(false);}else if(index>0&&checked){regionChecks[0].setChecked(false);}});}
   Spinner sex=spinner(new String[]{tg("Male","مرد"),tg("Female","زن")});
   Spinner activity=spinner(new String[]{tg("Low activity","فعالیت کم"),tg("Moderate activity","فعالیت متوسط"),tg("High activity","فعالیت زیاد")});
   Spinner level=spinner(new String[]{tg("Beginner","مبتدی"),tg("Intermediate","متوسط"),tg("Advanced","پیشرفته")});
@@ -472,7 +489,7 @@ public final class AdvancedFeatures {
   EditText height=field(tg("Height (cm)","قد (سانتی‌متر)"),"170",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
   EditText weight=field(tg("Weight (kg)","وزن (کیلوگرم)"),"70",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
   l.addView(label(tg("Main goal","هدف اصلی")));l.addView(goal);
-  l.addView(label(tg("Target muscle area","ناحیه هدف")));l.addView(region);
+  l.addView(label(tg("Target muscle area (choose one or more)","ناحیه هدف (یک یا چند مورد را انتخاب کنید)")));l.addView(regionGroup);
   l.addView(label(tg("Training experience","سطح آمادگی")));l.addView(level);
   l.addView(label(tg("Available equipment","تجهیزات در دسترس")));l.addView(equipment);
   l.addView(label(tg("Nutrition preference","ترجیح غذایی")));l.addView(diet);
@@ -485,33 +502,23 @@ public final class AdvancedFeatures {
     double cm=parseLocalizedDouble(height.getText().toString()),kg=parseLocalizedDouble(weight.getText().toString());
     int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());
     if(years<18||years>100||cm<120||cm>230||kg<30||kg>300||n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
-    int g=goal.getSelectedItemPosition(),r=region.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition(),lvl=level.getSelectedItemPosition(),eq=equipment.getSelectedItemPosition();boolean veg=diet.getSelectedItemPosition()==1;
+    int g=goal.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition(),lvl=level.getSelectedItemPosition(),eq=equipment.getSelectedItemPosition();boolean veg=diet.getSelectedItemPosition()==1;
+    ArrayList<Integer> selectedRegions=new ArrayList<>();for(int i=0;i<regionChecks.length;i++)if(regionChecks[i].isChecked())selectedRegions.add(i);if(selectedRegions.isEmpty())throw new IllegalArgumentException("Select at least one body area");
     double bmi=kg/((cm/100.0)*(cm/100.0));
     double bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161);
     double maintenance=bmr*(act==0?1.35:act==1?1.55:1.725);
     double target=g==0?(bmi<18.5?maintenance:Math.max(1200,maintenance-300)):g==1?maintenance:maintenance+200;
     target=Math.max(1200,target);
     double protein=kg*(g==2?1.8:1.5);
-    String area;
-    switch(r){
-     case 1: area=tg("shoulders","سرشانه");break;
-     case 2: area=tg("arms","بازو");break;
-     case 3: area=tg("abs and core","شکم و میان‌تنه");break;
-     case 4: area=tg("legs and glutes","پا و باسن");break;
-     case 5: area=tg("chest","سینه");break;
-     case 6: area=tg("back and lats","پشت و زیربغل");break;
-     default: area=tg("full body","کل بدن");
-    }
-    String[][] movementNames;
-    if(r==1) movementNames=new String[][]{{tg("Overhead press","پرس سرشانه"),"3","10"},{tg("Lateral raise","نشر جانب"),"3","12"},{tg("Rear-delt raise","نشر خم"),"2","12"},{tg("Shoulder external rotation","چرخش خارجی شانه"),"2","12"}};
-    else if(r==2) movementNames=new String[][]{{tg("Biceps curl","جلو بازو"),"3","10"},{tg("Hammer curl","جلو بازو چکشی"),"3","10"},{tg("Triceps extension","پشت بازو"),"3","12"},{tg("Close-grip push-up","شنا دست جمع"),"2","8"}};
-    else if(r==3) movementNames=new String[][]{{tg("Plank","پلانک"),"3","30"},{tg("Dead bug","ددباگ"),"3","10"},{tg("Reverse crunch","کرانچ معکوس"),"3","12"},{tg("Bird dog","برد داگ"),"2","10"}};
-    else if(r==4) movementNames=new String[][]{{tg("Squat","اسکوات"),"3","10"},{tg("Reverse lunge","لانج معکوس"),"3","10"},{tg("Hip hinge","هیپ‌هینج"),"3","10"},{tg("Glute bridge","پل باسن"),"3","12"},{tg("Calf raise","ساق پا"),"2","15"}};
-    else if(r==5) movementNames=new String[][]{{tg("Push-up","شنا سوئدی"),"3","10"},{tg("Chest press","پرس سینه"),"3","10"},{tg("Incline press","پرس بالاسینه"),"3","10"},{tg("Chest fly","فلای سینه"),"2","12"}};
-    else if(r==6) movementNames=new String[][]{{tg("Row","پارویی"),"3","10"},{tg("Lat pulldown / band pulldown","لت از بالا / لت با کش"),"3","10"},{tg("Face pull / band pull-apart","فیس پول / بازکردن کش"),"3","12"},{tg("Back extension","بازکردن پشت"),"2","12"}};
-    else movementNames=new String[][]{{tg("Squat","اسکوات"),"3","10"},{tg("Push-up","شنا سوئدی"),"3","8"},{tg("Row","پارویی"),"3","10"},{tg("Hip hinge","هیپ‌هینج"),"3","10"},{tg("Plank","پلانک"),"3","30"}};
+    StringBuilder areaBuilder=new StringBuilder();
+    for(int selectedRegion:selectedRegions){if(areaBuilder.length()>0)areaBuilder.append(" + ");areaBuilder.append(regionLabel(selectedRegion));}
+    String area=areaBuilder.toString();
+    ArrayList<String[]> movementList=new ArrayList<>();
+    HashSet<String> seenMovements=new HashSet<>();
+    for(int selectedRegion:selectedRegions){for(String[] movement:movementsForRegion(selectedRegion)){String movementKey=movement[0].toLowerCase(Locale.ROOT);if(seenMovements.add(movementKey))movementList.add(movement.clone());}}
+    if(movementList.isEmpty())throw new IllegalArgumentException("No movements for selected body areas");
     if(eq==0){
-     for(String[] ex:movementNames){
+     for(String[] ex:movementList){
       if(ex[0].contains("press")||ex[0].contains("پرس"))ex[0]=tg("Incline push-up","شنا روی سطح بلند");
       if(ex[0].contains("raise")||ex[0].contains("نشر"))ex[0]=tg("Arm raise without weights","بالا آوردن دست بدون وزنه");
       if(ex[0].contains("Row")||ex[0].contains("پارویی"))ex[0]=tg("Backpack row","پارویی با کوله‌پشتی");
@@ -521,15 +528,15 @@ public final class AdvancedFeatures {
     int repsBase=g==0?12:g==1?10:8;
     String planName=tg("Smart plan","برنامه هوشمند")+" - "+goal.getSelectedItem()+" - "+area;
     planId=db.addPlan(planName);
-    for(int i=0;i<movementNames.length;i++){
+    for(int i=0;i<movementList.size();i++){
      int sets=setsBase;
      if(lvl==0)sets=Math.min(3,sets);
      int reps=repsBase;
      if(g==0)reps=12;else if(g==1)reps=10;else reps=8+(lvl==0?2:0);
-     if(movementNames[i][0].contains("Plank")||movementNames[i][0].contains("پلانک"))reps=30;
-     db.addExercise(planId,movementNames[i][0],sets,reps);
+     if(movementList.get(i)[0].contains("Plank")||movementList.get(i)[0].contains("پلانک"))reps=30;
+     db.addExercise(planId,movementList.get(i)[0],sets,reps);
     }
-    a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putInt("fitness_level",lvl).putInt("fitness_region",r).putInt("fitness_equipment",eq).putInt("nutrition_preference",veg?1:0).putInt("nutrition_target_kcal",(int)Math.round(target)).putInt("nutrition_protein_g",(int)Math.round(protein)).apply();
+    a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putInt("fitness_level",lvl).putString("fitness_regions",selectedRegions.toString()).putInt("fitness_region",selectedRegions.get(0)).putInt("fitness_equipment",eq).putInt("nutrition_preference",veg?1:0).putInt("nutrition_target_kcal",(int)Math.round(target)).putInt("nutrition_protein_g",(int)Math.round(protein)).apply();
     String trainingSchedule=tg("Weekly schedule: ","تقسیم هفتگی: ")+n+" "+tg("sessions; leave a recovery day between hard sessions for the same muscle.","جلسه؛ برای یک عضله بین جلسات سنگین روز ریکاوری بگذارید.");
     String progression=tg("Progression: when every set reaches the top of the rep range with good technique, increase resistance slightly. Keep 1–3 reps in reserve and stop if you feel sharp pain.","پیشرفت: وقتی همه ست‌ها با تکنیک صحیح به سقف تکرار رسیدند، مقاومت را کمی افزایش دهید. ۱ تا ۳ تکرار ذخیره نگه دارید و در صورت درد تیز تمرین را متوقف کنید.");
     String nutrition;
@@ -543,6 +550,8 @@ public final class AdvancedFeatures {
      .append(tg("Estimated maintenance","کالری نگهدارنده تخمینی")).append(": ").append(Math.round(maintenance)).append(" kcal/day\n")
      .append(tg("Starting energy target","هدف اولیه انرژی")).append(": ").append(Math.round(target)).append(" kcal/day\n")
      .append(tg("Protein guide","راهنمای پروتئین")).append(": ").append(Math.round(protein)).append(" g/day\n")
+     .append(tg("Selected body areas","بخش‌های انتخاب‌شده")).append(": ").append(area).append("\n")
+     .append(tg("Exercises","حرکت‌ها")).append(": ").append(movementList.size()).append("\n")
      .append(tg("Training volume","حجم تمرین")).append(": ").append(setsBase).append(" ").append(tg("sets per movement","ست برای هر حرکت")).append("\n")
      .append(trainingSchedule).append("\n\n").append(tg("TRAINING PROGRESSION","پیشرفت تمرین")).append("\n").append(progression).append("\n\n")
      .append(tg("NUTRITION","تغذیه")).append("\n").append(nutrition).append("\n\n").append(mealExample).append("\n\n");
