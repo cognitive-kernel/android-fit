@@ -1,12 +1,12 @@
 name: Android CI
 on:
   push:
-    branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter, 'release/**' ]
+    branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter, feature/exercise-library-selection-speed, 'release/**' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: android-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: false
@@ -260,6 +260,15 @@ jobs:
           path: artifacts/*
           if-no-files-found: error
           retention-days: 90
+      - name: Publish public test download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.1.13-public-test
+          name: Fityar 1.1.13 — Public Test Build
+          prerelease: true
+          make_latest: false
+          files: artifacts/fityar-release-v1.1.13.apk
+          fail_on_unmatched_files: true
 
   signed-apk:
     # Signing/update work is intentionally deferred until the original key is recovered.
