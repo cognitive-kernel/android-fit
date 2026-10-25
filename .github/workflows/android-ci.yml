@@ -1,7 +1,8 @@
 name: Android CI
 on:
   push:
-    branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter, feature/smart-goal-nutrition-plans, 'release/**' ]
+    # The smart-goal feature branch is validated by its PR workflow below; avoid duplicate emulator runs.
+    branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter, 'release/**' ]
   pull_request:
     branches: [ main ]
   workflow_dispatch:
