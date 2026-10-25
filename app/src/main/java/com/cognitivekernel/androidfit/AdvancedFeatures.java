@@ -457,6 +457,60 @@ public final class AdvancedFeatures {
 
 
  /** Goal-specific exercise and nutrition guide based on age, height, weight and activity. */
+ private String canonicalMovementQuery(String name){
+  String[][] map={
+   {tg("Overhead press","پرس سرشانه"),"Overhead Press"},{tg("Pike push-up","شنا پایک"),"Pike Push-Up"},
+   {tg("Lateral raise","نشر جانب"),"Lateral Raise"},{tg("Rear-delt raise","نشر خم"),"Rear Delt Raise"},
+   {tg("Shoulder external rotation","چرخش خارجی شانه"),"Shoulder External Rotation"},
+   {tg("Biceps curl","جلو بازو"),"Biceps Curl"},{tg("Hammer curl","جلو بازو چکشی"),"Hammer Curl"},
+   {tg("Triceps extension","پشت بازو"),"Triceps Extension"},{tg("Close-grip push-up","شنا دست جمع"),"Close-Grip Push-Up"},
+   {tg("Plank","پلانک"),"Plank"},{tg("Dead bug","ددباگ"),"Dead Bug"},{tg("Reverse crunch","کرانچ معکوس"),"Reverse Crunch"},
+   {tg("Bird dog","برد داگ"),"Bird Dog"},{tg("Squat","اسکوات"),"Squat"},{tg("Reverse lunge","لانج معکوس"),"Reverse Lunge"},
+   {tg("Hip hinge","هیپ‌هینج"),"Hip Hinge"},{tg("Glute bridge","پل باسن"),"Glute Bridge"},{tg("Calf raise","ساق پا"),"Calf Raise"},
+   {tg("Push-up","شنا سوئدی"),"Push-Up"},{tg("Incline push-up","شنا روی سطح بلند"),"Incline Push-Up"},
+   {tg("Chest press","پرس سینه"),"Chest Press"},{tg("Incline press","پرس بالاسینه"),"Incline Press"},
+   {tg("Chest fly","فلای سینه"),"Chest Fly"},{tg("Row","پارویی"),"Row"},{tg("Backpack row","پارویی با کوله‌پشتی"),"Backpack Row"},
+   {tg("Lat pulldown / band pulldown","لت از بالا / لت با کش"),"Lat Pulldown"},
+   {tg("Face pull / band pull-apart","فیس پول / بازکردن کش"),"Face Pull"},
+   {tg("Back extension","بازکردن پشت"),"Back Extension"}
+  };
+  for(String[] pair:map)if(pair[0].equals(name))return pair[1];
+  return "";
+ }
+ private static String normalizeExerciseName(String value){return value==null?"":value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]","");}
+ private ExerciseLibraryRow findMatchingExerciseGif(List<ExerciseLibraryRow> rows,String movementName){
+  String query=canonicalMovementQuery(movementName);if(query.isEmpty())return null;
+  String target=normalizeExerciseName(query);
+  ExerciseLibraryRow best=null;int bestScore=Integer.MAX_VALUE;
+  for(ExerciseLibraryRow row:rows){
+   String candidate=normalizeExerciseName(row.englishName);
+   if(candidate.equals(target))return row;
+   if(candidate.startsWith(target)&&candidate.length()-target.length()<=12){
+    int score=candidate.length()-target.length();if(score<bestScore){best=row;bestScore=score;}
+   }
+  }
+  return best;
+ }
+ private void showMovementGif(String movementName){
+  java.util.concurrent.Future<ArrayList<ExerciseLibraryRow>> future=ensureLibraryFuture(a.getApplicationContext());
+  if(future.isDone()){
+   try{ExerciseLibraryRow match=findMatchingExerciseGif(future.get(),movementName);if(match!=null){showExerciseDetail(match.displayName("en".equals(selectedLanguage())),"",match.file,match.sourceId,false);return;}}
+   catch(Exception ignored){}
+   message(tg("No verified GIF match","گیف منطبق تأیید نشد"),tg("No reliable matching GIF was found for this movement. Search the exercise library instead of showing an unrelated animation.","برای این حرکت گیف مرتبط و قابل‌اعتماد پیدا نشد؛ برای جلوگیری از نمایش انیمیشن نامرتبط، نام حرکت را در کتابخانه جست‌وجو کنید."));
+   return;
+  }
+  ProgressDialog loading=new ProgressDialog(a);loading.setTitle(tg("Exercise GIF","گیف حرکت"));loading.setMessage(tg("Finding matching animation…","در حال یافتن گیف مرتبط…"));loading.setIndeterminate(true);loading.setCancelable(false);loading.show();
+  new Thread(()->{
+   ExerciseLibraryRow match=null;try{match=findMatchingExerciseGif(future.get(),movementName);}catch(Exception ignored){}
+   final ExerciseLibraryRow result=match;
+   new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+    if(loading.isShowing())loading.dismiss();
+    if(a.isFinishing()||(Build.VERSION.SDK_INT>=17&&a.isDestroyed()))return;
+    if(result==null){message(tg("No verified GIF match","گیف منطبق تأیید نشد"),tg("No reliable matching GIF was found for this movement. Search the exercise library instead of showing an unrelated animation.","برای این حرکت گیف مرتبط و قابل‌اعتماد پیدا نشد؛ برای جلوگیری از نمایش انیمیشن نامرتبط، نام حرکت را در کتابخانه جست‌وجو کنید."));}
+    else showExerciseDetail(result.displayName("en".equals(selectedLanguage())),"",result.file,result.sourceId,false);
+   });
+  },"FitYar-GIF-match").start();
+ }
  private String regionLabel(int region){
   switch(region){case 1:return tg("Shoulders","سرشانه");case 2:return tg("Arms","بازو");case 3:return tg("Abs / core","شکم و میان‌تنه");case 4:return tg("Legs & glutes","پا و باسن");case 5:return tg("Chest","سینه");case 6:return tg("Back","پشت و زیربغل");default:return tg("Full body","کل بدن");}
  }
@@ -519,9 +573,11 @@ public final class AdvancedFeatures {
     if(movementList.isEmpty())throw new IllegalArgumentException("No movements for selected body areas");
     if(eq==0){
      for(String[] ex:movementList){
-      if(ex[0].contains("press")||ex[0].contains("پرس"))ex[0]=tg("Incline push-up","شنا روی سطح بلند");
-      if(ex[0].contains("raise")||ex[0].contains("نشر"))ex[0]=tg("Arm raise without weights","بالا آوردن دست بدون وزنه");
-      if(ex[0].contains("Row")||ex[0].contains("پارویی"))ex[0]=tg("Backpack row","پارویی با کوله‌پشتی");
+      if(ex[0].equals(tg("Overhead press","پرس سرشانه")))ex[0]=tg("Pike push-up","شنا پایک");
+      else if(ex[0].equals(tg("Chest press","پرس سینه")))ex[0]=tg("Push-up","شنا سوئدی");
+      else if(ex[0].equals(tg("Incline press","پرس بالاسینه")))ex[0]=tg("Incline push-up","شنا روی سطح بلند");
+      else if(ex[0].equals(tg("Lateral raise","نشر جانب")))ex[0]=tg("Arm raise without weights","بالا آوردن دست بدون وزنه");
+      else if(ex[0].equals(tg("Row","پارویی")))ex[0]=tg("Backpack row","پارویی با کوله‌پشتی");
      }
     }
     int setsBase=lvl==0?2:lvl==1?3:4;
@@ -557,7 +613,15 @@ public final class AdvancedFeatures {
      .append(tg("NUTRITION","تغذیه")).append("\n").append(nutrition).append("\n\n").append(mealExample).append("\n\n");
     if(g==0&&bmi<18.5)out.append(tg("BMI is below 18.5; this plan does not prescribe a calorie deficit. Consider professional advice if weight loss is unintended.","BMI کمتر از ۱۸٫۵ است؛ این برنامه کسری کالری تجویز نمی‌کند. اگر کاهش وزن ناخواسته است، مشورت با متخصص را در نظر بگیرید.")).append("\n\n");
     out.append(tg("Safety: estimates are for adults and are not medical advice. Illness, medication, pregnancy and eating-disorder history are not accounted for. Consult a qualified professional when appropriate.","ایمنی: این تخمین‌ها برای بزرگسالان و غیرپزشکی‌اند. بیماری، دارو، بارداری و سابقه اختلال خوردن لحاظ نشده‌اند. در صورت نیاز با متخصص واجد صلاحیت مشورت کنید."));
-    ScrollView resultScroll=new ScrollView(a);TextView resultText=new TextView(a);resultText.setText(out.toString());resultText.setTextSize(16);int pad=(int)(14*a.getResources().getDisplayMetrics().density);resultText.setPadding(pad,pad,pad,pad);resultScroll.addView(resultText);
+    ScrollView resultScroll=new ScrollView(a);LinearLayout resultContent=column();TextView resultText=new TextView(a);resultText.setText(out.toString());resultText.setTextSize(16);int pad=(int)(14*a.getResources().getDisplayMetrics().density);resultText.setPadding(pad,pad,pad,pad);resultContent.addView(resultText);
+    TextView movementHeading=new TextView(a);movementHeading.setText(tg("MOVEMENTS — tap to view the matching GIF","حرکت‌ها — برای دیدن گیف مرتبط لمس کنید"));movementHeading.setTextSize(18);movementHeading.setPadding(0,pad,pad,pad);resultContent.addView(movementHeading);
+    for(String[] movement:movementList){
+     LinearLayout movementRow=new LinearLayout(a);movementRow.setOrientation(LinearLayout.HORIZONTAL);movementRow.setGravity(Gravity.CENTER_VERTICAL);
+     TextView movementLabel=new TextView(a);movementLabel.setText(movement[0]+"  ·  "+setsBase+" × "+movement[2]);movementLabel.setTextSize(15);movementRow.addView(movementLabel,new LinearLayout.LayoutParams(0, -2, 1));
+     Button gifButton=new Button(a);gifButton.setText(tg("View GIF","نمایش گیف"));gifButton.setOnClickListener(v->showMovementGif(movement[0]));movementRow.addView(gifButton);
+     resultContent.addView(movementRow);
+    }
+    resultScroll.addView(resultContent);
     new AlertDialog.Builder(a).setTitle(tg("Your saved training & nutrition plan","برنامه ذخیره‌شده تمرین و تغذیه")).setView(resultScroll).setPositiveButton(android.R.string.ok,null).show();
    }catch(Exception ex){if(planId>0){try{db.deletePlan(planId);}catch(Exception ignored){}}message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, weight 30–300 kg, 1–7 training days and 10–180 minutes per session.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰، وزن ۳۰ تا ۳۰۰ کیلوگرم، ۱ تا ۷ روز تمرین و ۱۰ تا ۱۸۰ دقیقه برای هر جلسه وارد کنید."));}
   }).setNegativeButton(android.R.string.cancel,null).show();
