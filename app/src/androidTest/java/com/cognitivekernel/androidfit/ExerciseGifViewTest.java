@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(AndroidJUnit4.class)
 public class ExerciseGifViewTest {
     // This file is present in app/src/main/assets/exercises and does not require network access.
-    private static final String TEST_GIF = "Air Squat (female)_[394813].gif";
+    private static final String TEST_GIF = "squat.gif";
 
     @Test public void bundledGifOpensFullscreenAndCloseButtonReturnsToPreviousScreen() {
         ExerciseGifView.setAnimationPlaybackEnabledForTests(false);
