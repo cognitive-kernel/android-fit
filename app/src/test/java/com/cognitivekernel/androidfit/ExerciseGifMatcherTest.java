@@ -19,6 +19,7 @@ public class ExerciseGifMatcherTest {
 
     @Test public void differentMovementVariantsAreRejected() {
         assertEquals(-1, ExerciseGifMatcher.score("Lateral Raise", "Lateral Raise with Towel"));
+        assertEquals(-1, ExerciseGifMatcher.score("Lateral Raise", "Reverse Lateral Raise"));
         assertEquals(-1, ExerciseGifMatcher.score("Shoulder External Rotation", "Shoulder External Rotation Test"));
         assertEquals(-1, ExerciseGifMatcher.score("Reverse Lunge", "Reverse Lunge with Leg Kick"));
         assertEquals(-1, ExerciseGifMatcher.score("Reverse Lunge", "Bodyweight Reverse Lunge with Overhead"));
