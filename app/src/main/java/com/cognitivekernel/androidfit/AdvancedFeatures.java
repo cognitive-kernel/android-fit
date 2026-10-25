@@ -123,17 +123,36 @@ public final class AdvancedFeatures {
  }
 
  private static final class ExerciseLibraryRow{
-  final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment,gender;
-  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId){
-   this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
-   this.exerciseType=classifyExerciseType(englishName);
-   this.bodyPart=classifyBodyPart(englishName);
-   this.equipment=classifyEquipment(englishName);
+  final String englishName,file,sourceId,gender;
+  private volatile String persianName,exerciseType,bodyPart,equipment;
+  ExerciseLibraryRow(String englishName,String persianNameUnused,String file,String sourceId){
+   this.englishName=englishName;this.file=file;this.sourceId=sourceId;
    String lower=englishName.toLowerCase(Locale.ROOT);
-   this.gender=containsAny(lower,"(male)"," male","male ","(female)"," female","female ")?(containsAny(lower,"(female)"," female","female ")?"Female":"Male"):"All";
+   this.gender=containsAny(lower,"(female)"," female","female ")? "Female":
+    (containsAny(lower,"(male)"," male","male ")?"Male":"All");
   }
-  String displayName(boolean english){return english?englishName:persianName;}
-  @Override public String toString(){return englishName+" "+persianName;}
+  String exerciseType(){
+   String value=exerciseType;if(value==null){value=classifyExerciseType(englishName);exerciseType=value;}return value;
+  }
+  String bodyPart(){
+   String value=bodyPart;if(value==null){value=classifyBodyPart(englishName);bodyPart=value;}return value;
+  }
+  String equipment(){
+   String value=equipment;if(value==null){value=classifyEquipment(englishName);equipment=value;}return value;
+  }
+  String persianName(){
+   String value=persianName;
+   if(value==null){value=persianExerciseName(englishName);persianName=value;}
+   return value;
+  }
+  String displayName(boolean english){return english?englishName:persianName();}
+  boolean matchesSearch(String query){
+   if(englishName.toLowerCase(Locale.ROOT).contains(query))return true;
+   boolean persianQuery=false;
+   for(int i=0;i<query.length();i++){char ch=query.charAt(i);if(ch>='\u0600'&&ch<='\u06FF'){persianQuery=true;break;}}
+   return persianQuery&&persianName().toLowerCase(Locale.ROOT).contains(query);
+  }
+  @Override public String toString(){return englishName+" "+persianName();}
  }
 
  private static String classifyExerciseType(String name){
@@ -206,15 +225,18 @@ public final class AdvancedFeatures {
   return false;
  }
 
- private final class ExerciseLibraryAdapter extends ArrayAdapter<ExerciseLibraryRow>{
-  private final ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
-  ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> initial){super(a,android.R.layout.simple_list_item_1,new ArrayList<>());setRows(initial);}
-  void setRows(List<ExerciseLibraryRow> values){rows.clear();rows.addAll(values);clear();addAll(values);}
+ private final class ExerciseLibraryAdapter extends android.widget.BaseAdapter{
+  private List<ExerciseLibraryRow> rows=Collections.emptyList();
+  ExerciseLibraryAdapter(List<ExerciseLibraryRow> initial){setRows(initial);}
+  void setRows(List<ExerciseLibraryRow> values){rows=values==null?Collections.emptyList():values;notifyDataSetChanged();}
+  @Override public int getCount(){return rows.size();}
+  @Override public ExerciseLibraryRow getItem(int position){return rows.get(position);}
+  @Override public long getItemId(int position){return position;}
   @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
    TextView text=convertView instanceof TextView?(TextView)convertView:new TextView(a);
-   int padding=(int)(16*a.getResources().getDisplayMetrics().density);
+   int padding=(int)(12*a.getResources().getDisplayMetrics().density);
    text.setPadding(padding,padding,padding,padding);
-   text.setMinHeight((int)(48*a.getResources().getDisplayMetrics().density));
+   text.setMinHeight((int)(44*a.getResources().getDisplayMetrics().density));
    text.setTextSize(16);
    ExerciseLibraryRow row=getItem(position);
    if(row!=null)text.setText(row.displayName("en".equals(selectedLanguage())));
@@ -223,7 +245,7 @@ public final class AdvancedFeatures {
  }
 
  private static final String[] EXERCISE_TYPES={"All","Strength","Aerobic","Stretching"};
- private static final String[] BODY_PARTS={"All","Back","Boxing","Calves","Cardio","Chest","Face","Feet","Forearms","Full body","Hands","Hips","Neck","Pilates","Plyometrics","Shoulders","Stretching","Thighs","Upper Arms","Waist","Weightlifting","Weightlifts","Yoga"};
+ private static final String[] BODY_PARTS={"All","Back","Boxing","Calves","Cardio","Chest","Face","Feet","Forearms","Full body","Hands","Hips","Neck","Pilates","Plyometrics","Shoulders","Stretching","Thighs","Upper Arms","Waist","Weightlifting","Yoga"};
  private static final String[] EQUIPMENT_TYPES={"All","Assisted","Band","Barbell","Battling Rope","Body weight","Bosu ball","Cable","Dumbbell","EZ Barbell","Hammer","Kettlebell","Leverage machine","Medicine Ball","Olympic barbell","Pilates Machine","Power Sled","Resistance Band","Roll","Rollball","Rope","Sled machine","Smith machine","Stability ball","Stick","Suspension","Trap bar","Vibrate Plate","Weighted","Wheel roller"};
 
  private static final String[] GENDER_TYPES={"All","Male","Female"};
@@ -308,6 +330,8 @@ public final class AdvancedFeatures {
    message(s("exercise_library"),tr("No GIF exercises were found in the exercise assets.","هیچ فایل GIF در پوشه حرکات پیدا نشد."));
    return;
   }
+
+  final float density=a.getResources().getDisplayMetrics().density;
   EditText search=new EditText(a);
   search.setSingleLine(true);
   search.setHint(tr("Search in Persian or English","جست‌وجو به فارسی یا انگلیسی"));
@@ -315,32 +339,77 @@ public final class AdvancedFeatures {
   Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body part","عضو بدن"));
   Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Equipment type","وسیله"));
   Spinner genderSpinner=makeCategorySpinner(GENDER_TYPES,tr("Gender","جنسیت"));
-  ListView list=new ListView(a);
-  ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(exercises);
+
   LinearLayout content=column();
-  content.addView(search);
-  content.addView(typeSpinner);
-  content.addView(bodySpinner);
-  content.addView(equipmentSpinner);
-  content.addView(genderSpinner);
-  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(390*a.getResources().getDisplayMetrics().density)));
+  content.setPadding((int)(10*density),(int)(8*density),(int)(10*density),(int)(8*density));
+  content.addView(search,new LinearLayout.LayoutParams(-1,-2));
+
+  LinearLayout firstFilterRow=new LinearLayout(a);
+  firstFilterRow.setOrientation(LinearLayout.HORIZONTAL);
+  LinearLayout secondFilterRow=new LinearLayout(a);
+  secondFilterRow.setOrientation(LinearLayout.HORIZONTAL);
+  addLibraryFilter(firstFilterRow,tr("Movement type","نوع حرکت"),typeSpinner);
+  addLibraryFilter(firstFilterRow,tr("Body part","عضو بدن"),bodySpinner);
+  addLibraryFilter(secondFilterRow,tr("Equipment","وسیله"),equipmentSpinner);
+  addLibraryFilter(secondFilterRow,tr("Gender","جنسیت"),genderSpinner);
+  content.addView(firstFilterRow,new LinearLayout.LayoutParams(-1,-2));
+  content.addView(secondFilterRow,new LinearLayout.LayoutParams(-1,-2));
+
+  ListView list=new ListView(a);
+  list.setDividerHeight(Math.max(1,(int)density));
+  ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(exercises);
+  list.setAdapter(adapter);
+  content.addView(list,new LinearLayout.LayoutParams(-1,0,1f));
+
+  LinearLayout previewPanel=new LinearLayout(a);
+  previewPanel.setOrientation(LinearLayout.VERTICAL);
+  previewPanel.setVisibility(View.GONE);
+  previewPanel.setPadding(0,(int)(4*density),0,0);
+  TextView selectedTitle=new TextView(a);
+  selectedTitle.setTextSize(17);
+  selectedTitle.setTypeface(null,android.graphics.Typeface.BOLD);
+  TextView sourceLabel=new TextView(a);
+  sourceLabel.setTextSize(11);
+  ExerciseGifView selectedGif=new ExerciseGifView(a);
+  previewPanel.addView(selectedTitle,new LinearLayout.LayoutParams(-1,-2));
+  previewPanel.addView(sourceLabel,new LinearLayout.LayoutParams(-1,-2));
+  previewPanel.addView(selectedGif,new LinearLayout.LayoutParams(-1,(int)(132*density)));
+  content.addView(previewPanel,new LinearLayout.LayoutParams(-1,(int)(168*density)));
+
+  final java.util.concurrent.atomic.AtomicInteger filterGeneration=new java.util.concurrent.atomic.AtomicInteger();
+  final boolean[] dialogDismissed={false};
   Runnable filterRows=()->{
    String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
-   String type=EXERCISE_TYPES[typeSpinner.getSelectedItemPosition()];
-   String body=BODY_PARTS[bodySpinner.getSelectedItemPosition()];
-   String equipment=EQUIPMENT_TYPES[equipmentSpinner.getSelectedItemPosition()];
-   String gender=GENDER_TYPES[genderSpinner.getSelectedItemPosition()];
-   ArrayList<ExerciseLibraryRow> filtered=new ArrayList<>();
-   for(ExerciseLibraryRow row:exercises){
-    if(!"All".equals(type)&&!type.equals(row.exerciseType))continue;
-    if(!"All".equals(body)&&!body.equals(row.bodyPart))continue;
-    if(!"All".equals(equipment)&&!equipment.equals(row.equipment))continue;
-    if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
-    if(!query.isEmpty()&&!row.englishName.toLowerCase(Locale.ROOT).contains(query)&&!row.persianName.toLowerCase(Locale.ROOT).contains(query))continue;
-    filtered.add(row);
+   String type=EXERCISE_TYPES[typeSpinner.getSelectedItemPosition()<0?0:typeSpinner.getSelectedItemPosition()];
+   String body=BODY_PARTS[bodySpinner.getSelectedItemPosition()<0?0:bodySpinner.getSelectedItemPosition()];
+   String equipment=EQUIPMENT_TYPES[equipmentSpinner.getSelectedItemPosition()<0?0:equipmentSpinner.getSelectedItemPosition()];
+   String gender=GENDER_TYPES[genderSpinner.getSelectedItemPosition()<0?0:genderSpinner.getSelectedItemPosition()];
+   int generation=filterGeneration.incrementAndGet();
+
+   if(query.isEmpty()&&"All".equals(type)&&"All".equals(body)&&"All".equals(equipment)&&"All".equals(gender)){
+    adapter.setRows(exercises);
+    return;
    }
-   adapter.setRows(filtered);
+
+   // Filter potentially thousands of bundled GIF records off the UI thread.
+   LIBRARY_EXECUTOR.execute(()->{
+    ArrayList<ExerciseLibraryRow> filtered=new ArrayList<>();
+    for(int i=0;i<exercises.size();i++){
+     if(generation!=filterGeneration.get())return;
+     ExerciseLibraryRow row=exercises.get(i);
+     if(!"All".equals(type)&&!type.equals(row.exerciseType()))continue;
+     if(!"All".equals(body)&&!body.equals(row.bodyPart()))continue;
+     if(!"All".equals(equipment)&&!equipment.equals(row.equipment()))continue;
+     if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
+     if(!query.isEmpty()&&!row.matchesSearch(query))continue;
+     filtered.add(row);
+    }
+    new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+     if(!dialogDismissed[0]&&generation==filterGeneration.get())adapter.setRows(filtered);
+    });
+   });
   };
+
   android.widget.AdapterView.OnItemSelectedListener filterListener=new android.widget.AdapterView.OnItemSelectedListener(){
    public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){filterRows.run();}
    public void onNothingSelected(android.widget.AdapterView<?> parent){}
@@ -349,23 +418,65 @@ public final class AdvancedFeatures {
   bodySpinner.setOnItemSelectedListener(filterListener);
   equipmentSpinner.setOnItemSelectedListener(filterListener);
   genderSpinner.setOnItemSelectedListener(filterListener);
+
+  android.os.Handler filterHandler=new android.os.Handler(android.os.Looper.getMainLooper());
   search.addTextChangedListener(new android.text.TextWatcher(){
-   public void beforeTextChanged(CharSequence s,int st,int count,int after){}
-   public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}
-   public void afterTextChanged(android.text.Editable e){}
+   public void beforeTextChanged(CharSequence text,int start,int count,int after){}
+   public void onTextChanged(CharSequence text,int start,int before,int count){
+    filterHandler.removeCallbacks(filterRows);
+    filterHandler.postDelayed(filterRows,140);
+   }
+   public void afterTextChanged(android.text.Editable editable){}
   });
-  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
+
+  final AlertDialog libraryDialog=new AlertDialog.Builder(a)
+    .setTitle(s("exercise_library"))
+    .setView(content)
+    .setNegativeButton(android.R.string.cancel,null)
+    .create();
+
   list.setOnItemClickListener((parent,view,position,id)->{
    ExerciseLibraryRow selected=adapter.getItem(position);
-   if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId,false);
+   if(selected==null)return;
+   selectedTitle.setText(selected.displayName("en".equals(selectedLanguage())));
+   sourceLabel.setText(selected.sourceId==null||selected.sourceId.isEmpty()?"":tr("Source: GymVisual","منبع: GymVisual"));
+   previewPanel.setVisibility(View.VISIBLE);
+   selectedGif.setContentDescription(selected.displayName("en".equals(selectedLanguage())));
+   selectedGif.setAssetName(selected.file);
+  });
+  libraryDialog.setOnDismissListener(dialog->{dialogDismissed[0]=true;filterGeneration.incrementAndGet();filterHandler.removeCallbacks(filterRows);});
+  libraryDialog.setOnShowListener(dialog->{
+   android.view.Window window=libraryDialog.getWindow();
+   if(window!=null){
+    android.util.DisplayMetrics metrics=a.getResources().getDisplayMetrics();
+    window.setLayout((int)(metrics.widthPixels*0.96f),(int)(metrics.heightPixels*0.88f));
+   }
+   // The default/unfiltered state always starts with the complete exercise catalogue.
+   search.setText("");
+   typeSpinner.setSelection(0);
+   bodySpinner.setSelection(0);
+   equipmentSpinner.setSelection(0);
+   genderSpinner.setSelection(0);
+   list.setSelection(0);
+   filterRows.run();
   });
   libraryDialog.show();
  }
 
- private static String persianExerciseName(String english){
-  if(english==null||english.trim().isEmpty())return "";
-  String value=english.toLowerCase(Locale.ROOT);
-  String[][] words={
+ private void addLibraryFilter(LinearLayout row,String label,Spinner spinner){
+  LinearLayout field=new LinearLayout(a);
+  field.setOrientation(LinearLayout.VERTICAL);
+  TextView caption=new TextView(a);
+  caption.setText(label);
+  caption.setTextSize(11);
+  int pad=(int)(3*a.getResources().getDisplayMetrics().density);
+  caption.setPadding(pad,pad,pad,0);
+  field.addView(caption,new LinearLayout.LayoutParams(-1,-2));
+  field.addView(spinner,new LinearLayout.LayoutParams(-1,-2));
+  row.addView(field,new LinearLayout.LayoutParams(0,-2,1f));
+ }
+
+ private static final String[][] EXERCISE_NAME_TRANSLATIONS={
    {"ez-bar","هالتر خمیده"},{"smith machine","دستگاه اسمیت"},{"lat pulldown","لت از بالا"},{"pull down","لت از بالا"},{"pulldown","لت از بالا"},{"leg press","پرس پا"},{"chest press","پرس سینه"},{"shoulder press","پرس سرشانه"},{"leg extension","جلو پا دستگاه"},{"leg curl","پشت پا دستگاه"},{"hamstring curl","پشت پا"},{"hip thrust","هیپ تراست"},{"cable crossover","کراس اور کابل"},{"reverse fly","فلای معکوس"},{"face pull","فیس پول"},{"calf raise","ساق پا"},{"wrist curl","مچ‌جمع"},{"triceps pushdown","پشت بازو سیم‌کش"},{"bent over","خم‌شده"},{"bent-over","خم‌شده"},{"single leg","تک‌پا"},{"single arm","تک‌دست"},{"medicine ball","توپ پزشکی"},{"stability ball","توپ تعادلی"},{"version","نسخه"},{"male","آقایان"},{"female","بانوان"},{"with","با"},{"without","بدون"},
    {"dumbbell","دمبل"},{"barbell","هالتر"},{"kettlebell","کتل‌بل"},{"cable","کابل"},{"machine","دستگاه"},{"band","کش"},
    {"bodyweight","وزن بدن"},{"weight","وزنه"},{"plate","صفحه"},{"medicine ball","توپ پزشکی"},{"stability ball","توپ تعادلی"},
@@ -394,7 +505,20 @@ public final class AdvancedFeatures {
    {"drill","تمرین"},{"exercise","حرکت"},{"workout","تمرین"},{"the",""},{"and","و"},{"to","به"},{"from","از"},{"on","روی"},
    {"in","در"},{"at","در"},{"with","با"},{"of",""},{"for","برای"},{"a",""},{"an",""},{"male","آقایان"},{"version","نسخه"}
   };
-  for(String[] pair:words)value=value.replaceAll("(?<![a-z])"+java.util.regex.Pattern.quote(pair[0])+"(?![a-z])",java.util.regex.Matcher.quoteReplacement(pair[1]));
+ 
+ private static final java.util.regex.Pattern[] EXERCISE_NAME_PATTERNS=buildExerciseNamePatterns();
+ private static java.util.regex.Pattern[] buildExerciseNamePatterns(){
+  java.util.regex.Pattern[] result=new java.util.regex.Pattern[EXERCISE_NAME_TRANSLATIONS.length];
+  for(int i=0;i<result.length;i++){
+   result[i]=java.util.regex.Pattern.compile("(?<![a-z])"+java.util.regex.Pattern.quote(EXERCISE_NAME_TRANSLATIONS[i][0])+"(?![a-z])");
+  }
+  return result;
+ }
+ private static String persianExerciseName(String english){
+  if(english==null||english.trim().isEmpty())return "";
+  String value=english.toLowerCase(Locale.ROOT);
+
+  for(int i=0;i<EXERCISE_NAME_TRANSLATIONS.length;i++)value=EXERCISE_NAME_PATTERNS[i].matcher(value).replaceAll(java.util.regex.Matcher.quoteReplacement(EXERCISE_NAME_TRANSLATIONS[i][1]));
   value=value.replaceAll("[()]", " ").replaceAll("[,/]", "،").replaceAll("\\s+"," ").trim();
   StringBuilder out=new StringBuilder();
   for(String token:value.split(" ")){
