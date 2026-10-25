@@ -7,6 +7,7 @@ import androidx.test.espresso.Espresso;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import android.widget.Spinner;
+import android.widget.FrameLayout;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static androidx.test.espresso.action.ViewActions.click;
@@ -16,6 +17,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(AndroidJUnit4.class)
 public class SmartGoalPlanSelectionTest {
@@ -53,7 +56,8 @@ public class SmartGoalPlanSelectionTest {
             scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
             Espresso.onView(withText("سطح فعالیت روزانه")).perform(scrollTo()).check(matches(isDisplayed()));
             scenario.onActivity(activity -> {
-                Spinner selector = activity.findViewWithTag("dailyActivityLevelSpinner");
+                FrameLayout content = activity.findViewById(android.R.id.content);
+                Spinner selector = content.findViewWithTag("dailyActivityLevelSpinner");
                 assertNotNull("Daily activity selector should be present", selector);
                 selector.setSelection(0);
                 assertEquals("فعالیت کم", selector.getSelectedItem().toString());
