@@ -200,7 +200,12 @@ public final class ExerciseGifView extends View {
             Paint placeholder = new Paint(Paint.ANTI_ALIAS_FLAG);
             placeholder.setColor(0xFF444444);
             placeholder.setTextSize(14 * getResources().getDisplayMetrics().density);
-            String message = loadFailed ? "GIF unavailable — check internet" : "Loading GIF…";
+            String language = getContext().getSharedPreferences("fit_settings", 0).getString("language", null);
+            if (language == null) language = getContext().getSharedPreferences("fityar_preferences", 0).getString("language", "fa");
+            boolean english = "en".equalsIgnoreCase(language);
+            String message = loadFailed
+                    ? (english ? "GIF unavailable — check internet" : "بارگذاری گیف ناموفق بود؛ اینترنت را بررسی کنید")
+                    : (english ? "Loading GIF…" : "در حال بارگذاری گیف…");
             float x = Math.max(8, (getWidth() - placeholder.measureText(message)) / 2f);
             float y = getHeight() / 2f;
             canvas.drawText(message, x, y, placeholder);
