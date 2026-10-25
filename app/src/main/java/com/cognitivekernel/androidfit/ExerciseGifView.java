@@ -125,9 +125,11 @@ public final class ExerciseGifView extends View {
                 if (connection != null) connection.disconnect();
                 if (temporary != null && temporary.exists()) temporary.delete();
                 IN_FLIGHT.remove(assetName);
-                setContentDescription(assetName.replace(".gif", "").replace('_', ' ')
-                        + (movie == null ? " — GIF unavailable" : " — tap to enlarge"));
-                postInvalidate();
+                post(() -> {
+                    setContentDescription(assetName.replace(".gif", "").replace('_', ' ')
+                            + (movie == null ? " — GIF unavailable" : " — tap to enlarge"));
+                    invalidate();
+                });
             }
         });
     }
