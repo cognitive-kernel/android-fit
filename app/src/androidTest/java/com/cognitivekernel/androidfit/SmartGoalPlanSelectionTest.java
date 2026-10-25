@@ -48,7 +48,7 @@ public class SmartGoalPlanSelectionTest {
         String previous = prefs.getString("language", "fa");
         prefs.edit().putString("language", "fa").commit();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            Espresso.onView(withId(R.id.goalNutritionButton)).perform(click());
+            scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
             Espresso.onView(withText("سطح فعالیت روزانه")).perform(scrollTo()).check(matches(isDisplayed()));
             Espresso.onView(withText("فعالیت کم")).perform(scrollTo(), click());
             Espresso.onView(withText("فعالیت متوسط")).perform(click());
