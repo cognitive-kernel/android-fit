@@ -51,73 +51,110 @@ public final class AdvancedFeatures {
  }
 
  public void showLibrary(){
-  // Loading and translating a large catalog on the UI thread freezes the menu once
-  // thousands of exercises are bundled. Parse and prepare rows off the main thread.
-  final ProgressDialog loading = new ProgressDialog(a);
+  java.util.concurrent.Future<ArrayList<ExerciseLibraryRow>> future=ensureLibraryFuture(a.getApplicationContext());
+  if(future.isDone()){
+   try{showLoadedExerciseLibrary(future.get());}
+   catch(Exception ex){message(s("error"),tr("Could not load the exercise library.","بارگذاری کتابخانه حرکات انجام نشد."));}
+   return;
+  }
+  final ProgressDialog loading=new ProgressDialog(a);
   loading.setTitle(s("exercise_library"));
-  loading.setMessage(tr("Loading exercise library…","در حال بارگذاری کتابخانه حرکات…"));
+  loading.setMessage(tr("Preparing exercise library…","در حال آماده‌سازی کتابخانه حرکات…"));
   loading.setIndeterminate(true);
   loading.setCancelable(false);
   loading.show();
-
-  final android.os.Handler main = new android.os.Handler(android.os.Looper.getMainLooper());
-  final java.util.concurrent.ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor();
-  worker.execute(() -> {
-   final ArrayList<ExerciseLibraryRow> rows = new ArrayList<>();
-   String loadError = null;
-   try(java.io.InputStream in=a.getAssets().open("exercises/exercise_catalog.json");
-       java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream()){
-    byte[] buffer=new byte[16384];int count;
-    while((count=in.read(buffer))!=-1)bytes.write(buffer,0,count);
-    JSONArray catalog=new JSONArray(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
-    for(int i=0;i<catalog.length();i++){
-     JSONObject item=catalog.optJSONObject(i);
-     if(item==null)continue;
-     String file=item.optString("file","");
-     if(!file.matches("(?i)[a-z0-9._-]+\\.gif"))continue;
-     String english=item.optString("name_en",item.optString("name",file));
-     String persian=item.optString("name_fa","");
-     String display="en".equals(selectedLanguage())?english:(persian.isEmpty()?persianExerciseName(english):persian);
-     rows.add(new ExerciseLibraryRow(display,english,file,item.optString("source_id","")));
-    }
-   }catch(Exception ex){loadError=ex.getClass().getSimpleName();}
-   final String error=loadError;
-   main.post(() -> {
-    worker.shutdown();
-    if(a.isFinishing() || (Build.VERSION.SDK_INT>=17 && a.isDestroyed())){loading.dismiss();return;}
+  final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());
+  LIBRARY_EXECUTOR.execute(()->{
+   ArrayList<ExerciseLibraryRow> rows=null;String error=null;
+   try{rows=future.get();}catch(Exception ex){error=ex.getClass().getSimpleName();}
+   final ArrayList<ExerciseLibraryRow> result=rows;final String loadError=error;
+   main.post(()->{
+    if(a.isFinishing()||(Build.VERSION.SDK_INT>=17&&a.isDestroyed())){loading.dismiss();return;}
     loading.dismiss();
-    if(error!=null) {
-     message(s("error"),tr("Could not load the exercise catalog.","بارگذاری فهرست حرکات انجام نشد."));
-     return;
-    }
-    if(rows.isEmpty()){
-     String[] names={s("lib_squat"),s("lib_pushup"),s("lib_lunge"),s("lib_plank"),s("lib_dumbbell_row")};
-     String[] details={s("detail_squat"),s("detail_pushup"),s("detail_lunge"),s("detail_plank"),s("detail_row")};
-     String[] gifs={"squat.gif","pushup.gif","lunge.gif","plank.gif","row.gif"};
-     new AlertDialog.Builder(a).setTitle(s("exercise_library")).setItems(names,(d,which)->showExerciseDetail(names[which],details[which],gifs[which],null)).setNegativeButton(android.R.string.cancel,null).show();
-     return;
-    }
-    showLoadedExerciseLibrary(rows);
+    if(loadError!=null){message(s("error"),tr("Could not load the exercise library.","بارگذاری کتابخانه حرکات انجام نشد."));return;}
+    showLoadedExerciseLibrary(result==null?new ArrayList<>():result);
    });
   });
  }
 
- private static final class ExerciseLibraryRow {
-  final String displayName, englishName, file, sourceId;
-  ExerciseLibraryRow(String displayName,String englishName,String file,String sourceId){
-   this.displayName=displayName;this.englishName=englishName;this.file=file;this.sourceId=sourceId;
+ private static final java.util.concurrent.ExecutorService LIBRARY_EXECUTOR=java.util.concurrent.Executors.newSingleThreadExecutor();
+ private static volatile java.util.concurrent.Future<ArrayList<ExerciseLibraryRow>> libraryFuture;
+
+ public static void preloadLibrary(Context context){ensureLibraryFuture(context.getApplicationContext());}
+
+ private static synchronized java.util.concurrent.Future<ArrayList<ExerciseLibraryRow>> ensureLibraryFuture(Context context){
+  if(libraryFuture==null){
+   final Context app=context.getApplicationContext();
+   libraryFuture=LIBRARY_EXECUTOR.submit(()->loadExerciseLibrary(app));
   }
-  @Override public String toString(){return displayName;}
+  return libraryFuture;
+ }
+
+ private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
+  ArrayList<String> files=new ArrayList<>();
+  collectExerciseGifFiles(context.getAssets(),"exercises",files);
+  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(files.size());
+  java.util.regex.Pattern idPattern=java.util.regex.Pattern.compile("(?:_\\[?(\\d{3,8})\\]?|\\s+\\[?(\\d{3,8})\\]?)$");
+  for(String assetPath:files){
+   String file=assetPath.substring("exercises/".length());
+   String title=file.substring(0,file.length()-4);
+   java.util.regex.Matcher matcher=idPattern.matcher(title);
+   String sourceId="";
+   if(matcher.find()){
+    sourceId=matcher.group(1)!=null?matcher.group(1):matcher.group(2);
+    title=title.substring(0,matcher.start());
+   }
+   String english=title.replace('_',' ').replaceAll("\\s+"," ").trim();
+   if(english.isEmpty())continue;
+   rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
+  }
+  Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
+  return rows;
+ }
+
+ private static void collectExerciseGifFiles(android.content.res.AssetManager assets,String directory,ArrayList<String> output)throws IOException{
+  String[] entries=assets.list(directory);
+  if(entries==null)return;
+  for(String entry:entries){
+   String path=directory+"/"+entry;
+   if(entry.toLowerCase(Locale.ROOT).endsWith(".gif"))output.add(path);
+   else if(!entry.contains("."))collectExerciseGifFiles(assets,path,output);
+  }
+ }
+
+ private static final class ExerciseLibraryRow{
+  final String englishName,persianName,file,sourceId;
+  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId){
+   this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
+  }
+  String displayName(boolean english){return english?englishName:persianName;}
+  @Override public String toString(){return englishName+" "+persianName;}
+ }
+
+ private final class ExerciseLibraryAdapter extends ArrayAdapter<ExerciseLibraryRow>{
+  ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> rows){super(a,android.R.layout.simple_list_item_1,rows);}
+  @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
+   TextView text=convertView instanceof TextView?(TextView)convertView:new TextView(a);
+   int padding=(int)(16*a.getResources().getDisplayMetrics().density);
+   text.setPadding(padding,padding,padding,padding);
+   text.setMinHeight((int)(48*a.getResources().getDisplayMetrics().density));
+   text.setTextSize(16);
+   ExerciseLibraryRow row=getItem(position);
+   if(row!=null)text.setText(row.displayName("en".equals(selectedLanguage())));
+   return text;
+  }
  }
 
  private void showLoadedExerciseLibrary(ArrayList<ExerciseLibraryRow> exercises){
+  if(exercises==null||exercises.isEmpty()){
+   message(s("exercise_library"),tr("No GIF exercises were found in the exercise assets.","هیچ فایل GIF در پوشه حرکات پیدا نشد."));
+   return;
+  }
   EditText search=new EditText(a);
   search.setSingleLine(true);
-  search.setHint(tr("Search exercises","جست‌وجوی حرکت"));
+  search.setHint(tr("Search in Persian or English","جست‌وجو به فارسی یا انگلیسی"));
   ListView list=new ListView(a);
-  // ArrayAdapter filters its backing collection on a worker thread. Rows retain their
-  // original GIF filename, so duplicate translated names never select the wrong GIF.
-  ArrayAdapter<ExerciseLibraryRow> adapter=new ArrayAdapter<ExerciseLibraryRow>(a,android.R.layout.simple_list_item_1,exercises);
+  ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(exercises);
   list.setAdapter(adapter);
   LinearLayout content=column();
   content.addView(search);
@@ -130,19 +167,16 @@ public final class AdvancedFeatures {
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{
    ExerciseLibraryRow selected=adapter.getItem(position);
-   if(selected!=null){
-    // Leave the library dialog visible underneath details; this preserves query and scroll.
-    showExerciseDetail(selected.displayName,"",selected.file,selected.sourceId,false);
-   }
+   if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId,false);
   });
   libraryDialog.show();
  }
 
- private String persianExerciseName(String english){
+ private static String persianExerciseName(String english){
   if(english==null||english.trim().isEmpty())return "";
   String value=english.toLowerCase(Locale.ROOT);
   String[][] words={
-   {"version","نسخه"},{"male","آقایان"},{"female","بانوان"},{"with","با"},{"without","بدون"},
+   {"ez-bar","هالتر خمیده"},{"smith machine","دستگاه اسمیت"},{"lat pulldown","لت از بالا"},{"pull down","لت از بالا"},{"pulldown","لت از بالا"},{"leg press","پرس پا"},{"chest press","پرس سینه"},{"shoulder press","پرس سرشانه"},{"leg extension","جلو پا دستگاه"},{"leg curl","پشت پا دستگاه"},{"hamstring curl","پشت پا"},{"hip thrust","هیپ تراست"},{"cable crossover","کراس اور کابل"},{"reverse fly","فلای معکوس"},{"face pull","فیس پول"},{"calf raise","ساق پا"},{"wrist curl","مچ‌جمع"},{"triceps pushdown","پشت بازو سیم‌کش"},{"bent over","خم‌شده"},{"bent-over","خم‌شده"},{"single leg","تک‌پا"},{"single arm","تک‌دست"},{"medicine ball","توپ پزشکی"},{"stability ball","توپ تعادلی"},{"version","نسخه"},{"male","آقایان"},{"female","بانوان"},{"with","با"},{"without","بدون"},
    {"dumbbell","دمبل"},{"barbell","هالتر"},{"kettlebell","کتل‌بل"},{"cable","کابل"},{"machine","دستگاه"},{"band","کش"},
    {"bodyweight","وزن بدن"},{"weight","وزنه"},{"plate","صفحه"},{"medicine ball","توپ پزشکی"},{"stability ball","توپ تعادلی"},
    {"push-up","شنا"},{"pushup","شنا"},{"pull-up","بارفیکس"},{"pullup","بارفیکس"},{"chin-up","بارفیکس دست برعکس"},
@@ -183,7 +217,7 @@ public final class AdvancedFeatures {
   }
   return out.toString();
  }
- private String transliterateExerciseWord(String word){
+ private static String transliterateExerciseWord(String word){
   String[][] sounds={{"tion","شن"},{"sion","ژن"},{"ough","اُف"},{"ight","ایت"},{"ee","ی"},{"ea","ی"},{"oo","و"},{"ou","او"},{"ow","او"},{"sh","ش"},{"ch","چ"},{"ph","ف"},{"th","ث"},{"ck","ک"},{"qu","کو"},{"x","کس"},{"a","َ"},{"b","ب"},{"c","ک"},{"d","د"},{"e","ِ"},{"f","ف"},{"g","گ"},{"h","ه"},{"i","ی"},{"j","ج"},{"k","ک"},{"l","ل"},{"m","م"},{"n","ن"},{"o","و"},{"p","پ"},{"q","ک"},{"r","ر"},{"s","س"},{"t","ت"},{"u","و"},{"v","و"},{"w","و"},{"y","ی"},{"z","ز"}};
   String result=word;
   for(String[] pair:sounds)result=result.replace(pair[0],pair[1]);
