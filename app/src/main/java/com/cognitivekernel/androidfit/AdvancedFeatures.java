@@ -467,8 +467,8 @@ public final class AdvancedFeatures {
    {tg("Bird dog","برد داگ"),"Bird Dog"},{tg("Squat","اسکوات"),"Squat"},{tg("Reverse lunge","لانج معکوس"),"Reverse Lunge"},
    {tg("Hip hinge","هیپ‌هینج"),"Hip Hinge"},{tg("Glute bridge","پل باسن"),"Glute Bridge"},{tg("Calf raise","ساق پا"),"Calf Raise"},
    {tg("Push-up","شنا سوئدی"),"Push-Up"},{tg("Incline push-up","شنا روی سطح بلند"),"Incline Push-Up"},
-   {tg("Chest press","پرس سینه"),"Chest Press"},{tg("Incline press","پرس بالاسینه"),"Incline Press"},
-   {tg("Chest fly","فلای سینه"),"Chest Fly"},{tg("Row","پارویی"),"Row"},{tg("Backpack row","پارویی با کوله‌پشتی"),"Backpack Row"},
+   {tg("Chest press","پرس سینه"),"Chest Press"},{tg("Incline press","پرس بالاسینه"),"Incline Bench Press"},
+   {tg("Chest fly","فلای سینه"),"Chest Fly"},{tg("Row","پارویی"),"Row"},{tg("Backpack row","پارویی با کوله‌پشتی"),"Bent Over Row"},
    {tg("Lat pulldown / band pulldown","لت از بالا / لت با کش"),"Lat Pulldown"},
    {tg("Face pull / band pull-apart","فیس پول / بازکردن کش"),"Face Pull"},
    {tg("Back extension","بازکردن پشت"),"Back Extension"}
