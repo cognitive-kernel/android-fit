@@ -108,9 +108,11 @@ jobs:
         run: |
           # Emulator startup failures can leave adb commands waiting forever.
           # Bound diagnostics so they cannot consume the entire job timeout.
-          timeout 15s adb devices -l || true
-          timeout 20s adb -s emulator-5554 shell getprop sys.boot_completed || true
-          timeout 20s adb -s emulator-5554 logcat -d -t 6000 || true
+          # Use hard kill deadlines: adb can occasionally hang even after the emulator
+          # test task has already failed, preventing the job from reporting its result.
+          timeout --kill-after=2s 8s adb devices -l || true
+          timeout --kill-after=2s 8s adb -s emulator-5554 shell getprop sys.boot_completed || true
+          timeout --kill-after=2s 12s adb -s emulator-5554 logcat -d -t 2500 || true
 
   test-install-apk:
     # Deliberately separate from signed-apk: this APK has its own package ID
