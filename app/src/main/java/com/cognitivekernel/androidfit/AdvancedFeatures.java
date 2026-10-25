@@ -352,9 +352,13 @@ public final class AdvancedFeatures {
   bodySpinner.setOnItemSelectedListener(filterListener);
   equipmentSpinner.setOnItemSelectedListener(filterListener);
   genderSpinner.setOnItemSelectedListener(filterListener);
+  android.os.Handler filterHandler=new android.os.Handler(android.os.Looper.getMainLooper());
   search.addTextChangedListener(new android.text.TextWatcher(){
    public void beforeTextChanged(CharSequence s,int st,int count,int after){}
-   public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}
+   public void onTextChanged(CharSequence text,int st,int before,int count){
+    filterHandler.removeCallbacks(filterRows);
+    filterHandler.postDelayed(filterRows,180);
+   }
    public void afterTextChanged(android.text.Editable e){}
   });
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
