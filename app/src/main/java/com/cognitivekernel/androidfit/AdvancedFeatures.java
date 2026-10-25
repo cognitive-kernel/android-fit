@@ -571,9 +571,28 @@ public final class AdvancedFeatures {
     StringBuilder areaBuilder=new StringBuilder();
     for(int selectedRegion:selectedRegions){if(areaBuilder.length()>0)areaBuilder.append(" + ");areaBuilder.append(regionLabel(selectedRegion));}
     String area=areaBuilder.toString();
+    ArrayList<ArrayList<String[]>> movementsByRegion=new ArrayList<>();
+    int availableMovements=0;
+    for(int selectedRegion:selectedRegions){
+     ArrayList<String[]> regionMovements=new ArrayList<>();
+     for(String[] movement:movementsForRegion(selectedRegion))regionMovements.add(movement.clone());
+     movementsByRegion.add(regionMovements);availableMovements+=regionMovements.size();
+    }
+    int movementLimit=movementLimitForSession(mins,availableMovements,selectedRegions.size(),selectedRegions.contains(0));
     ArrayList<String[]> movementList=new ArrayList<>();
     HashSet<String> seenMovements=new HashSet<>();
-    for(int selectedRegion:selectedRegions){for(String[] movement:movementsForRegion(selectedRegion)){String movementKey=movement[0].toLowerCase(Locale.ROOT);if(seenMovements.add(movementKey))movementList.add(movement.clone());}}
+    for(int depth=0;movementList.size()<movementLimit;depth++){
+     boolean addedAtDepth=false;
+     for(ArrayList<String[]> regionMovements:movementsByRegion){
+      if(depth>=regionMovements.size())continue;
+      String[] movement=regionMovements.get(depth);
+      String movementKey=movement[0].toLowerCase(Locale.ROOT);
+      if(seenMovements.add(movementKey))movementList.add(movement.clone());
+      addedAtDepth=true;
+      if(movementList.size()>=movementLimit)break;
+     }
+     if(!addedAtDepth)break;
+    }
     if(movementList.isEmpty())throw new IllegalArgumentException("No movements for selected body areas");
     if(eq==0){
      for(String[] ex:movementList){
@@ -592,6 +611,7 @@ public final class AdvancedFeatures {
     }
     movementList=uniqueMovements;
     int setsBase=lvl==0?2:lvl==1?3:4;
+    setsBase=setsForSessionDuration(setsBase,mins);
     int repsBase=g==0?12:g==1?10:8;
     String planName=tg("Smart plan","برنامه هوشمند")+" - "+goal.getSelectedItem()+" - "+area;
     planId=db.addPlan(planName);
@@ -636,6 +656,16 @@ public final class AdvancedFeatures {
     new AlertDialog.Builder(a).setTitle(tg("Your saved training & nutrition plan","برنامه ذخیره‌شده تمرین و تغذیه")).setView(resultScroll).setPositiveButton(android.R.string.ok,null).show();
    }catch(Exception ex){if(planId>0){try{db.deletePlan(planId);}catch(Exception ignored){}}message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, weight 30–300 kg, 1–7 training days and 10–180 minutes per session.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰، وزن ۳۰ تا ۳۰۰ کیلوگرم، ۱ تا ۷ روز تمرین و ۱۰ تا ۱۸۰ دقیقه برای هر جلسه وارد کنید."));}
   }).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ static int movementLimitForSession(int minutes,int totalMovements,int selectedRegionCount,boolean fullBody){
+  if(totalMovements<=0)return 0;
+  int minimum=fullBody?Math.min(3,totalMovements):Math.min(Math.max(1,selectedRegionCount),totalMovements);
+  int durationLimit=Math.max(1,minutes/5);
+  return Math.min(totalMovements,Math.max(minimum,durationLimit));
+ }
+ static int setsForSessionDuration(int baseSets,int minutes){
+  int extra=minutes>=120?2:minutes>=75?1:0;
+  return Math.min(5,Math.max(1,baseSets)+extra);
  }
  private String tg(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
 
