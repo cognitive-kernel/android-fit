@@ -4,6 +4,35 @@ def stableDebugStorePassword = System.getenv('FIT_YAR_RELEASE_STORE_PASSWORD') ?
 def stableDebugKeyAlias = System.getenv('FIT_YAR_RELEASE_KEY_ALIAS') ?: "androiddebugkey"
 def stableDebugKeyPassword = System.getenv('FIT_YAR_RELEASE_KEY_PASSWORD') ?: "android"
 
+def coreGifAliases = [
+    'Air Squat (VERSION 2)_[471413].gif': 'squat.gif',
+    'Push-up_[288113].gif': 'pushup.gif',
+    'Bodyweight Reverse Lunge with Overhead..._[655113].gif': 'lunge.gif',
+    'Plank on Hands_[515913].gif': 'plank.gif',
+    'Band Bent Over Wide Grip Row (male)_[445213].gif': 'row.gif',
+    'Briskly Walking_[300413].gif': 'walk.gif'
+]
+
+tasks.register('prepareCoreExerciseGifs') {
+    def sourceDir = file('src/main/assets/exercises')
+    def outputDir = file("$buildDir/generated/coreExerciseAssets/core_exercises")
+    inputs.files(coreGifAliases.keySet().collect { new File(sourceDir, it) })
+    outputs.dir(outputDir)
+    doLast {
+        delete(outputDir)
+        outputDir.mkdirs()
+        coreGifAliases.each { sourceName, aliasName ->
+            def source = new File(sourceDir, sourceName)
+            if (!source.isFile()) throw new GradleException("Missing core exercise GIF: $sourceName")
+            copy {
+                from source
+                into outputDir
+                rename { aliasName }
+            }
+        }
+    }
+}
+
 android {
     namespace 'com.cognitivekernel.androidfit'
     compileSdk 36
@@ -36,11 +65,21 @@ android {
         versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.12')
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
+    sourceSets {
+        main {
+            assets {
+                srcDir "$buildDir/generated/coreExerciseAssets"
+                exclude 'exercises/**/*.gif'
+            }
+        }
+    }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 }
+tasks.named('preBuild').configure { dependsOn 'prepareCoreExerciseGifs' }
+
 dependencies {
     implementation 'androidx.core:core:1.15.0'
     testImplementation 'junit:junit:4.13.2'
