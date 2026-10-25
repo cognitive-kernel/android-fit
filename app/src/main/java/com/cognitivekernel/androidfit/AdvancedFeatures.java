@@ -529,6 +529,7 @@ public final class AdvancedFeatures {
   for(int i=0;i<regionLabels.length;i++){final int index=i;regionChecks[i]=new CheckBox(a);regionChecks[i].setText(regionLabels[i]);regionChecks[i].setChecked(i==0);regionGroup.addView(regionChecks[i]);regionChecks[i].setOnCheckedChangeListener((button,checked)->{if(index==0&&checked){for(int j=1;j<regionChecks.length;j++)regionChecks[j].setChecked(false);}else if(index>0&&checked){regionChecks[0].setChecked(false);}});}
   Spinner sex=spinner(new String[]{tg("Male","مرد"),tg("Female","زن")});
   Spinner activity=spinner(new String[]{tg("Low activity","فعالیت کم"),tg("Moderate activity","فعالیت متوسط"),tg("High activity","فعالیت زیاد")});
+   activity.setContentDescription(tg("Daily activity level","سطح فعالیت روزانه"));
   Spinner level=spinner(new String[]{tg("Beginner","مبتدی"),tg("Intermediate","متوسط"),tg("Advanced","پیشرفته")});
   Spinner equipment=spinner(new String[]{tg("Bodyweight only","فقط وزن بدن"),tg("Home equipment","تجهیزات خانگی"),tg("Full gym","باشگاه کامل")});
   Spinner diet=spinner(new String[]{tg("Balanced / mixed diet","رژیم متعادل / همه‌چیزخوار"),tg("Vegetarian","گیاه‌خواری")});
