@@ -98,7 +98,6 @@ public final class AdvancedFeatures {
     String[] fields=line.split("\\t",3);
     if(fields.length<2)continue;
     String file=fields[0].trim(),english=fields[1].trim(),sourceId=fields.length>2?fields[2].trim():"";
-    String localAlias=localCoreAlias(english);if(!localAlias.isEmpty())file=localAlias;
     if(file.isEmpty()||english.isEmpty()||!file.toLowerCase(Locale.ROOT).endsWith(".gif"))continue;
     rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
    }
@@ -106,15 +105,7 @@ public final class AdvancedFeatures {
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
   return rows;
  }
- private static String localCoreAlias(String english){
-  if("Air Squat (VERSION 2)".equalsIgnoreCase(english))return "squat.gif";
-  if("Push-up".equalsIgnoreCase(english))return "pushup.gif";
-  if("Bodyweight Reverse Lunge with Overhead...".equalsIgnoreCase(english))return "lunge.gif";
-  if("Bodyweight Front Plank to Downward Dog".equalsIgnoreCase(english))return "plank.gif";
-  if("Band Bent Over Wide Grip Row (male)".equalsIgnoreCase(english))return "row.gif";
-  if("Briskly Walking".equalsIgnoreCase(english))return "walk.gif";
-  return "";
- }
+
  private static void collectExerciseGifFiles(android.content.res.AssetManager assets,String directory,ArrayList<String> output)throws IOException{
   String[] entries=assets.list(directory);
   if(entries==null)return;
