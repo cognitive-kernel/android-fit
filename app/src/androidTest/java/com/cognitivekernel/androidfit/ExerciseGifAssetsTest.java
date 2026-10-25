@@ -5,6 +5,8 @@ import android.graphics.Movie;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.InputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static org.junit.Assert.assertNotNull;
@@ -26,4 +28,24 @@ public class ExerciseGifAssetsTest {
             }
         }
     }
+    @Test public void fullGymVisualCatalogueIndexIsBundled() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        int count = 0;
+        boolean hasSquat = false, hasPushUp = false, hasShoulder = false;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                context.getAssets().open("exercise_catalog.tsv"), "UTF-8"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                count++;
+                hasSquat |= line.toLowerCase(java.util.Locale.ROOT).contains("squat");
+                hasPushUp |= line.toLowerCase(java.util.Locale.ROOT).contains("push-up");
+                hasShoulder |= line.toLowerCase(java.util.Locale.ROOT).contains("shoulder");
+            }
+        }
+        assertTrue("Full GymVisual index should contain thousands of exercises", count >= 6500);
+        assertTrue("Squat category examples should be indexed", hasSquat);
+        assertTrue("Push-up examples should be indexed", hasPushUp);
+        assertTrue("Shoulder examples should be indexed", hasShoulder);
+    }
+
 }
