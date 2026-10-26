@@ -18,15 +18,9 @@ concurrency:
 jobs:
   release-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-        with:
-          filter: blob:none
-          sparse-checkout: |
-            /**
-            !/app/src/main/assets/exercises/*.gif
-          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -93,6 +87,8 @@ jobs:
             exit 1
           fi
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionCode='$VERSION_CODE'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionName='$VERSION_NAME'"
           sha256sum "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
