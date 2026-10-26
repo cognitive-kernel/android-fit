@@ -52,7 +52,8 @@ public final class ExerciseGifView extends View {
         super(context);
         this.assetName = assetName == null ? "" : assetName;
         Movie decoded = null;
-        try (InputStream in = context.getAssets().open("core_exercises/" + this.assetName)) {
+        String coreAlias = bundledCoreAlias(this.assetName);
+        try (InputStream in = context.getAssets().open("core_exercises/" + (coreAlias == null ? this.assetName : coreAlias))) {
             decoded = Movie.decodeStream(in);
         } catch (Exception ignored) { }
         if (decoded == null) {
@@ -78,6 +79,17 @@ public final class ExerciseGifView extends View {
         setFocusable(true);
         setOnClickListener(v -> showFullScreen());
         if (decoded == null && !this.assetName.isEmpty()) downloadIfNeeded(context.getApplicationContext());
+    }
+
+    /** Maps catalogue filenames to the six GIF aliases bundled for offline use. */
+    static String bundledCoreAlias(String name) {
+        if ("Air Squat (VERSION 2)_[471413].gif".equals(name)) return "squat.gif";
+        if ("Push-up_[288113].gif".equals(name)) return "pushup.gif";
+        if ("Bodyweight Reverse Lunge with Overhead..._[655113].gif".equals(name)) return "lunge.gif";
+        if ("Bodyweight Front Plank to Downward Dog_[450013].gif".equals(name)) return "plank.gif";
+        if ("Band Bent Over Wide Grip Row (male)_[445213].gif".equals(name)) return "row.gif";
+        if ("Briskly Walking_[300413].gif".equals(name)) return "walk.gif";
+        return null;
     }
 
     private static File cachedFile(Context context, String name) {
