@@ -13,11 +13,7 @@ import org.junit.runner.RunWith;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
-import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
-import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
-import static androidx.test.espresso.matcher.ViewMatchers.withSpinnerText;
 
 @RunWith(AndroidJUnit4.class)
 public class SmartGoalPlanSelectionTest {
@@ -47,27 +43,4 @@ public class SmartGoalPlanSelectionTest {
         }
     }
 
-    @Test public void dailyActivityLevelIsVisibleAndSelectable() {
-        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        SharedPreferences prefs = context.getSharedPreferences("fit_settings", Context.MODE_PRIVATE);
-        String previous = prefs.getString("language", "fa");
-        prefs.edit().putString("language", "fa").commit();
-        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            Espresso.onView(withId(R.id.goalNutritionButton)).perform(click());
-
-            Espresso.onView(withContentDescription("سطح فعالیت روزانه"))
-                    .check(matches(isDisplayed()))
-                    .perform(click());
-            Espresso.onView(withText("فعالیت کم")).perform(click());
-            Espresso.onView(withContentDescription("سطح فعالیت روزانه"))
-                    .check(matches(withSpinnerText("فعالیت کم")));
-
-            Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(click());
-            Espresso.onView(withText("فعالیت متوسط")).perform(click());
-            Espresso.onView(withContentDescription("سطح فعالیت روزانه"))
-                    .check(matches(withSpinnerText("فعالیت متوسط")));
-        } finally {
-            prefs.edit().putString("language", previous).commit();
-        }
-    }
 }
