@@ -8,12 +8,12 @@ on:
       version_code:
         description: "Android versionCode greater than the last installed release"
         required: true
-        default: "109"
+        default: "110"
         type: string
       version_name:
         description: "Android versionName"
         required: true
-        default: "1.1.13"
+        default: "1.1.14"
         type: string
 
 permissions:
@@ -26,19 +26,13 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     env:
-      VERSION_CODE: ${{ inputs.version_code || '109' }}
-      VERSION_NAME: ${{ inputs.version_name || '1.1.13' }}
+      VERSION_CODE: ${{ inputs.version_code || '110' }}
+      VERSION_NAME: ${{ inputs.version_name || '1.1.14' }}
       EXPECTED_CERT_SHA256: "61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
     steps:
       - uses: actions/checkout@v4
-        with:
-          filter: blob:none
-          sparse-checkout: |
-            /**
-            !/app/src/main/assets/exercises/*.gif
-          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -95,7 +89,7 @@ jobs:
           sha256sum "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: fityar-release-candidate-${{ inputs.version_name || '1.1.13' }}
+          name: fityar-release-candidate-${{ inputs.version_name || '1.1.14' }}
           path: artifacts/*
           if-no-files-found: error
           retention-days: 30
