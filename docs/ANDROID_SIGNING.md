@@ -8,19 +8,26 @@
 - Every release must have a strictly higher `versionCode` than the last distributed release.
 - The signing certificate SHA-256 fingerprint must be pinned and checked in CI before any release APK is published.
 - Keep a durable copy of the keystore and its alias/passwords. GitHub Actions caches are temporary build caches, not the source of truth.
-- The currently installed older APK may have a different certificate. Because the owner accepts a one-time reinstall and has a database backup, designate the first APK signed by the new permanent key as the **new update baseline**. Install that baseline after exporting and verifying a usable backup. From that point onward, keep the new key unchanged.
+- The previously device-accepted update candidate and v1.1.11 were signed with this same certificate. Keep using it for every later APK. Do not uninstall the app to work around any signature error; if Android rejects an update, stop and inspect the APK certificates first.
 - Restoring a database backup protects app data only if the backup is valid and restoration succeeds; it does not make Android accept a mismatched APK signature.
 
-## One-time baseline decision and required secret handling
+## Release setup and key custody
 
-CI has successfully built version 1.1.13 (`versionCode=109`) with the configured release keystore. The same fingerprint was recorded for the v1.1.11 release and the earlier candidate that the user confirmed installed as an update. This key is therefore the permanent baseline for future releases. The private key and passwords remain in GitHub Actions secrets and must never be committed. The production release workflow now pins the public certificate fingerprint in source and fails closed if the configured keystore differs. The user's current phone has not been inspected directly in this session, so use the existing update chain and test the APK without uninstalling the app.
+The permanent release keystore is supplied through GitHub Actions secrets; the repository does not store the private keystore or passwords. The release workflow verifies the certificate against the fingerprint pinned in source.
 
-1. Decide whether the existing candidate keystore (observed candidate SHA-256 below) will become the permanent baseline. If yes, do **not** generate a replacement key; securely preserve a backup of the exact keystore used by CI and verify that it can be restored. If not, generate a new dedicated keystore locally with Android SDK `keytool` and use that new key consistently.
-2. Record the chosen alias and passwords in a durable place and keep a separate backup copy of the keystore. Do not rely on GitHub Actions cache or a single workstation.
-3. Ensure the repository Actions secrets under **Settings → Secrets and variables → Actions** match the chosen keystore: `FIT_YAR_RELEASE_KEYSTORE_BASE64`, `FIT_YAR_RELEASE_KEY_ALIAS`, `FIT_YAR_RELEASE_STORE_PASSWORD`, and `FIT_YAR_RELEASE_KEY_PASSWORD`. The candidate-build job proves that a candidate secret is currently available, but does not by itself approve the key as the permanent baseline. Never paste the keystore or passwords into an issue, commit, or chat.
-4. Set the repository Actions variable `FIT_YAR_RELEASE_CERT_SHA256` to the chosen certificate's SHA-256 fingerprint (colon-separated or unseparated hex is accepted). The release workflow compares the built APK certificate against this pin and fails closed on missing/mismatched settings.
-5. Use **Actions → FitYar permanent release APK → Run workflow** on `main`, provide a `version_code` greater than the last distributed version and a `version_name`, and download the `fityar-release-*` artifact only if the workflow succeeds. This workflow builds the release variant and verifies the package ID, signature, and certificate fingerprint.
-6. Install the baseline APK on a test phone only after confirming the backup is usable. Verify app launch and backup/restore, then preserve the APK, checksum, version and fingerprint as release records.
+Required Actions secrets:
+1. `FIT_YAR_RELEASE_KEYSTORE_BASE64`
+2. `FIT_YAR_RELEASE_KEY_ALIAS`
+3. `FIT_YAR_RELEASE_STORE_PASSWORD`
+4. `FIT_YAR_RELEASE_KEY_PASSWORD`
+
+Before any future release:
+1. Confirm the above secrets still reference the same permanent keystore.
+2. Increment both `versionCode` and `versionName`; never reuse a published version code.
+3. Run **Actions → FitYar permanent release APK** on the intended release branch and supply the new version values.
+4. Download the artifact only if the workflow passes its package, signature, and pinned-fingerprint checks.
+5. Keep a separate encrypted backup of the keystore and passwords in a secure password/key-management system. Never put them in GitHub source, docs, issues, or chat.
+6. Verify the APK checksum, preserve the artifact and release record, and test the update on a device without uninstalling the existing app.
 
 ### Permanent release certificate (pinned)
 
@@ -82,4 +89,4 @@ The isolated test APK uses package `com.cognitivekernel.androidfit.test2` and ca
 
 ## Historical note
 
-The previous production signing key was not recovered or verified. The new permanent key is intended to establish a stable update chain starting with the first baseline APK signed by it. Keep a verified database backup before the one-time migration/install.
+The permanent signing certificate is pinned and re-verified in CI. The current phone still must be used for the final in-place update test; this documentation and CI cannot independently inspect its installed APK.
