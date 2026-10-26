@@ -10,6 +10,7 @@ This file is the release ledger for FitYar. Update it in the same pull request a
   - `FIT_YAR_RELEASE_KEY_ALIAS`
   - `FIT_YAR_RELEASE_KEY_PASSWORD`
   - `FIT_YAR_RELEASE_STORE_PASSWORD`
+- The public certificate fingerprint is pinned in `.github/workflows/android-release.yml`; do not replace it without a deliberate key migration.
 - Private key bytes, secret values, and passwords must never be committed or printed in logs.
 - The keystore and its passwords must be backed up securely outside GitHub. GitHub Actions artifacts/caches are not the only backup.
 - Every production update must use the same keystore, alias, and signing certificate as the last accepted update.
@@ -37,14 +38,15 @@ This file is the release ledger for FitYar. Update it in the same pull request a
 |---|---:|---|---|
 | 1.1.8 | 104 | Historical baseline in repository docs | Earlier CI signing configuration expected the cached debug certificate; do not assume older artifacts are interchangeable. |
 | 1.1.9-test-key | 105 | Candidate key accepted by user device; feature validation incomplete | Actions run [40105406787](https://github.com/cognitive-kernel/android-fit/actions/runs/40105406787), artifact `fityar-release-key-test-v105`. User confirmed it installed as an update, but reported the new GIF library/navigation behavior was not present. This proves that this candidate artifact updated that device at that time; it does not prove the current source features were included. |
-| 1.1.11 | 107 | Built and CI passed; ready for device verification | PR [#14](https://github.com/cognitive-kernel/android-fit/pull/14) merged as `d08c798ef88b20244559acb63a78e8fb90f4746b`. CI run [40158495102](https://github.com/cognitive-kernel/android-fit/actions/runs/40158495102) passed unit tests, lint, emulator instrumentation, package/version checks, and candidate-key signing. Artifact: [fityar-corrected-release-key-v107.zip](https://github.com/cognitive-kernel/android-fit/actions/runs/40158495102). APK package `com.cognitivekernel.androidfit`, versionName `1.1.11`, versionCode `107`. Certificate SHA-256 `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`. Device behavior still needs user confirmation. |
+| 1.1.11 | 107 | Prior accepted signing baseline | PR [#14](https://github.com/cognitive-kernel/android-fit/pull/14) merged as `d08c798ef88b20244559acb63a78e8fb90f4746b`. CI run [40158495102](https://github.com/cognitive-kernel/android-fit/actions/runs/40158495102) passed unit tests, lint, emulator instrumentation, package/version checks, and candidate-key signing. Artifact: [fityar-corrected-release-key-v107.zip](https://github.com/cognitive-kernel/android-fit/actions/runs/40158495102). APK package `com.cognitivekernel.androidfit`, versionName `1.1.11`, versionCode `107`. Certificate SHA-256 `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`. Device behavior still needs user confirmation. |
 
 ## Certificate fingerprint record
 
 Record only the public certificate SHA-256 fingerprint from `apksigner verify --print-certs`; never record key material or passwords here.
 
-- Last device-accepted candidate APK (v105): fingerprint must be copied from the artifact's `signature.txt` / Actions log and checked against the currently installed app before any later APK is distributed.
-- Current candidate release certificate SHA-256 (verified in CI run 40158495102): `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`. This is the configured `FIT_YAR_RELEASE_*` certificate used for v1.1.11.
+- **Permanent pinned release certificate SHA-256:** `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`.
+- The fingerprint was verified for v1.1.11 and the previously device-accepted update candidate, and was re-verified for v1.1.13 (`versionCode=109`) in CI run [40267603799](https://github.com/cognitive-kernel/android-fit/actions/runs/40267603799).
+- The production release workflow hard-pins this fingerprint and fails if a different certificate is used. The private keystore and passwords remain in Actions secrets.
 
 ## Download and checksum record
 
@@ -53,3 +55,4 @@ For each distributed APK, add a row with the exact artifact URL, SHA-256 checksu
 | Version | Artifact URL | SHA-256 | Source commit | Device result |
 |---|---|---|---|---|
 | 1.1.9-test-key / 105 | [Actions run 40105406787](https://github.com/cognitive-kernel/android-fit/actions/runs/40105406787) | Artifact ZIP SHA-256 `01e27990c1512a6cfa5969ecb02a860a67c30f282cb188b102fb4d81eecb613f` | `f337fb3fbd78fafd3c56e5b8a5b84167e6b20f4d` | User confirmed update installed; exercise-library changes were not present as expected. |
+| 1.1.13 candidate / 109 | [Actions run 40267603799](https://github.com/cognitive-kernel/android-fit/actions/runs/40267603799) | See `SHA256SUMS.txt` in artifact `fityar-candidate-v109` | `8a8de269d6f573f86941b6905225a276d6949146` | CI green; package `com.cognitivekernel.androidfit`; pinned certificate verified. This is a candidate artifact, not a public production release; test update installation and app behavior before declaring delivery. |
