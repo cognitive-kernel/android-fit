@@ -30,6 +30,16 @@ public class ExerciseGifMatcherTest {
         assertEquals(-1, ExerciseGifMatcher.score("Plank", "Plank Jack"));
     }
 
+    @Test public void bundledCoreGifsResolveFromCatalogueNames() {
+        assertEquals("squat.gif", ExerciseGifView.bundledCoreAlias("Air Squat (VERSION 2)_[471413].gif"));
+        assertEquals("pushup.gif", ExerciseGifView.bundledCoreAlias("Push-up_[288113].gif"));
+        assertEquals("lunge.gif", ExerciseGifView.bundledCoreAlias("Bodyweight Reverse Lunge with Overhead..._[655113].gif"));
+        assertEquals("plank.gif", ExerciseGifView.bundledCoreAlias("Bodyweight Front Plank to Downward Dog_[450013].gif"));
+        assertEquals("row.gif", ExerciseGifView.bundledCoreAlias("Band Bent Over Wide Grip Row (male)_[445213].gif"));
+        assertEquals("walk.gif", ExerciseGifView.bundledCoreAlias("Briskly Walking_[300413].gif"));
+        assertEquals(null, ExerciseGifView.bundledCoreAlias("Unbundled Exercise.gif"));
+    }
+
     @Test public void emptyNamesAreRejected() {
         assertEquals(-1, ExerciseGifMatcher.score("", "Push-up"));
         assertEquals(-1, ExerciseGifMatcher.score("Push-up", null));
