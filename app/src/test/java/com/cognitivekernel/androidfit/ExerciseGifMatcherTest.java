@@ -16,7 +16,6 @@ public class ExerciseGifMatcherTest {
         assertTrue(ExerciseGifMatcher.score("Squat", "Air Squat (VERSION 2)") > 0);
         assertTrue(ExerciseGifMatcher.score("Reverse Lunge", "Bodyweight Reverse Lunge") > 0);
         assertTrue(ExerciseGifMatcher.score("Reverse Lunge", "Bodyweight Reverse Lunge with Overhead...") > 0);
-        assertTrue(ExerciseGifMatcher.score("Plank", "Bodyweight Front Plank to Downward Dog") > 0);
         assertTrue(ExerciseGifMatcher.score("Incline Bench Press", "Dumbbell Incline Bench Press") > 0);
         assertTrue(ExerciseGifMatcher.score("Bent Over Row", "Dumbbell Bent Over Row") > 0);
     }
@@ -28,6 +27,7 @@ public class ExerciseGifMatcherTest {
         assertEquals(-1, ExerciseGifMatcher.score("Reverse Lunge", "Reverse Lunge with Leg Kick"));
 
         assertEquals(-1, ExerciseGifMatcher.score("Plank", "Plank Jack"));
+        assertEquals(-1, ExerciseGifMatcher.score("Plank", "Bodyweight Front Plank to Downward Dog"));
     }
 
     @Test public void bundledCoreGifsResolveFromCatalogueNames() {
