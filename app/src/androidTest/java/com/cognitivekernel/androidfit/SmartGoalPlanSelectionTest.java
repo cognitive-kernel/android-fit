@@ -13,11 +13,10 @@ import org.junit.runner.RunWith;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.espresso.matcher.ViewMatchers.withSpinnerText;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 @RunWith(AndroidJUnit4.class)
 public class SmartGoalPlanSelectionTest {
