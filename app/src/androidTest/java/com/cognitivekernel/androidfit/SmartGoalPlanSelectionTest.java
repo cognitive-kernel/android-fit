@@ -15,6 +15,7 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withContentDescription;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 import static androidx.test.espresso.matcher.ViewMatchers.withSpinnerText;
 
@@ -52,7 +53,7 @@ public class SmartGoalPlanSelectionTest {
         String previous = prefs.getString("language", "fa");
         prefs.edit().putString("language", "fa").commit();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
+            Espresso.onView(withId(R.id.goalNutritionButton)).perform(click());
 
             Espresso.onView(withContentDescription("سطح فعالیت روزانه"))
                     .check(matches(isDisplayed()))
