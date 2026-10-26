@@ -73,7 +73,6 @@ jobs:
           FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
           FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
           FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
-          FIT_YAR_RELEASE_CERT_SHA256: ${{ vars.FIT_YAR_RELEASE_CERT_SHA256 }}
           VERSION_NAME: ${{ inputs.version_name }}
         run: |
           set -euo pipefail
