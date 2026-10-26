@@ -2,10 +2,6 @@ package com.cognitivekernel.androidfit;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.Spinner;
-
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -18,6 +14,7 @@ import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.espresso.matcher.ViewMatchers.withSpinnerText;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -57,18 +54,18 @@ public class SmartGoalPlanSelectionTest {
         prefs.edit().putString("language", "fa").commit();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
-            scenario.onActivity(activity -> {
-                FrameLayout content = activity.findViewById(android.R.id.content);
-                Spinner selector = content.findViewWithTag("dailyActivityLevelSpinner");
-                assertNotNull("Daily activity selector should be present", selector);
-                assertEquals(View.VISIBLE, selector.getVisibility());
-                assertTrue("Daily activity selector must have at least two choices",
-                        selector.getAdapter() != null && selector.getAdapter().getCount() >= 2);
-                selector.setSelection(0);
-                assertEquals("فعالیت کم", selector.getSelectedItem().toString());
-                selector.setSelection(1);
-                assertEquals("فعالیت متوسط", selector.getSelectedItem().toString());
-            });
+
+            Espresso.onView(withContentDescription("سطح فعالیت روزانه"))
+                    .check(matches(isDisplayed()))
+                    .perform(click());
+            Espresso.onView(withText("فعالیت کم")).perform(click());
+            Espresso.onView(withContentDescription("سطح فعالیت روزانه"))
+                    .check(matches(withSpinnerText("فعالیت کم")));
+
+            Espresso.onView(withContentDescription("سطح فعالیت روزانه")).perform(click());
+            Espresso.onView(withText("فعالیت متوسط")).perform(click());
+            Espresso.onView(withContentDescription("سطح فعالیت روزانه"))
+                    .check(matches(withSpinnerText("فعالیت متوسط")));
         } finally {
             prefs.edit().putString("language", previous).commit();
         }
