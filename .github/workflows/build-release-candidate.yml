@@ -1,0 +1,104 @@
+name: FitYar release candidate APK
+on:
+  push:
+    branches:
+      - feature/smart-goal-nutrition-plans
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "Android versionCode greater than the last installed release"
+        required: true
+        default: "109"
+        type: string
+      version_name:
+        description: "Android versionName"
+        required: true
+        default: "1.1.13"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fityar-release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      VERSION_CODE: ${{ inputs.version_code || '109' }}
+      VERSION_NAME: ${{ inputs.version_name || '1.1.13' }}
+      EXPECTED_CERT_SHA256: "61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /**
+            !/app/src/main/assets/exercises/*.gif
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Require permanent release key and validate inputs
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_RELEASE_KEYSTORE_BASE64 }}
+          FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
+          FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
+          FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION_CODE" =~ ^[1-9][0-9]*$ ]]
+          [[ -n "$VERSION_NAME" ]]
+          for name in FIT_YAR_RELEASE_KEYSTORE_BASE64 FIT_YAR_RELEASE_KEY_ALIAS FIT_YAR_RELEASE_STORE_PASSWORD FIT_YAR_RELEASE_KEY_PASSWORD; do
+            test -n "${!name:-}" || { echo "::error::Missing required secret $name"; exit 1; }
+          done
+          mkdir -p "$RUNNER_TEMP/fityar-signing"
+          printf '%s' "$FIT_YAR_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/fityar-signing/release.jks"
+          test -s "$RUNNER_TEMP/fityar-signing/release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/fityar-signing/release.jks" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" >/dev/null
+      - name: Build release variant
+        run: gradle -PFIT_YAR_VERSION_CODE="$VERSION_CODE" -PFIT_YAR_VERSION_NAME="$VERSION_NAME" assembleRelease
+      - name: Sign and verify package, version, and pinned certificate
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
+          FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
+          FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          UNSIGNED="$(find app/build/outputs/apk/release -maxdepth 1 -name '*unsigned*.apk' -print -quit)"
+          if [ -z "$UNSIGNED" ]; then UNSIGNED="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"; fi
+          test -n "$UNSIGNED"
+          mkdir -p artifacts
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt"
+          "$APKSIGNER" sign --ks "$RUNNER_TEMP/fityar-signing/release.jks" --ks-key-alias "$FIT_YAR_RELEASE_KEY_ALIAS" --ks-pass env:FIT_YAR_RELEASE_STORE_PASSWORD --key-pass env:FIT_YAR_RELEASE_KEY_PASSWORD --out "artifacts/fit-yar-${VERSION_NAME}.apk" "$UNSIGNED"
+          "$APKSIGNER" verify --verbose --print-certs "artifacts/fit-yar-${VERSION_NAME}.apk" | tee artifacts/signature.txt
+          ACTUAL="$(sed -n 's/.*certificate SHA-256 digest: //p' artifacts/signature.txt | head -n1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          test -n "$ACTUAL" && test "$ACTUAL" = "$EXPECTED" || { echo "::error::Signing certificate mismatch; refusing to upload."; exit 1; }
+          "$AAPT" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$AAPT" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionCode='$VERSION_CODE'"
+          sha256sum "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fityar-release-candidate-${{ inputs.version_name || '1.1.13' }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Clean up signing material
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/fityar-signing"
