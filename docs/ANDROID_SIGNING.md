@@ -31,7 +31,7 @@ Before any future release:
 
 ### Permanent release certificate (pinned)
 
-- Verified build artifact: `fityar-candidate-v109.apk`, version `1.1.13`, `versionCode=109`
+- Previous verified candidate: version `1.1.13`, `versionCode=109`. The next candidate is `1.1.14`, `versionCode=110`; do not reuse the old version.
 - Pinned signer SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
 - This is the release certificate expected for all future production APKs. CI must stop if the keystore signs with any other certificate.
 
@@ -41,7 +41,7 @@ Before any future release:
 - Keystore alias: stored in `FIT_YAR_RELEASE_KEY_ALIAS` secret; do not disclose it in source or logs beyond non-secret diagnostic output.
 - Certificate SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
 - Baseline package: `com.cognitivekernel.androidfit`
-- Last built candidate versionCode: `109` (`1.1.13`); every future production release must use a strictly greater versionCode.
+- Last previously built candidate versionCode: `109` (`1.1.13`). The next candidate must be `110` (`1.1.14`) or higher; every future production release must use a strictly greater versionCode.
 
 ## Current CI test certificate (not the permanent release key)
 
@@ -82,6 +82,12 @@ apksigner verify --print-certs app-release.apk
 ```
 
 **Never silently replace the permanent key.** If the key is lost or the certificate changes, stop release publication and plan a migration; Android does not treat a different signing key as a normal in-place update.
+
+## Full exercise-library packaging requirement
+
+The production/release-candidate APK must include the full `app/src/main/assets/exercises/` GIF library, not just the six offline core GIFs. The tracked catalogue contains 6,556 GIF files totaling approximately 732 MB before APK compression. A tiny APK around 2–4 MB is the separate `.test2`/side-by-side test build or a reduced-library build; it is not the full production candidate and must not be presented as the final replacement. Release workflows must check out the GIF files, include them in Android assets, and verify the expected version code/name, package ID, certificate fingerprint, and SHA-256 before handing over the artifact.
+
+The permanent signing identity is the certificate fingerprint above. The private keystore/passwords remain in GitHub Actions secrets and the user's secure backup; the documentation deliberately does not contain the secret key material. Never uninstall the installed app to bypass an update signature error.
 
 ## Test installation
 
