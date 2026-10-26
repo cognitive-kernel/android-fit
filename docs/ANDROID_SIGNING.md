@@ -51,7 +51,7 @@ Current expected CI test certificate SHA-256:
 
 `57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47`
 
-This debug/test certificate is not the permanent release certificate. The signed production APK job remains disabled unless explicitly configured; a successful test APK build does not prove that an APK can update an existing production installation.
+This debug/test certificate is not the permanent release certificate. The optional `signed-apk` job in `android-ci.yml` remains gated; the supported production-package build path is `android-release.yml`, and the branch test artifact is built by `build-release-candidate.yml`. A side-by-side test APK does not prove that an APK can update an existing production installation.
 
 ## Historical artifact mismatch
 
@@ -62,7 +62,7 @@ Older GitHub Actions artifacts were signed by different automatically generated 
 
 These fingerprints differ from the currently pinned CI test certificate. The old artifacts therefore are not guaranteed to update one another or the new baseline. A local Android Studio build may also use a different local debug key.
 
-The diagnostic previously found `FIT_YAR_DEBUG_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_BASE64`, and `KEYSTORE_BASE64` empty; the old cache key held a certificate that did not match the pinned test fingerprint, and the v2 cache was absent. No original private keystore was found in tracked repository paths or the inspected CI artifacts. These facts are why a separate permanent release key and explicit fingerprint pin are required.
+The diagnostic above concerns the old **debug/test** signing key only; it does not mean the permanent release key is missing. Production release builds use the separately configured `FIT_YAR_RELEASE_*` secrets and the pinned release certificate documented above. Never substitute the debug/test key for that release identity.
 
 ## Release checklist (required for every release)
 
