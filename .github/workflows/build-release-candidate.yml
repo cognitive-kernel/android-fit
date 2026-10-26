@@ -97,16 +97,9 @@ jobs:
           "$AAPT" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionCode='$VERSION_CODE'"
           "$AAPT" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionName='${VERSION_NAME}'"
           apk_bytes=$(stat -c '%s' "artifacts/fit-yar-${VERSION_NAME}.apk")
-          gif_count=$(unzip -Z1 "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -E '^assets/exercises/.*[.]gif      - uses: actions/upload-artifact@v4
-        with:
-          name: fityar-release-candidate-${{ inputs.version_name || '1.1.14' }}
-          path: artifacts/*
-          if-no-files-found: error
-          retention-days: 30
-      - name: Clean up signing material
-        if: always()
-        run: rm -rf "$RUNNER_TEMP/fityar-signing"
- | wc -l)
+          unzip -Z1 "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/apk-entries.txt
+          grep -E '^assets/exercises/.*[.]gif$' artifacts/apk-entries.txt > artifacts/packaged-gifs.txt || true
+          gif_count=$(wc -l < artifacts/packaged-gifs.txt)
           echo "APK bytes: $apk_bytes; packaged GymVisual GIFs: $gif_count"
           test "$gif_count" -ge 6500 || { echo "::error::APK is missing the full GymVisual GIF catalogue."; exit 1; }
           test "$apk_bytes" -ge 500000000 || { echo "::error::APK is unexpectedly small; refusing to publish a reduced-library APK."; exit 1; }
