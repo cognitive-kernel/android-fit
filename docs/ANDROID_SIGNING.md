@@ -1,8 +1,8 @@
 # Android signing and update policy
 
-## Permanent signing identity from the next release
+## Permanent signing identity (locked baseline)
 
-**Decision:** The first APK distributed as the new baseline must be signed with one deliberately created, permanent FitYar release keystore. Every later APK for the same package must use that exact keystore and certificate. Never generate a new key during a normal build or release.
+**Decision:** The permanent FitYar release signing identity is the already configured candidate key whose APK update was previously accepted on the user's device. Its certificate is now the pinned baseline for future builds. Every later APK for the same package must use that exact keystore and certificate. Never generate a new key during a normal build or release.
 
 - Android package ID: `com.cognitivekernel.androidfit` — do not change it for ordinary updates.
 - Every release must have a strictly higher `versionCode` than the last distributed release.
@@ -11,9 +11,9 @@
 - The currently installed older APK may have a different certificate. Because the owner accepts a one-time reinstall and has a database backup, designate the first APK signed by the new permanent key as the **new update baseline**. Install that baseline after exporting and verifying a usable backup. From that point onward, keep the new key unchanged.
 - Restoring a database backup protects app data only if the backup is valid and restoration succeeds; it does not make Android accept a mismatched APK signature.
 
-## One-time setup required before publishing the baseline APK
+## One-time baseline decision and required secret handling
 
-The branch CI currently has access to a candidate keystore secret and successfully built a candidate APK with it. That does **not** yet establish a permanent release baseline: the certificate pin has not been confirmed against a trusted release record, the currently installed app's certificate is not available for comparison, and the production `signed-apk` job remains gated. Treat the candidate as test-only until the fingerprint and release policy are explicitly confirmed. Documentation alone does not establish those facts. For a new permanent baseline, complete these steps once:
+CI has successfully built version 1.1.13 (`versionCode=109`) with the configured release keystore. The same fingerprint was recorded for the v1.1.11 release and the earlier candidate that the user confirmed installed as an update. This key is therefore the permanent baseline for future releases. The private key and passwords remain in GitHub Actions secrets and must never be committed. The production release workflow now pins the public certificate fingerprint in source and fails closed if the configured keystore differs. The user's current phone has not been inspected directly in this session, so use the existing update chain and test the APK without uninstalling the app.
 
 1. Decide whether the existing candidate keystore (observed candidate SHA-256 below) will become the permanent baseline. If yes, do **not** generate a replacement key; securely preserve a backup of the exact keystore used by CI and verify that it can be restored. If not, generate a new dedicated keystore locally with Android SDK `keytool` and use that new key consistently.
 2. Record the chosen alias and passwords in a durable place and keep a separate backup copy of the keystore. Do not rely on GitHub Actions cache or a single workstation.
@@ -22,22 +22,23 @@ The branch CI currently has access to a candidate keystore secret and successful
 5. Use **Actions → FitYar permanent release APK → Run workflow** on `main`, provide a `version_code` greater than the last distributed version and a `version_name`, and download the `fityar-release-*` artifact only if the workflow succeeds. This workflow builds the release variant and verifies the package ID, signature, and certificate fingerprint.
 6. Install the baseline APK on a test phone only after confirming the backup is usable. Verify app launch and backup/restore, then preserve the APK, checksum, version and fingerprint as release records.
 
-### Candidate certificate observed in CI (not yet approved as release baseline)
+### Permanent release certificate (pinned)
 
-- Candidate artifact: `fityar-candidate-v109.apk`, version `1.1.13`, `versionCode=109`
-- Candidate signer SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
-- This fingerprint is observed from CI output, not a pinned release certificate. Do not assume it matches the APK currently installed on a phone.
+- Verified build artifact: `fityar-candidate-v109.apk`, version `1.1.13`, `versionCode=109`
+- Pinned signer SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
+- This is the release certificate expected for all future production APKs. CI must stop if the keystore signs with any other certificate.
 
 ### Permanent release certificate approval
 
-- Keystore alias: the alias stored in the candidate release secret; confirm it before baseline creation
-- Certificate SHA-256: **PENDING approval and pinning — do not publish a production release until verified**
+- Status: **PINNED**
+- Keystore alias: stored in `FIT_YAR_RELEASE_KEY_ALIAS` secret; do not disclose it in source or logs beyond non-secret diagnostic output.
+- Certificate SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
 - Baseline package: `com.cognitivekernel.androidfit`
-- Baseline versionCode: must be greater than the installed version; increment it for every subsequent release.
+- Last built candidate versionCode: `109` (`1.1.13`); every future production release must use a strictly greater versionCode.
 
 ## Current CI test certificate (not the permanent release key)
 
-The GitHub Actions side-by-side test build uses the cached key at `~/.android/debug.keystore`, alias `androiddebugkey`. The workflow verifies this test APK's certificate before publishing the test artifact. This is separate from the candidate APK above, which is signed with the candidate keystore secret.
+The GitHub Actions side-by-side test build uses the cached key at `~/.android/debug.keystore`, alias `androiddebugkey`. The workflow verifies this test APK's certificate before publishing the test artifact. This is separate from the production-package candidate APK, which is signed with the pinned release keystore secret.
 
 Current expected CI test certificate SHA-256:
 
