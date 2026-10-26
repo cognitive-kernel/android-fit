@@ -49,7 +49,7 @@ jobs:
           FIT_YAR_RELEASE_CERT_SHA256: ${{ vars.FIT_YAR_RELEASE_CERT_SHA256 }}
         run: |
           set -euo pipefail
-          for name in FIT_YAR_RELEASE_KEYSTORE_BASE64 FIT_YAR_RELEASE_KEY_ALIAS FIT_YAR_RELEASE_STORE_PASSWORD FIT_YAR_RELEASE_KEY_PASSWORD FIT_YAR_RELEASE_CERT_SHA256; do
+          for name in FIT_YAR_RELEASE_KEYSTORE_BASE64 FIT_YAR_RELEASE_KEY_ALIAS FIT_YAR_RELEASE_STORE_PASSWORD FIT_YAR_RELEASE_KEY_PASSWORD; do
             if [ -z "${!name:-}" ]; then
               echo "::error::Required release setting $name is missing. No APK will be published."
               exit 1
@@ -88,7 +88,8 @@ jobs:
           "$APKSIGNER" sign --ks "$RUNNER_TEMP/fityar-signing/release.jks" --ks-key-alias "$FIT_YAR_RELEASE_KEY_ALIAS" --ks-pass env:FIT_YAR_RELEASE_STORE_PASSWORD --key-pass env:FIT_YAR_RELEASE_KEY_PASSWORD --out "artifacts/fit-yar-${VERSION_NAME}.apk" "$UNSIGNED"
           "$APKSIGNER" verify --verbose --print-certs "artifacts/fit-yar-${VERSION_NAME}.apk" | tee artifacts/signature.txt
           ACTUAL="$(sed -n 's/.*certificate SHA-256 digest: //p' artifacts/signature.txt | head -n1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
-          EXPECTED="$(printf '%s' "$FIT_YAR_RELEASE_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          # Public certificate fingerprint is intentionally pinned in source; private key material remains in Actions secrets.
+          EXPECTED="61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
           if [ -z "$ACTUAL" ] || [ "$ACTUAL" != "$EXPECTED" ]; then
             echo "::error::APK certificate fingerprint mismatch; refusing to publish artifact."
             exit 1
