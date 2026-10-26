@@ -81,15 +81,14 @@ android {
         applicationId 'com.cognitivekernel.androidfit'
         minSdk 23
         targetSdk 36
-        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('109').toInteger()
-        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.13')
+        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('110').toInteger()
+        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.14')
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
     }
     sourceSets {
         main {
             assets {
                 srcDir "$buildDir/generated/coreExerciseAssets"
-                exclude 'exercises/**/*.gif'
             }
         }
     }
