@@ -97,11 +97,12 @@ public final class ExerciseGifView extends View {
         setClickable(true);
         setFocusable(true);
         setOnClickListener(v -> showFullScreen());
-        if (decoded == null && !this.assetName.isEmpty()) {
+        if (!this.assetName.isEmpty()) {
             Context app = context.getApplicationContext();
             if (Build.VERSION.SDK_INT >= 28) {
-                loadLocalDrawableAsync(app, corePath, "exercises/" + this.assetName);
-            } else {
+                // Decode with ImageDecoder off the UI thread; Movie remains an immediate fallback.
+                loadLocalDrawableAsync(app, corePath, "exercises/" + this.assetName, decoded == null);
+            } else if (decoded == null) {
                 downloadIfNeeded(app);
             }
         }
@@ -170,7 +171,7 @@ public final class ExerciseGifView extends View {
         return file;
     }
 
-    private void loadLocalDrawableAsync(Context context, String corePath, String exercisePath) {
+    private void loadLocalDrawableAsync(Context context, String corePath, String exercisePath, boolean allowNetworkFallback) {
         DOWNLOADS.execute(() -> {
             Drawable decoded = decodeAssetDrawable(context, corePath);
             if (decoded == null) decoded = decodeAssetDrawable(context, exercisePath);
@@ -186,7 +187,7 @@ public final class ExerciseGifView extends View {
                     setContentDescription(assetName.replace(".gif", "").replace('_', ' ') + " — tap to enlarge");
                     invalidate();
                 });
-            } else {
+            } else if (allowNetworkFallback) {
                 downloadIfNeeded(context);
             }
         });
