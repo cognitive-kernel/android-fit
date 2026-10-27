@@ -51,6 +51,7 @@ jobs:
           sparse-checkout: |
             /**
             !/app/src/main/assets/exercises/*.gif
+            !/app/src/main/assets/exercises/1 2 Stick Drill (male)_\[596513\].gif
           sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
