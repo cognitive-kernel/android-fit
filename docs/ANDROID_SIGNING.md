@@ -31,7 +31,7 @@ Before any future release:
 
 ### Permanent release certificate (pinned)
 
-- Previous verified candidate: version `1.1.13`, `versionCode=109`. The next candidate is `1.1.14`, `versionCode=110`; do not reuse the old version.
+- Latest verified candidate: version `1.1.14`, `versionCode=110`; the next production release must use `versionCode >= 111` and a new version name. Do not reuse `110`.
 - Pinned signer SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
 - This is the release certificate expected for all future production APKs. CI must stop if the keystore signs with any other certificate.
 
@@ -41,7 +41,7 @@ Before any future release:
 - Keystore alias: stored in `FIT_YAR_RELEASE_KEY_ALIAS` secret; do not disclose it in source or logs beyond non-secret diagnostic output.
 - Certificate SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
 - Baseline package: `com.cognitivekernel.androidfit`
-- Last previously built candidate versionCode: `109` (`1.1.13`). The next candidate must be `110` (`1.1.14`) or higher; every future production release must use a strictly greater versionCode.
+- Latest verified candidate versionCode: `110` (`1.1.14`). Every future production release must use a strictly greater versionCode.
 
 ## Current CI test certificate (not the permanent release key)
 
@@ -95,4 +95,4 @@ The isolated test APK uses package `com.cognitivekernel.androidfit.test2` and ca
 
 ## Historical note
 
-The permanent signing certificate is pinned and re-verified in CI. The current phone still must be used for the final in-place update test; this documentation and CI cannot independently inspect its installed APK.
+The permanent signing certificate is pinned and re-verified in CI. Latest candidate build: [FitYar release candidate APK](https://github.com/${repo}/actions/runs/40462096719/artifacts/12714863722). CI verified package `com.cognitivekernel.androidfit`, `versionCode=110`, `versionName=1.1.14`, all 6,556 GymVisual GIFs and the pinned certificate. The current phone still must be used for the final in-place update test; this documentation and CI cannot independently inspect its installed APK.

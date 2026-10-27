@@ -18,7 +18,9 @@ The GitHub Actions workflow runs these checks on the latest commit:
    - Selective backup export and restoration of workout data without overwriting unrelated health records.
    - Legacy SQLite backup validation: valid FitYar schema accepted; corrupt, unrelated, and newer-version databases rejected.
    - Conservative exercise GIF matching: exact matches and safe equipment/position variants are accepted; unrelated variants are rejected.
-   - All six bundled core GIFs decode and animate; the bundled GymVisual index contains 6,500+ entries.
+   - All six bundled core GIFs decode; the plank animation has a non-zero duration.
+   - `ExerciseGifView` resolves a catalogue exercise to its bundled offline GIF, opens fullscreen, and closes by × or by tapping the enlarged GIF.
+   - On Android 9+, GIFs are decoded with `ImageDecoder` on a background executor, with `Movie` as fallback; real-device playback and the network/cache fallback remain manual checks.
 
 ## Local commands
 
@@ -39,7 +41,7 @@ The app exports a versioned UTF-8 JSON backup. The user can select workout plans
 
 ## Update-safety rule
 
-Do not uninstall the existing app to bypass a signature conflict. Before installing an APK over an existing FitYar installation, compare its signer certificate with the installed version and confirm the new version code is not lower. The CI key is not the same as some older automatically signed artifacts; see [ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md). Never replace or regenerate the registered key silently. The GymVisual catalogue is indexed locally but its 6,500+ GIFs are fetched on demand from the pinned source commit and cached; only six core GIFs are bundled in the APK.
+Do not uninstall the existing app to bypass a signature conflict. Before installing an APK over an existing FitYar installation, compare its signer certificate with the installed version and confirm the new version code is not lower. The CI key is not the same as some older automatically signed artifacts; see [ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md). Never replace or regenerate the registered key silently. The production release-candidate APK bundles all 6,556 GymVisual GIFs; the small `.test2` APK built by sparse CI checkout includes only the core GIF aliases. The app has a pinned-source download/cache fallback for an unavailable local GIF, and real-device offline-cache behavior must still be checked manually.
 
 
 ## آزمون دستی روی گوشی واقعی (نسخهٔ آزمایشی مستقل)
