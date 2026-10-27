@@ -416,7 +416,7 @@ public final class AdvancedFeatures {
 
  private void showExerciseDetail(String name,String details,String gif,String sourceId){showExerciseDetail(name,details,gif,sourceId,false);}
  private void showExerciseDetail(String name,String details,String gif,String sourceId,boolean returnToLibrary){
-  LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);
+  LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);image.setOnClickListener(v->ExerciseImages.showFullscreen(a,gif,name));
   l.addView(image,new LinearLayout.LayoutParams(-1,(int)(220*a.getResources().getDisplayMetrics().density)));
   TextView title=new TextView(a);title.setText(name);title.setTextSize(20);l.addView(title);
   if(details!=null&&!details.trim().isEmpty()){TextView body=new TextView(a);body.setText(details);l.addView(body);}
