@@ -362,7 +362,7 @@ public final class AdvancedFeatures {
   libraryDialog.show();
  }
 
- private static String persianExerciseName(String english){
+ static String persianExerciseName(String english){
   if(english==null||english.trim().isEmpty())return "";
   String value=english.toLowerCase(Locale.ROOT);
   String[][] words={

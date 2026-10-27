@@ -18,42 +18,59 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.WeakHashMap;
 
 /** Resolves bundled exercise GIFs and displays them without dismissing the screen underneath. */
 public final class ExerciseImages {
     private static volatile ArrayList<String> cachedFiles;
+    private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
     public static String findGif(Context context, String exerciseName) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
         ArrayList<String> files = files(context.getAssets());
         String wanted = normalize(exerciseName);
+        String wantedLatin = normalize(transliteratePersian(exerciseName));
+        if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
         String best = null;
         int bestScore = 0;
         for (String file : files) {
             String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String candidate = normalize(base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", ""));
-            if (candidate.isEmpty()) continue;
-            if (candidate.equals(wanted)) return file;
+            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
+            String candidate = normalize(cleanBase);
+            String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
+            String matchWanted = wanted.isEmpty() ? wantedLatin : wanted;
+            String matchCandidate = wanted.isEmpty() ? candidate : (wanted.matches(".*[\\u0600-\\u06FF].*") ? localizedCandidate : candidate);
+            if (matchCandidate.isEmpty()) matchCandidate = candidate;
+            if (matchCandidate.isEmpty()) continue;
+            if (matchCandidate.equals(matchWanted) || localizedCandidate.equals(wanted)) return file;
             int score = 0;
-            if (wanted.contains(candidate) || candidate.contains(wanted)) {
-                score = Math.min(wanted.length(), candidate.length()) * 3;
+            if (matchWanted.contains(matchCandidate) || matchCandidate.contains(matchWanted)) {
+                score = Math.min(matchWanted.length(), matchCandidate.length()) * 3;
             } else {
-                String[] a = wanted.split(" ");
-                String[] b = candidate.split(" ");
+                String[] a = matchWanted.split(" ");
+                String[] b = matchCandidate.split(" ");
                 for (String token : a) if (token.length() > 2) {
                     for (String other : b) if (token.equals(other)) { score += token.length() * 2; break; }
                 }
             }
             if (score > bestScore) { bestScore = score; best = file; }
         }
-        int minimum = Math.max(9, wanted.replace(" ", "").length() / 2);
+        String scoringName = wanted.isEmpty() ? wantedLatin : wanted;
+        int minimum = Math.max(5, scoringName.replace(" ", "").length() / 3);
         return bestScore >= minimum ? best : null;
+    }
+
+    private static String transliteratePersian(String value) {
+        String[][] pairs = {{"آ","a"},{"ا","a"},{"ب","b"},{"پ","p"},{"ت","t"},{"ث","s"},{"ج","j"},{"چ","ch"},{"ح","h"},{"خ","kh"},{"د","d"},{"ذ","z"},{"ر","r"},{"ز","z"},{"ژ","zh"},{"س","s"},{"ش","sh"},{"ص","s"},{"ض","z"},{"ط","t"},{"ظ","z"},{"ع",""},{"غ","gh"},{"ف","f"},{"ق","gh"},{"ک","k"},{"گ","g"},{"ل","l"},{"م","m"},{"ن","n"},{"و","w"},{"ه","h"},{"ی","y"},{"ئ","y"},{"ء",""}};
+        String result = value == null ? "" : value;
+        for (String[] pair : pairs) result = result.replace(pair[0], pair[1]);
+        return result;
     }
 
     private static String normalize(String value) {
         return value.toLowerCase(Locale.ROOT).replaceAll("\\.gif$", "")
-            .replaceAll("[_\\-]+", " ").replaceAll("[^a-z0-9 ]", " ")
+            .replaceAll("[_\\-]+", " ").replaceAll("[^a-z0-9\\u0600-\\u06FF ]", " ")
             .replaceAll("\\s+", " ").trim();
     }
 
@@ -83,7 +100,17 @@ public final class ExerciseImages {
 
     public static void showFullscreen(Activity activity, String assetPath, String title) {
         if (activity == null || activity.isFinishing() || assetPath == null || assetPath.trim().isEmpty()) return;
+        synchronized (OPEN_FULLSCREEN) {
+            Dialog existing = OPEN_FULLSCREEN.get(activity);
+            if (existing != null && existing.isShowing()) return;
+        }
         Dialog dialog = new Dialog(activity);
+        synchronized (OPEN_FULLSCREEN) { OPEN_FULLSCREEN.put(activity, dialog); }
+        dialog.setOnDismissListener(ignored -> {
+            synchronized (OPEN_FULLSCREEN) {
+                if (OPEN_FULLSCREEN.get(activity) == dialog) OPEN_FULLSCREEN.remove(activity);
+            }
+        });
         LinearLayout root = new LinearLayout(activity);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.BLACK);
