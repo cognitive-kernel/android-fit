@@ -215,17 +215,17 @@ jobs:
           test -n "${FIT_YAR_RELEASE_KEY_PASSWORD:-}" || { echo "::error::Release key password secret is missing."; exit 1; }
           test -n "${FIT_YAR_RELEASE_STORE_PASSWORD:-}" || { echo "::error::Release store password secret is missing."; exit 1; }
           keytool -list -v -keystore "$FIT_YAR_SIGNING_KEYSTORE" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" | grep -E 'Alias name:|SHA1:|SHA256:|Valid from:'
-          gradle -PFIT_YAR_VERSION_CODE=108 -PFIT_YAR_VERSION_NAME=1.1.12 assembleDebug
+          gradle -PFIT_YAR_VERSION_CODE=112 -PFIT_YAR_VERSION_NAME=1.1.16 assembleDebug
           APK="app/build/outputs/apk/debug/app-debug.apk"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='108'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='112'"
           mkdir -p artifacts
-          cp "$APK" artifacts/fityar-large-library-v108.apk
+          cp "$APK" artifacts/fityar-large-library-v112.apk
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v108.apk | tee artifacts/signature.txt
           sha256sum artifacts/fityar-large-library-v108.apk > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: fityar-large-library-v108
+          name: fityar-large-library-v112
           path: artifacts/*
           if-no-files-found: error
           retention-days: 14
