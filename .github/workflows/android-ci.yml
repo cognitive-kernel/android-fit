@@ -220,7 +220,7 @@ jobs:
           gradle -PFIT_YAR_VERSION_CODE=114 -PFIT_YAR_VERSION_NAME=1.1.18 assembleDebug
           APK="app/build/outputs/apk/debug/app-debug.apk"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='113'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='114'"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionName='1.1.18'"
           mkdir -p artifacts
           cp "$APK" artifacts/fityar-large-library-v114.apk
@@ -249,7 +249,7 @@ jobs:
             artifacts/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --title "FitYar 1.1.18" \
-            --notes "FitYar 1.1.18. Version code 113. The APK is signed with the verified FitYar release certificate."
+            --notes "FitYar 1.1.18. Version code 114. The APK is signed with the verified FitYar release certificate."
       - uses: actions/upload-artifact@v4
         with:
           name: fityar-large-library-v114
