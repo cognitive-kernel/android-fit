@@ -221,8 +221,8 @@ jobs:
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='112'"
           mkdir -p artifacts
           cp "$APK" artifacts/fityar-large-library-v112.apk
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v108.apk | tee artifacts/signature.txt
-          sha256sum artifacts/fityar-large-library-v108.apk > artifacts/SHA256SUMS.txt
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v112.apk | tee artifacts/signature.txt
+          sha256sum artifacts/fityar-large-library-v112.apk > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: fityar-large-library-v112
