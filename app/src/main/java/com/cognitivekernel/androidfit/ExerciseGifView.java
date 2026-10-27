@@ -181,6 +181,7 @@ public final class ExerciseGifView extends View {
             if (result != null) {
                 post(() -> {
                     animatedDrawable = result;
+                    setLayerType(View.LAYER_TYPE_NONE, null);
                     attachAnimatedDrawable(result);
                     startAnimatedDrawable(result);
                     loadFailed = false;
@@ -202,10 +203,7 @@ public final class ExerciseGifView extends View {
                 File target = cachedFile(context, assetName);
                 if (target.isFile() && target.length() > 0) {
                     animatedDrawable = decodeFileDrawable(context, target);
-                    if (animatedDrawable != null) {
-                        attachAnimatedDrawable(animatedDrawable);
-                        startAnimatedDrawable(animatedDrawable);
-                    } else {
+                    if (animatedDrawable == null) {
                         try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
                     }
                     if (movie != null || animatedDrawable != null) {
@@ -239,10 +237,7 @@ public final class ExerciseGifView extends View {
                 if (target.exists() && !target.delete()) throw new IllegalStateException("Cannot replace cache");
                 if (!temporary.renameTo(target)) throw new IllegalStateException("Cannot save GIF");
                 animatedDrawable = decodeFileDrawable(context, target);
-                if (animatedDrawable != null) {
-                    attachAnimatedDrawable(animatedDrawable);
-                    startAnimatedDrawable(animatedDrawable);
-                } else {
+                if (animatedDrawable == null) {
                     try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
                 }
                 if (movie != null || animatedDrawable != null) {
@@ -257,6 +252,13 @@ public final class ExerciseGifView extends View {
                 if (temporary != null && temporary.exists()) temporary.delete();
                 IN_FLIGHT.remove(assetName);
                 post(() -> {
+                    if (animatedDrawable != null) {
+                        setLayerType(View.LAYER_TYPE_NONE, null);
+                        attachAnimatedDrawable(animatedDrawable);
+                        startAnimatedDrawable(animatedDrawable);
+                    } else {
+                        setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                    }
                     setContentDescription(assetName.replace(".gif", "").replace('_', ' ')
                             + (movie == null && animatedDrawable == null ? " — GIF unavailable" : " — tap to enlarge"));
                     invalidate();
