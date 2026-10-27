@@ -1,6 +1,9 @@
 package com.cognitivekernel.androidfit;
 
+import android.content.Context;
+import android.graphics.Movie;
 import android.view.ViewGroup;
+import java.io.InputStream;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.matcher.RootMatchers;
@@ -47,6 +50,21 @@ public class ExerciseGifViewTest {
             scenario.onActivity(activity -> {
                 ExerciseGifView preview = new ExerciseGifView(activity, CATALOG_GIF);
                 assertTrue("A catalogue exercise must resolve to its bundled offline GIF", preview.hasDecodedGifForTests());
+            });
+        }
+    }
+
+    @Test public void realCatalogueGifDecodesFromAssets() throws Exception {
+        Context context = InstrumentationRegistry.getInstrumentation().getTargetContext();
+        try (InputStream stream = context.getAssets().open("exercises/1 2 Stick Drill (male)_[596513].gif")) {
+            Movie movie = Movie.decodeStream(stream);
+            assertNotNull("Real catalogue GIF must decode from its packaged path", movie);
+            assertTrue("Catalogue GIF must have positive dimensions", movie.width() > 0 && movie.height() > 0);
+        }
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            scenario.onActivity(activity -> {
+                ExerciseGifView preview = new ExerciseGifView(activity, "1 2 Stick Drill (male)_[596513].gif");
+                assertTrue("Non-core catalogue GIF should decode", preview.hasDecodedGifForTests());
             });
         }
     }
