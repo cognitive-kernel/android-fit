@@ -31,7 +31,7 @@ Before any future release:
 
 ### Permanent release certificate (pinned)
 
-- Latest verified candidate: version `1.1.14`, `versionCode=110`; the next production release must use `versionCode >= 111` and a new version name. Do not reuse `110`.
+- Latest verified candidate: version `1.1.14`, `versionCode=110`. The next candidate is `1.1.15`, `versionCode=111`; do not reuse `110`. Keep the permanent package ID and pinned certificate unchanged.
 - Pinned signer SHA-256: `61:DB:AC:4C:3B:39:36:AD:0D:A7:5C:02:17:81:D1:94:D9:97:DE:0E:67:18:E0:F1:53:C8:5F:14:62:9F:0C:4A`
 - This is the release certificate expected for all future production APKs. CI must stop if the keystore signs with any other certificate.
 
