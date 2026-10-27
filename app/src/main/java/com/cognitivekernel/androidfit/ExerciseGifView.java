@@ -154,6 +154,10 @@ public final class ExerciseGifView extends View {
         return movie != null || animatedDrawable != null;
     }
 
+    boolean hasNativeGifRendererForTests() {
+        return animatedDrawable instanceof AnimatedImageDrawable;
+    }
+
     /** Maps catalogue filenames to the six GIF aliases bundled for offline use. */
     static String bundledCoreAlias(String name) {
         if ("Air Squat (VERSION 2)_[471413].gif".equals(name)) return "squat.gif";
