@@ -2,7 +2,7 @@
 
 ## CI checks
 
-The GitHub Actions workflow runs these checks on the latest commit:
+The latest successful validation is [Android CI run 40483246108](https://github.com/cognitive-kernel/android-fit/actions/runs/40483246108), commit `84d2727551b9f0d5cec4d2885101edfc54f5311f`: unit tests, Lint, test APK build/signature checks and all 32 API 34 emulator tests passed. The full release-candidate APK is [artifact 12723044501](https://github.com/cognitive-kernel/android-fit/actions/runs/40483240276/artifacts/12723044501). The workflow runs these checks on each applicable CI event:
 
 1. Java 17 / Gradle 8.11.1 build.
 2. JVM unit tests for Gregorian-to-Jalali conversion, including Nowruz boundaries, zero padding, and invalid dates, localized numeric parsing, and UTF-8 CSV quoting/formula-injection protection.
@@ -17,6 +17,10 @@ The GitHub Actions workflow runs these checks on the latest commit:
    - Additive migration from historical database schemas v1, v2, and v3 without losing records.
    - Selective backup export and restoration of workout data without overwriting unrelated health records.
    - Legacy SQLite backup validation: valid FitYar schema accepted; corrupt, unrelated, and newer-version databases rejected.
+   - Conservative exercise GIF matching: exact matches and safe equipment/position variants are accepted; unrelated variants are rejected.
+   - All six bundled core GIFs decode; the plank animation has a non-zero duration.
+   - `ExerciseGifView` decodes the six bundled core GIFs and a real non-core GymVisual catalogue GIF from `assets/exercises/`, opens fullscreen, and closes by × or by tapping the enlarged GIF.
+   - On Android 9+, `Movie` is the primary renderer when it can decode the source; `ImageDecoder` runs in the background only as fallback. Real-device playback and network/cache fallback remain manual checks.
 
 ## Local commands
 
@@ -37,7 +41,7 @@ The app exports a versioned UTF-8 JSON backup. The user can select workout plans
 
 ## Update-safety rule
 
-Do not uninstall the existing app to bypass a signature conflict. Before installing an APK over an existing FitYar installation, compare its signer certificate with the installed version and confirm the new version code is not lower. The CI key is not the same as some older automatically signed artifacts; see [ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md). Never replace or regenerate the registered key silently.
+Do not uninstall the existing app to bypass a signature conflict. Before installing an APK over an existing FitYar installation, compare its signer certificate with the installed version and confirm the new version code is not lower. The CI key is not the same as some older automatically signed artifacts; see [ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md). Never replace or regenerate the registered key silently. The production release-candidate APK bundles all 6,556 GymVisual GIFs; the small `.test2` APK built by sparse CI checkout includes only the core GIF aliases. The app has a pinned-source download/cache fallback for an unavailable local GIF, and real-device offline-cache behavior must still be checked manually.
 
 
 ## آزمون دستی روی گوشی واقعی (نسخهٔ آزمایشی مستقل)
@@ -45,13 +49,16 @@ Do not uninstall the existing app to bypass a signature conflict. Before install
 این چک‌لیست برای APK با شناسهٔ بستهٔ `com.cognitivekernel.androidfit.test2` است؛ این نسخه در کنار نسخهٔ اصلی نصب می‌شود و نتیجهٔ آن، سازگاری امضای APK اصلی یا مهاجرت داده‌های برنامهٔ اصلی را ثابت نمی‌کند.
 
 1. **نصب و شروع:** APK را نصب کنید، برنامه را باز کنید و صفحهٔ اصلی را در حالت فارسی و انگلیسی بررسی کنید.
-2. **GIFها:** کتابخانهٔ حرکات را باز کنید؛ هر شش حرکت اسکوات، شنا، لانج، پلانک، پارویی و راه‌رفتن را جداگانه باز کنید. بررسی کنید تصویر حرکت می‌کند، تصویر بریده یا خالی نیست و بدون اینترنت هم نمایش داده می‌شود.
-3. **ثبت تمرین:** یک برنامه و تمرین آزمایشی بسازید، یک رکورد ثبت کنید، برنامه را ببندید و دوباره باز کنید؛ رکورد باید باقی بماند.
-4. **پشتیبان‌گیری انتخابی و بازیابی:** در بخش پشتیبان‌گیری ابتدا فقط «برنامه‌ها و سوابق تمرین» را انتخاب کنید و فایل JSON بسازید؛ بررسی کنید فایل فقط بخش انتخاب‌شده را دارد. یک برنامه و رکورد آزمایشی تازه بسازید، فایل را بازیابی کنید و تأیید کنید داده‌های تمرین به وضعیت زمان پشتیبان برمی‌گردند ولی سوابق سلامت، قدم‌شمار و تنظیمات تغییر نمی‌کنند. سپس همین آزمون را جداگانه برای «سوابق سلامت»، «سوابق قدم‌شمار» و «تنظیمات برنامه» انجام دهید. در صفحهٔ بازیابی نیز فقط یک بخش از فایل چندبخشی را انتخاب کنید و تأیید کنید بقیهٔ بخش‌ها دست‌نخورده می‌مانند. آزمون جایگزینی داده‌ها را فقط در نسخهٔ آزمایشی انجام دهید.
-5. **فایل نامعتبر، لغو و پشتیبان قدیمی:** فایل خالی، JSON ناقص و فایل با نسخهٔ پشتیبان ناشناخته را انتخاب کنید؛ برنامه نباید داده‌های موجود را پاک کند. در انتخاب فایل و تأیید بازیابی نیز لغو را آزمایش کنید. برای فایل قدیمی SQLite، تأیید جایگزینی کل پایگاه داده باید پیش از هر تغییر نمایش داده شود و با لغو، اطلاعات فعلی بدون تغییر بماند.
-6. **قدم‌شمار:** مجوز اعلان/فعالیت درخواستی را بدهید، شروع، مکث، ادامه و پایان را بررسی کنید. یک بار مجوز را هنگام انتخاب «ادامه» رد/اعطا کنید و مطمئن شوید درخواست ادامه به شروع تبدیل نمی‌شود و شمارندهٔ جلسه صفر نمی‌شود. هنگام مکث، چند قدم بردارید و مطمئن شوید عدد جلسه تغییر نمی‌کند. سپس برنامه را به پس‌زمینه ببرید و رفتار را بررسی کنید.
-7. **راه‌اندازی مجدد:** با قدم‌شمار در حالت مکث، گوشی را راه‌اندازی مجدد کنید و بررسی کنید سرویس بدون اجازهٔ کاربر شمارش را از سر نگیرد. سپس حالت شروع‌شده را جداگانه آزمایش کنید؛ رفتار پس از راه‌اندازی مجدد به نسخهٔ Android، حسگر و محدودیت‌های سازنده وابسته است.
-8. **چیدمان:** صفحه‌های کوچک، بزرگ‌نمایی متن و تغییر زبان را بررسی کنید؛ دکمه‌ها نباید روی هم بیفتند و متن نباید از صفحه بیرون بزند.
-9. **گزارش خطا:** برای هر مشکل، مدل گوشی، نسخهٔ Android، زبان برنامه، مراحل بازتولید و تصویر صفحه را ثبت کنید.
+2. **GIFهای پایه و کتابخانه:** شش GIF پایهٔ اسکوات، شنا، لانج، پلانک، پارویی و راه‌رفتن باید بدون اینترنت پخش شوند. فهرست GymVisual باید بیش از ۶۵۰۰ حرکت را بدون فیلتر نشان دهد؛ فیلترهای نوع حرکت، عضو بدن، وسیله، جنسیت و جست‌وجوی فارسی/انگلیسی باید فهرست را در همان پنجره به‌روز کنند.
+3. **دانلود و cache:** با اینترنت یک GIF از کاتالوگ را باز کنید؛ نمایش «در حال بارگذاری» باید به GIF متحرک تبدیل شود. سپس اینترنت را خاموش کنید و همان GIF cacheشده را دوباره باز کنید. GIFهای دانلودنشده در حالت آفلاین باید پیام روشن بدهند، نه تصویر اشتباه.
+4. **بزرگ‌نمایی:** روی GIF محلی و GIF دانلودشده بزنید؛ نمایش تمام‌صفحه باید نسبت تصویر را حفظ کند. لمس GIF بزرگ یا × باید به جزئیات همان حرکت برگرداند.
+5. **تطبیق برنامه:** برای هر حرکت برنامه دکمهٔ نمایش GIF را بزنید. فقط حرکت دقیق یا گونهٔ مرتبط نمایش داده شود؛ اگر تطبیق مطمئن نیست، باید پیام عدم تطبیق نشان داده شود.
+6. **ثبت تمرین:** یک برنامه و تمرین آزمایشی بسازید، یک رکورد ثبت کنید، برنامه را ببندید و دوباره باز کنید؛ رکورد باید باقی بماند.
+7. **پشتیبان‌گیری انتخابی و بازیابی:** در بخش پشتیبان‌گیری ابتدا فقط «برنامه‌ها و سوابق تمرین» را انتخاب کنید و فایل JSON بسازید؛ بررسی کنید فایل فقط بخش انتخاب‌شده را دارد. یک برنامه و رکورد آزمایشی تازه بسازید، فایل را بازیابی کنید و تأیید کنید داده‌های تمرین به وضعیت زمان پشتیبان برمی‌گردند ولی سوابق سلامت، قدم‌شمار و تنظیمات تغییر نمی‌کنند. سپس همین آزمون را جداگانه برای «سوابق سلامت»، «سوابق قدم‌شمار» و «تنظیمات برنامه» انجام دهید. در صفحهٔ بازیابی نیز فقط یک بخش از فایل چندبخشی را انتخاب کنید و تأیید کنید بقیهٔ بخش‌ها دست‌نخورده می‌مانند. آزمون جایگزینی داده‌ها را فقط در نسخهٔ آزمایشی انجام دهید.
+8. **فایل نامعتبر، لغو و پشتیبان قدیمی:** فایل خالی، JSON ناقص و فایل با نسخهٔ پشتیبان ناشناخته را انتخاب کنید؛ برنامه نباید داده‌های موجود را پاک کند. در انتخاب فایل و تأیید بازیابی نیز لغو را آزمایش کنید. برای فایل قدیمی SQLite، تأیید جایگزینی کل پایگاه داده باید پیش از هر تغییر نمایش داده شود و با لغو، اطلاعات فعلی بدون تغییر بماند.
+9. **قدم‌شمار:** مجوز اعلان/فعالیت درخواستی را بدهید، شروع، مکث، ادامه و پایان را بررسی کنید. یک بار مجوز را هنگام انتخاب «ادامه» رد/اعطا کنید و مطمئن شوید درخواست ادامه به شروع تبدیل نمی‌شود و شمارندهٔ جلسه صفر نمی‌شود. هنگام مکث، چند قدم بردارید و مطمئن شوید عدد جلسه تغییر نمی‌کند. سپس برنامه را به پس‌زمینه ببرید و رفتار را بررسی کنید.
+10. **راه‌اندازی مجدد:** با قدم‌شمار در حالت مکث، گوشی را راه‌اندازی مجدد کنید و بررسی کنید سرویس بدون اجازهٔ کاربر شمارش را از سر نگیرد. سپس حالت شروع‌شده را جداگانه آزمایش کنید؛ رفتار پس از راه‌اندازی مجدد به نسخهٔ Android، حسگر و محدودیت‌های سازنده وابسته است.
+11. **چیدمان:** صفحه‌های کوچک، بزرگ‌نمایی متن و تغییر زبان را بررسی کنید؛ دکمه‌ها نباید روی هم بیفتند و متن نباید از صفحه بیرون بزند.
+12. **گزارش خطا:** برای هر مشکل، مدل گوشی، نسخهٔ Android، زبان برنامه، مراحل بازتولید و تصویر صفحه را ثبت کنید.
 
 **هشدار داده‌ها:** برای آزمون نسخهٔ اصلی، برنامهٔ نصب‌شده را حذف نکنید. نصب APK به‌عنوان به‌روزرسانی فقط پس از تطبیق گواهی امضا و تأیید نسخهٔ بالاتر مجاز است؛ پیش از آن، پشتیبان دستی مستقل بگیرید.

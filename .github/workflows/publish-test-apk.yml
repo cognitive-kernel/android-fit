@@ -1,0 +1,72 @@
+name: Publish FitYar side-by-side test APK
+
+on:
+  push:
+    branches:
+      - release/test-v1.1.13
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fityar-public-test-release
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish-test-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /**
+            !/app/src/main/assets/exercises/*.gif
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Build side-by-side APK
+        run: gradle -PFIT_YAR_TEST_INSTALL=true -PFIT_YAR_VERSION_CODE=109 -PFIT_YAR_VERSION_NAME=1.1.13 assembleDebug
+      - name: Verify package, version, signature and checksum
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          AAPT="$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt"
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          "$AAPT" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit.test2'"
+          "$AAPT" dump badging "$APK" | grep -F "versionCode='109'"
+          "$APKSIGNER" verify --print-certs "$APK" > signature.txt
+          mkdir -p release-assets
+          cp "$APK" release-assets/fityar-test-side-by-side-v1.1.13.apk
+          cp signature.txt release-assets/signature.txt
+          (cd release-assets && sha256sum fityar-test-side-by-side-v1.1.13.apk > SHA256SUMS.txt)
+      - name: Publish public test-only release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: fit-yar-v1.1.13-test
+          name: FitYar 1.1.13 — Public Test Build (Side-by-side)
+          prerelease: true
+          make_latest: false
+          generate_release_notes: false
+          body: |
+            **Test-only APK. This is not an update for the existing FitYar installation.**
+
+            This APK uses the separate package ID `com.cognitivekernel.androidfit.test2` so it can be installed beside the existing app without replacing its data. It is intended for user acceptance testing only.
+
+            The production update remains blocked until the original signing certificate is recovered and matched against the installed app. Do not uninstall the existing FitYar app to install this build.
+          files: |
+            release-assets/fityar-test-side-by-side-v1.1.13.apk
+            release-assets/SHA256SUMS.txt
+            release-assets/signature.txt

@@ -1,6 +1,7 @@
 name: Android CI
 on:
   push:
+    # The smart-goal feature branch is validated by its PR workflow below; avoid duplicate emulator runs.
     branches: [ main, ci/verify-workout-app, feature/performance-report, feature/background-step-counter, 'release/**' ]
   pull_request:
     branches: [ main ]
@@ -8,8 +9,9 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: android-ci-${{ github.workflow }}-${{ github.ref }}-${{ github.sha }}
-  cancel-in-progress: false
+  # Keep only the newest run for a branch/PR; parallel emulator runs have made ADB unstable.
+  group: android-ci-${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   unit-tests-and-lint:
@@ -17,6 +19,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /**
+            !/app/src/main/assets/exercises/*.gif
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -38,6 +46,13 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /**
+            !/app/src/main/assets/exercises/*.gif
+            /app/src/main/assets/exercises/1 2 Stick Drill (male)_\[596513\].gif
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -67,6 +82,16 @@ jobs:
             echo "Android SDK installation failed after 3 attempts."
             exit 1
           fi
+      - name: Enable KVM access when the runner exposes it
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+          else
+            echo "::warning::/dev/kvm is unavailable; emulator may need software acceleration."
+          fi
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -77,16 +102,28 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
           disable-animations: true
-          script: gradle connectedDebugAndroidTest
+          script: gradle connectedDebugAndroidTest --stacktrace
+      - name: Upload instrumentation test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-instrumentation-reports
+          path: |
+            app/build/reports/androidTests/connected/**
+            app/build/outputs/androidTest-results/connected/**
+          if-no-files-found: warn
+          retention-days: 7
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
         run: |
           # Emulator startup failures can leave adb commands waiting forever.
           # Bound diagnostics so they cannot consume the entire job timeout.
-          timeout 15s adb devices -l || true
-          timeout 20s adb -s emulator-5554 shell getprop sys.boot_completed || true
-          timeout 20s adb -s emulator-5554 logcat -d -t 6000 || true
+          # Use hard kill deadlines: adb can occasionally hang even after the emulator
+          # test task has already failed, preventing the job from reporting its result.
+          timeout --kill-after=2s 8s adb devices -l || true
+          timeout --kill-after=2s 8s adb -s emulator-5554 shell getprop sys.boot_completed || true
+          timeout --kill-after=2s 12s adb -s emulator-5554 logcat -d -t 2500 || true
 
   test-install-apk:
     # Deliberately separate from signed-apk: this APK has its own package ID
@@ -95,6 +132,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /**
+            !/app/src/main/assets/exercises/*.gif
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -180,6 +223,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /**
+            !/app/src/main/assets/exercises/*.gif
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -215,17 +264,17 @@ jobs:
           test -n "${FIT_YAR_RELEASE_KEY_PASSWORD:-}" || { echo "::error::Release key password secret is missing."; exit 1; }
           test -n "${FIT_YAR_RELEASE_STORE_PASSWORD:-}" || { echo "::error::Release store password secret is missing."; exit 1; }
           keytool -list -v -keystore "$FIT_YAR_SIGNING_KEYSTORE" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" | grep -E 'Alias name:|SHA1:|SHA256:|Valid from:'
-          gradle -PFIT_YAR_VERSION_CODE=108 -PFIT_YAR_VERSION_NAME=1.1.12 assembleDebug
+          gradle -PFIT_YAR_VERSION_CODE=109 -PFIT_YAR_VERSION_NAME=1.1.13 assembleDebug
           APK="app/build/outputs/apk/debug/app-debug.apk"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='108'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='109'"
           mkdir -p artifacts
-          cp "$APK" artifacts/fityar-large-library-v108.apk
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v108.apk | tee artifacts/signature.txt
-          sha256sum artifacts/fityar-large-library-v108.apk > artifacts/SHA256SUMS.txt
+          cp "$APK" artifacts/fityar-candidate-v109.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-candidate-v109.apk | tee artifacts/signature.txt
+          sha256sum artifacts/fityar-candidate-v109.apk > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: fityar-large-library-v108
+          name: fityar-candidate-v109
           path: artifacts/*
           if-no-files-found: error
           retention-days: 14
@@ -239,6 +288,12 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            /**
+            !/app/src/main/assets/exercises/*.gif
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -300,9 +355,9 @@ jobs:
           set -euo pipefail
           gradle assembleDebug
           mkdir -p artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk artifacts/fit-yar-v1.1.8.apk
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/fit-yar-v1.1.13.apk
           APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
-          "$APKSIGNER" verify --print-certs artifacts/fit-yar-v1.1.8.apk | tee /tmp/apk-certs.txt
+          "$APKSIGNER" verify --print-certs artifacts/fit-yar-v1.1.13.apk | tee /tmp/apk-certs.txt
           grep -F "Signer #1 certificate SHA-256 digest: 578264315217b79651a86f3607c6ec5a9c0a1785d461aad576a4cbeca4d36447" /tmp/apk-certs.txt
       - uses: actions/upload-artifact@v4
         with:

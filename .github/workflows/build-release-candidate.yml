@@ -1,0 +1,115 @@
+name: FitYar release candidate APK
+on:
+  push:
+    branches:
+      - feature/smart-goal-nutrition-plans
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "Android versionCode greater than the last installed release"
+        required: true
+        default: "111"
+        type: string
+      version_name:
+        description: "Android versionName"
+        required: true
+        default: "1.1.15"
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fityar-release-candidate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      VERSION_CODE: ${{ inputs.version_code || '111' }}
+      VERSION_NAME: ${{ inputs.version_name || '1.1.15' }}
+      EXPECTED_CERT_SHA256: "61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify full exercise GIF source catalogue before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=$(find app/src/main/assets/exercises -type f -iname '*.gif' | wc -l)
+          bytes=$(find app/src/main/assets/exercises -type f -iname '*.gif' -printf '%s\n' | awk '{sum += $1} END {printf "%.0f", sum}')
+          echo "GIF source files: $count; total source bytes: $bytes"
+          test "$count" -ge 6500 || { echo "::error::Full GymVisual GIF catalogue is missing (expected at least 6500 GIFs)."; exit 1; }
+          test "$bytes" -ge 700000000 || { echo "::error::GIF source library is unexpectedly small; refusing to build a reduced APK."; exit 1; }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Require permanent release key and validate inputs
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_RELEASE_KEYSTORE_BASE64 }}
+          FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
+          FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
+          FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          [[ "$VERSION_CODE" =~ ^[1-9][0-9]*$ ]]
+          [[ -n "$VERSION_NAME" ]]
+          for name in FIT_YAR_RELEASE_KEYSTORE_BASE64 FIT_YAR_RELEASE_KEY_ALIAS FIT_YAR_RELEASE_STORE_PASSWORD FIT_YAR_RELEASE_KEY_PASSWORD; do
+            test -n "${!name:-}" || { echo "::error::Missing required secret $name"; exit 1; }
+          done
+          mkdir -p "$RUNNER_TEMP/fityar-signing"
+          printf '%s' "$FIT_YAR_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/fityar-signing/release.jks"
+          test -s "$RUNNER_TEMP/fityar-signing/release.jks"
+          keytool -list -keystore "$RUNNER_TEMP/fityar-signing/release.jks" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" >/dev/null
+      - name: Build release variant
+        run: gradle -PFIT_YAR_VERSION_CODE="$VERSION_CODE" -PFIT_YAR_VERSION_NAME="$VERSION_NAME" assembleRelease
+      - name: Sign and verify package, version, and pinned certificate
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
+          FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
+          FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          UNSIGNED="$(find app/build/outputs/apk/release -maxdepth 1 -name '*unsigned*.apk' -print -quit)"
+          if [ -z "$UNSIGNED" ]; then UNSIGNED="$(find app/build/outputs/apk/release -maxdepth 1 -name '*.apk' -print -quit)"; fi
+          test -n "$UNSIGNED"
+          mkdir -p artifacts
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          AAPT="$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt"
+          "$APKSIGNER" sign --ks "$RUNNER_TEMP/fityar-signing/release.jks" --ks-key-alias "$FIT_YAR_RELEASE_KEY_ALIAS" --ks-pass env:FIT_YAR_RELEASE_STORE_PASSWORD --key-pass env:FIT_YAR_RELEASE_KEY_PASSWORD --out "artifacts/fit-yar-${VERSION_NAME}.apk" "$UNSIGNED"
+          "$APKSIGNER" verify --verbose --print-certs "artifacts/fit-yar-${VERSION_NAME}.apk" | tee artifacts/signature.txt
+          ACTUAL="$(sed -n 's/.*certificate SHA-256 digest: //p' artifacts/signature.txt | head -n1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          test -n "$ACTUAL" && test "$ACTUAL" = "$EXPECTED" || { echo "::error::Signing certificate mismatch; refusing to upload."; exit 1; }
+          "$AAPT" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$AAPT" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionCode='$VERSION_CODE'"
+          "$AAPT" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionName='${VERSION_NAME}'"
+          apk_bytes=$(stat -c '%s' "artifacts/fit-yar-${VERSION_NAME}.apk")
+          unzip -Z1 "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/apk-entries.txt
+          grep -E '^assets/exercises/.*[.]gif$' artifacts/apk-entries.txt > artifacts/packaged-gifs.txt || true
+          gif_count=$(wc -l < artifacts/packaged-gifs.txt)
+          echo "APK bytes: $apk_bytes; packaged GymVisual GIFs: $gif_count"
+          test "$gif_count" -ge 6500 || { echo "::error::APK is missing the full GymVisual GIF catalogue."; exit 1; }
+          test "$apk_bytes" -ge 500000000 || { echo "::error::APK is unexpectedly small; refusing to publish a reduced-library APK."; exit 1; }
+          sha256sum "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fityar-release-candidate-${{ inputs.version_name || '1.1.15' }}
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+      - name: Clean up signing material
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/fityar-signing"

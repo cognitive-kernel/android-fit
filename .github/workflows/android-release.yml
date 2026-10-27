@@ -18,9 +18,18 @@ concurrency:
 jobs:
   release-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+      - name: Verify full exercise GIF source catalogue before building
+        shell: bash
+        run: |
+          set -euo pipefail
+          count=$(find app/src/main/assets/exercises -type f -iname '*.gif' | wc -l)
+          bytes=$(find app/src/main/assets/exercises -type f -iname '*.gif' -printf '%s\n' | awk '{sum += $1} END {printf "%.0f", sum}')
+          echo "GIF source files: $count; total source bytes: $bytes"
+          test "$count" -ge 6500 || { echo "::error::Full GymVisual GIF catalogue is missing (expected at least 6500 GIFs)."; exit 1; }
+          test "$bytes" -ge 700000000 || { echo "::error::GIF source library is unexpectedly small; refusing to build a reduced APK."; exit 1; }
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -40,10 +49,9 @@ jobs:
           FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
           FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
           FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
-          FIT_YAR_RELEASE_CERT_SHA256: ${{ vars.FIT_YAR_RELEASE_CERT_SHA256 }}
         run: |
           set -euo pipefail
-          for name in FIT_YAR_RELEASE_KEYSTORE_BASE64 FIT_YAR_RELEASE_KEY_ALIAS FIT_YAR_RELEASE_STORE_PASSWORD FIT_YAR_RELEASE_KEY_PASSWORD FIT_YAR_RELEASE_CERT_SHA256; do
+          for name in FIT_YAR_RELEASE_KEYSTORE_BASE64 FIT_YAR_RELEASE_KEY_ALIAS FIT_YAR_RELEASE_STORE_PASSWORD FIT_YAR_RELEASE_KEY_PASSWORD; do
             if [ -z "${!name:-}" ]; then
               echo "::error::Required release setting $name is missing. No APK will be published."
               exit 1
@@ -68,7 +76,6 @@ jobs:
           FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
           FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
           FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
-          FIT_YAR_RELEASE_CERT_SHA256: ${{ vars.FIT_YAR_RELEASE_CERT_SHA256 }}
           VERSION_NAME: ${{ inputs.version_name }}
         run: |
           set -euo pipefail
@@ -82,12 +89,24 @@ jobs:
           "$APKSIGNER" sign --ks "$RUNNER_TEMP/fityar-signing/release.jks" --ks-key-alias "$FIT_YAR_RELEASE_KEY_ALIAS" --ks-pass env:FIT_YAR_RELEASE_STORE_PASSWORD --key-pass env:FIT_YAR_RELEASE_KEY_PASSWORD --out "artifacts/fit-yar-${VERSION_NAME}.apk" "$UNSIGNED"
           "$APKSIGNER" verify --verbose --print-certs "artifacts/fit-yar-${VERSION_NAME}.apk" | tee artifacts/signature.txt
           ACTUAL="$(sed -n 's/.*certificate SHA-256 digest: //p' artifacts/signature.txt | head -n1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
-          EXPECTED="$(printf '%s' "$FIT_YAR_RELEASE_CERT_SHA256" | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          # Public certificate fingerprint is intentionally pinned in source; private key material remains in Actions secrets.
+          EXPECTED="61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
           if [ -z "$ACTUAL" ] || [ "$ACTUAL" != "$EXPECTED" ]; then
             echo "::error::APK certificate fingerprint mismatch; refusing to publish artifact."
             exit 1
           fi
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionCode='$VERSION_CODE'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionName='$VERSION_NAME'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "artifacts/fit-yar-${VERSION_NAME}.apk" | grep -F "versionName='${VERSION_NAME}'"
+          apk_bytes=$(stat -c '%s' "artifacts/fit-yar-${VERSION_NAME}.apk")
+          unzip -Z1 "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/apk-entries.txt
+          grep -E '^assets/exercises/.*[.]gif$' artifacts/apk-entries.txt > artifacts/packaged-gifs.txt || true
+          gif_count=$(wc -l < artifacts/packaged-gifs.txt)
+          echo "APK bytes: $apk_bytes; packaged GymVisual GIFs: $gif_count"
+          test "$gif_count" -ge 6500 || { echo "::error::APK is missing the full GymVisual GIF catalogue."; exit 1; }
+          test "$apk_bytes" -ge 500000000 || { echo "::error::APK is unexpectedly small; refusing to publish a reduced-library APK."; exit 1; }
+          rm -f artifacts/apk-entries.txt artifacts/packaged-gifs.txt
           sha256sum "artifacts/fit-yar-${VERSION_NAME}.apk" > artifacts/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:

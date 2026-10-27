@@ -91,22 +91,16 @@ public final class AdvancedFeatures {
  }
 
  private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
-  ArrayList<String> files=new ArrayList<>();
-  collectExerciseGifFiles(context.getAssets(),"exercises",files);
-  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(files.size());
-  java.util.regex.Pattern idPattern=java.util.regex.Pattern.compile("(?:_\\[?(\\d{3,8})\\]?|\\s+\\[?(\\d{3,8})\\]?)$");
-  for(String assetPath:files){
-   String file=assetPath.substring("exercises/".length());
-   String title=file.substring(0,file.length()-4);
-   java.util.regex.Matcher matcher=idPattern.matcher(title);
-   String sourceId="";
-   if(matcher.find()){
-    sourceId=matcher.group(1)!=null?matcher.group(1):matcher.group(2);
-    title=title.substring(0,matcher.start());
+  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
+  try(BufferedReader reader=new BufferedReader(new InputStreamReader(context.getAssets().open("exercise_catalog.tsv"),"UTF-8"))){
+   String line;
+   while((line=reader.readLine())!=null){
+    String[] fields=line.split("\\t",3);
+    if(fields.length<2)continue;
+    String file=fields[0].trim(),english=fields[1].trim(),sourceId=fields.length>2?fields[2].trim():"";
+    if(file.isEmpty()||english.isEmpty()||!file.toLowerCase(Locale.ROOT).endsWith(".gif"))continue;
+    rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
    }
-   String english=title.replace('_',' ').replaceAll("\\s+"," ").trim();
-   if(english.isEmpty())continue;
-   rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
   }
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
   return rows;
@@ -349,9 +343,13 @@ public final class AdvancedFeatures {
   bodySpinner.setOnItemSelectedListener(filterListener);
   equipmentSpinner.setOnItemSelectedListener(filterListener);
   genderSpinner.setOnItemSelectedListener(filterListener);
+  android.os.Handler filterHandler=new android.os.Handler(android.os.Looper.getMainLooper());
   search.addTextChangedListener(new android.text.TextWatcher(){
    public void beforeTextChanged(CharSequence s,int st,int count,int after){}
-   public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}
+   public void onTextChanged(CharSequence text,int st,int before,int count){
+    filterHandler.removeCallbacks(filterRows);
+    filterHandler.postDelayed(filterRows,180);
+   }
    public void afterTextChanged(android.text.Editable e){}
   });
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
@@ -416,8 +414,9 @@ public final class AdvancedFeatures {
 
  private void showExerciseDetail(String name,String details,String gif,String sourceId){showExerciseDetail(name,details,gif,sourceId,false);}
  private void showExerciseDetail(String name,String details,String gif,String sourceId,boolean returnToLibrary){
-  LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);
+  LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name+" — "+tg("tap GIF to enlarge","برای بزرگ‌نمایی گیف را لمس کنید"));
   l.addView(image,new LinearLayout.LayoutParams(-1,(int)(220*a.getResources().getDisplayMetrics().density)));
+  TextView gifHint=new TextView(a);gifHint.setText(tg("Tap the GIF to enlarge. Tap the enlarged GIF or × to return here.","برای بزرگ‌نمایی گیف را لمس کنید؛ برای بازگشت، گیف بزرگ یا × را بزنید."));gifHint.setTextSize(13);gifHint.setGravity(Gravity.CENTER);l.addView(gifHint);
   TextView title=new TextView(a);title.setText(name);title.setTextSize(20);l.addView(title);
   if(details!=null&&!details.trim().isEmpty()){TextView body=new TextView(a);body.setText(details);l.addView(body);}
   if(sourceId!=null&&!sourceId.isEmpty()){TextView attribution=new TextView(a);attribution.setText("© Gym visual — https://gymvisual.com/");l.addView(attribution);}
@@ -457,61 +456,221 @@ public final class AdvancedFeatures {
 
 
  /** Goal-specific exercise and nutrition guide based on age, height, weight and activity. */
+ private String canonicalMovementQuery(String name){
+  String[][] map={
+   {tg("Overhead press","پرس سرشانه"),"Overhead Press"},{tg("Pike push-up","شنا پایک"),"Pike Push-Up"},
+   {tg("Lateral raise","نشر جانب"),"Lateral Raise"},{tg("Rear-delt raise","نشر خم"),"Rear Delt Raise"},
+   {tg("Shoulder external rotation","چرخش خارجی شانه"),"Shoulder External Rotation"},
+   {tg("Biceps curl","جلو بازو"),"Biceps Curl"},{tg("Hammer curl","جلو بازو چکشی"),"Hammer Curl"},
+   {tg("Triceps extension","پشت بازو"),"Triceps Extension"},{tg("Close-grip push-up","شنا دست جمع"),"Close-Grip Push-Up"},
+   {tg("Plank","پلانک"),"Plank"},{tg("Dead bug","ددباگ"),"Dead Bug"},{tg("Reverse crunch","کرانچ معکوس"),"Reverse Crunch"},
+   {tg("Bird dog","برد داگ"),"Bird Dog"},{tg("Squat","اسکوات"),"Squat"},{tg("Reverse lunge","لانج معکوس"),"Reverse Lunge"},
+   {tg("Hip hinge","هیپ‌هینج"),"Hip Hinge"},{tg("Glute bridge","پل باسن"),"Glute Bridge"},{tg("Calf raise","ساق پا"),"Calf Raise"},
+   {tg("Push-up","شنا سوئدی"),"Push-Up"},{tg("Incline push-up","شنا روی سطح بلند"),"Incline Push-Up"},
+   {tg("Chest press","پرس سینه"),"Chest Press"},{tg("Incline press","پرس بالاسینه"),"Incline Bench Press"},
+   {tg("Chest fly","فلای سینه"),"Chest Fly"},{tg("Row","پارویی"),"Row"},{tg("Backpack row","پارویی با کوله‌پشتی"),"Bent Over Row"},
+   {tg("Lat pulldown / band pulldown","لت از بالا / لت با کش"),"Lat Pulldown"},
+   {tg("Face pull / band pull-apart","فیس پول / بازکردن کش"),"Face Pull"},
+   {tg("Back extension","بازکردن پشت"),"Back Extension"}
+  };
+  for(String[] pair:map)if(pair[0].equals(name))return pair[1];
+  return "";
+ }
+ private ExerciseLibraryRow findMatchingExerciseGif(List<ExerciseLibraryRow> rows,String movementName){
+  String query=canonicalMovementQuery(movementName);if(query.isEmpty())return null;
+  ExerciseLibraryRow best=null;int bestScore=Integer.MAX_VALUE;
+  for(ExerciseLibraryRow row:rows){
+   int score=ExerciseGifMatcher.score(query,row.englishName);
+   if(score==0)return row;
+   if(score>0&&score<bestScore){best=row;bestScore=score;}
+  }
+  return best;
+ }
+ private void showMovementGif(String movementName){
+  java.util.concurrent.Future<ArrayList<ExerciseLibraryRow>> future=ensureLibraryFuture(a.getApplicationContext());
+  if(future.isDone()){
+   try{ExerciseLibraryRow match=findMatchingExerciseGif(future.get(),movementName);if(match!=null){showExerciseDetail(match.displayName("en".equals(selectedLanguage())),"",match.file,match.sourceId,false);return;}}
+   catch(Exception ignored){}
+   message(tg("No verified GIF match","گیف منطبق تأیید نشد"),tg("No reliable matching GIF was found for this movement. Search the exercise library instead of showing an unrelated animation.","برای این حرکت گیف مرتبط و قابل‌اعتماد پیدا نشد؛ برای جلوگیری از نمایش انیمیشن نامرتبط، نام حرکت را در کتابخانه جست‌وجو کنید."));
+   return;
+  }
+  ProgressDialog loading=new ProgressDialog(a);loading.setTitle(tg("Exercise GIF","گیف حرکت"));loading.setMessage(tg("Finding matching animation…","در حال یافتن گیف مرتبط…"));loading.setIndeterminate(true);loading.setCancelable(false);loading.show();
+  new Thread(()->{
+   ExerciseLibraryRow match=null;try{match=findMatchingExerciseGif(future.get(),movementName);}catch(Exception ignored){}
+   final ExerciseLibraryRow result=match;
+   new android.os.Handler(android.os.Looper.getMainLooper()).post(()->{
+    if(loading.isShowing())loading.dismiss();
+    if(a.isFinishing()||(Build.VERSION.SDK_INT>=17&&a.isDestroyed()))return;
+    if(result==null){message(tg("No verified GIF match","گیف منطبق تأیید نشد"),tg("No reliable matching GIF was found for this movement. Search the exercise library instead of showing an unrelated animation.","برای این حرکت گیف مرتبط و قابل‌اعتماد پیدا نشد؛ برای جلوگیری از نمایش انیمیشن نامرتبط، نام حرکت را در کتابخانه جست‌وجو کنید."));}
+    else showExerciseDetail(result.displayName("en".equals(selectedLanguage())),"",result.file,result.sourceId,false);
+   });
+  },"FitYar-GIF-match").start();
+ }
+ private String regionLabel(int region){
+  switch(region){case 1:return tg("Shoulders","سرشانه");case 2:return tg("Arms","بازو");case 3:return tg("Abs / core","شکم و میان‌تنه");case 4:return tg("Legs & glutes","پا و باسن");case 5:return tg("Chest","سینه");case 6:return tg("Back","پشت و زیربغل");default:return tg("Full body","کل بدن");}
+ }
+ private String[][] movementsForRegion(int region){
+  switch(region){
+   case 1:return new String[][]{{tg("Overhead press","پرس سرشانه"),"3","10"},{tg("Lateral raise","نشر جانب"),"3","12"},{tg("Rear-delt raise","نشر خم"),"2","12"},{tg("Shoulder external rotation","چرخش خارجی شانه"),"2","12"}};
+   case 2:return new String[][]{{tg("Biceps curl","جلو بازو"),"3","10"},{tg("Hammer curl","جلو بازو چکشی"),"3","10"},{tg("Triceps extension","پشت بازو"),"3","12"},{tg("Close-grip push-up","شنا دست جمع"),"2","8"}};
+   case 3:return new String[][]{{tg("Plank","پلانک"),"3","30"},{tg("Dead bug","ددباگ"),"3","10"},{tg("Reverse crunch","کرانچ معکوس"),"3","12"},{tg("Bird dog","برد داگ"),"2","10"}};
+   case 4:return new String[][]{{tg("Squat","اسکوات"),"3","10"},{tg("Reverse lunge","لانج معکوس"),"3","10"},{tg("Hip hinge","هیپ‌هینج"),"3","10"},{tg("Glute bridge","پل باسن"),"3","12"},{tg("Calf raise","ساق پا"),"2","15"}};
+   case 5:return new String[][]{{tg("Push-up","شنا سوئدی"),"3","10"},{tg("Chest press","پرس سینه"),"3","10"},{tg("Incline press","پرس بالاسینه"),"3","10"},{tg("Chest fly","فلای سینه"),"2","12"}};
+   case 6:return new String[][]{{tg("Row","پارویی"),"3","10"},{tg("Lat pulldown / band pulldown","لت از بالا / لت با کش"),"3","10"},{tg("Face pull / band pull-apart","فیس پول / بازکردن کش"),"3","12"},{tg("Back extension","بازکردن پشت"),"2","12"}};
+   default:return new String[][]{{tg("Squat","اسکوات"),"3","10"},{tg("Push-up","شنا سوئدی"),"3","8"},{tg("Row","پارویی"),"3","10"},{tg("Hip hinge","هیپ‌هینج"),"3","10"},{tg("Plank","پلانک"),"3","30"}};
+  }
+ }
  public void buildGoalPlan(){
   LinearLayout l=column();
   Spinner goal=spinner(new String[]{tg("Weight loss","کاهش وزن"),tg("Fitness & body composition","فیتنس و تناسب اندام"),tg("Muscle building","عضله‌سازی")});
-  Spinner region=spinner(new String[]{tg("Full body","کل بدن"),tg("Shoulders","سرشانه"),tg("Arms","بازو"),tg("Abs / core","شکم و میان‌تنه"),tg("Legs & glutes","پا و باسن"),tg("Chest","سینه"),tg("Back","پشت و زیربغل")});
+  String[] regionLabels={tg("Full body","کل بدن"),tg("Shoulders","سرشانه"),tg("Arms","بازو"),tg("Abs / core","شکم و میان‌تنه"),tg("Legs & glutes","پا و باسن"),tg("Chest","سینه"),tg("Back","پشت و زیربغل")};
+  CheckBox[] regionChecks=new CheckBox[regionLabels.length];
+  LinearLayout regionGroup=column();
+  for(int i=0;i<regionLabels.length;i++){final int index=i;regionChecks[i]=new CheckBox(a);regionChecks[i].setText(regionLabels[i]);regionChecks[i].setChecked(i==0);regionGroup.addView(regionChecks[i]);regionChecks[i].setOnCheckedChangeListener((button,checked)->{if(index==0&&checked){for(int j=1;j<regionChecks.length;j++)regionChecks[j].setChecked(false);}else if(index>0&&checked){regionChecks[0].setChecked(false);}});}
   Spinner sex=spinner(new String[]{tg("Male","مرد"),tg("Female","زن")});
+  Spinner activity=spinner(new String[]{tg("Low activity","فعالیت کم"),tg("Moderate activity","فعالیت متوسط"),tg("High activity","فعالیت زیاد")});
+   activity.setContentDescription(tg("Daily activity level","سطح فعالیت روزانه"));
+   activity.setTag("dailyActivityLevelSpinner");
+  Spinner level=spinner(new String[]{tg("Beginner","مبتدی"),tg("Intermediate","متوسط"),tg("Advanced","پیشرفته")});
+  Spinner equipment=spinner(new String[]{tg("Bodyweight only","فقط وزن بدن"),tg("Home equipment","تجهیزات خانگی"),tg("Full gym","باشگاه کامل")});
+  Spinner diet=spinner(new String[]{tg("Balanced / mixed diet","رژیم متعادل / همه‌چیزخوار"),tg("Vegetarian","گیاه‌خواری")});
+  EditText days=field(tg("Training days per week (1–7)","تعداد روز تمرین در هفته (۱ تا ۷)"),"3",android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText minutes=field(tg("Minutes per session (10–180)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),"45",android.text.InputType.TYPE_CLASS_NUMBER);
   EditText age=field(tg("Age (years)","سن (سال)"),"30",android.text.InputType.TYPE_CLASS_NUMBER);
   EditText height=field(tg("Height (cm)","قد (سانتی‌متر)"),"170",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
   EditText weight=field(tg("Weight (kg)","وزن (کیلوگرم)"),"70",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
-  Spinner activity=spinner(new String[]{tg("Low activity","فعالیت کم"),tg("Moderate activity","فعالیت متوسط"),tg("High activity","فعالیت زیاد")});
-  l.addView(label(tg("Choose your goal","هدف اصلی")));l.addView(goal);
-  l.addView(label(tg("Muscle-building target area","ناحیهٔ هدف عضله‌سازی")));l.addView(region);
+  l.addView(label(tg("Main goal","هدف اصلی")));l.addView(goal);
+  l.addView(label(tg("Target muscle area (choose one or more)","ناحیه هدف (یک یا چند مورد را انتخاب کنید)")));l.addView(regionGroup);
+  l.addView(label(tg("Training experience","سطح آمادگی")));l.addView(level);
+  l.addView(label(tg("Daily activity level","سطح فعالیت روزانه")));l.addView(activity);
+  l.addView(label(tg("Available equipment","تجهیزات در دسترس")));l.addView(equipment);
+  l.addView(label(tg("Nutrition preference","ترجیح غذایی")));l.addView(diet);
   l.addView(label(tg("Sex for calorie estimate","جنسیت برای تخمین کالری")));l.addView(sex);
-  l.addView(age);l.addView(height);l.addView(weight);l.addView(label(tg("Usual daily activity","فعالیت معمول روزانه")));l.addView(activity);
-  new AlertDialog.Builder(a).setTitle(tg("Personal training & nutrition","تمرین و تغذیهٔ شخصی")).setView(l).setPositiveButton(tg("Create guide","ساخت راهنما"),(d,w)->{
+  l.addView(days);l.addView(minutes);l.addView(age);l.addView(height);l.addView(weight);
+  ScrollView plannerScroll=new ScrollView(a);plannerScroll.addView(l);
+  new AlertDialog.Builder(a).setTitle(tg("Smart goal, training & nutrition planner","برنامه‌ریز هوشمند هدف، تمرین و تغذیه")).setView(plannerScroll).setPositiveButton(tg("Build and save plan","ساخت و ذخیره برنامه"),(d,w)->{
+   long planId=-1;
    try{
     int years=parseLocalizedInt(age.getText().toString());
     double cm=parseLocalizedDouble(height.getText().toString()),kg=parseLocalizedDouble(weight.getText().toString());
-    if(years<18||years>100||cm<120||cm>230||kg<30||kg>300)throw new IllegalArgumentException();
-    int g=goal.getSelectedItemPosition(),r=region.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition();
+    int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());
+    if(years<18||years>100||cm<120||cm>230||kg<30||kg>300||n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
+    int g=goal.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition(),lvl=level.getSelectedItemPosition(),eq=equipment.getSelectedItemPosition();boolean veg=diet.getSelectedItemPosition()==1;
+    ArrayList<Integer> selectedRegions=new ArrayList<>();for(int i=0;i<regionChecks.length;i++)if(regionChecks[i].isChecked())selectedRegions.add(i);if(selectedRegions.isEmpty())throw new IllegalArgumentException("Select at least one body area");
     double bmi=kg/((cm/100.0)*(cm/100.0));
     double bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161);
-    double maintenance=bmr*(act==0?1.35:act==1?1.55:1.725);
-    double target;if(g==0)target=bmi<18.5?maintenance:Math.max(1200,maintenance-350);else target=g==1?maintenance:maintenance+200;target=Math.max(1200,target);
-    double protein=(g==2?1.8:1.5)*kg;
-    StringBuilder out=new StringBuilder();
-    out.append(tg("Profile","مشخصات")).append("\n").append(tg("BMI (screening estimate only)","BMI (فقط شاخص غربالگری تقریبی)")).append(": ").append(String.format(Locale.getDefault(),"%.1f",bmi)).append("\n")
-      .append(tg("Estimated maintenance","کالری نگهدارندهٔ تخمینی")).append(": ").append(Math.round(maintenance)).append(" kcal/day\n")
-      .append(tg("Starting energy target","هدف اولیهٔ انرژی")).append(": ").append(Math.round(target)).append(" kcal/day\n")
-      .append(tg("Protein guide","راهنمای پروتئین")).append(": ").append(Math.round(protein)).append(" g/day\n\n");
-    if(g==0&&bmi<18.5)out.append(tg("Weight note: BMI is below 18.5, so this guide does not set a calorie deficit. Consider discussing unintended weight loss or nutrition concerns with a qualified clinician.","نکتهٔ وزن: BMI کمتر از ۱۸٫۵ است؛ بنابراین این راهنما کسری کالری پیشنهاد نمی‌کند. اگر کاهش وزن ناخواسته یا نگرانی تغذیه‌ای دارید، با متخصص سلامت مشورت کنید.")).append("\n\n");
-    if(g==0){
-     out.append(tg("TRAINING — WEIGHT LOSS","تمرین — کاهش وزن")).append("\n").append(tg("3–5 days/week: 25–45 min brisk walking/cycling plus 2–3 full-body strength sessions. Keep the calorie deficit modest and increase activity gradually.","۳ تا ۵ روز در هفته: ۲۵ تا ۴۵ دقیقه پیاده‌روی تند یا دوچرخه، به‌علاوهٔ ۲ تا ۳ جلسه قدرتی کل بدن. کسری کالری ملایم داشته باشید و فعالیت را تدریجی افزایش دهید.")).append("\n\n")
-      .append(tg("FOOD — vegetables, fruit, beans, whole grains and lean protein; reduce sugary drinks and highly processed snacks. Aim for slow, sustainable loss.","تغذیه — سبزی، میوه، حبوبات، غلات کامل و پروتئین کم‌چرب را بیشتر کنید؛ نوشیدنی شیرین و تنقلات بسیار فرآوری‌شده را کاهش دهید. کاهش وزن آهسته و پایدار را هدف بگیرید."));
-    }else if(g==1){
-     out.append(tg("TRAINING — FITNESS","تمرین — فیتنس و تناسب اندام")).append("\n").append(tg("3 strength sessions/week for all major muscle groups, 2 moderate cardio sessions, and mobility work. Start with 2–3 sets of 8–15 controlled reps.","۳ جلسه قدرتی در هفته برای عضلات اصلی، ۲ جلسه هوازی متوسط و تمرین تحرک مفاصل. با ۲ تا ۳ ست و ۸ تا ۱۵ تکرار کنترل‌شده شروع کنید.")).append("\n\n")
-      .append(tg("FOOD — start near maintenance; include protein at each meal, vegetables, whole-food carbohydrates and healthy fats. Adjust after 2–3 weeks based on progress.","تغذیه — نزدیک کالری نگهدارنده شروع کنید؛ در هر وعده پروتئین، سبزیجات، کربوهیدرات کامل و چربی مفید بگنجانید. پس از ۲ تا ۳ هفته براساس روند پیشرفت تنظیم کنید."));
-    }else{
-     String area;
-     switch(r){
-      case 1: area=tg("shoulders: overhead press, lateral raises, rear-delt raises","سرشانه: پرس سرشانه، نشر جانب، نشر خم");break;
-      case 2: area=tg("arms: biceps curls, hammer curls, triceps extensions","بازو: جلو بازو، جلو بازو چکشی، پشت بازو");break;
-      case 3: area=tg("abs/core: plank, dead bug, reverse crunch; visible abs also depend on overall body fat","شکم و میان‌تنه: پلانک، ددباگ، کرانچ معکوس؛ نمایان‌شدن شکم به چربی کل بدن هم وابسته است");break;
-      case 4: area=tg("legs/glutes: squats, lunges, hip hinges, glute bridges","پا و باسن: اسکوات، لانج، هیپ‌هینج، پل باسن");break;
-      case 5: area=tg("chest: push-ups, dumbbell/floor press","سینه: شنا، پرس دمبل یا پرس روی زمین");break;
-      case 6: area=tg("back: rows, band rows, safe pulling movements","پشت و زیربغل: انواع پارویی، پارویی کشی و حرکات کششی ایمن");break;
-      default: area=tg("full body: squat, push-up, row, hip hinge and plank","کل بدن: اسکوات، شنا، پارویی، هیپ‌هینج و پلانک");
-     }
-     out.append(tg("TRAINING — MUSCLE BUILDING","تمرین — عضله‌سازی")).append("\n").append(tg("Target area: ","ناحیهٔ هدف: ")).append(area).append("\n")
-      .append(tg("Train the selected area twice weekly with about 48 hours between hard sessions. Begin with 3 exercises, 2–4 sets each and 6–15 reps; leave 1–3 good reps in reserve and increase reps/load gradually.","ناحیهٔ انتخابی را هفته‌ای ۲ بار تمرین دهید و بین جلسات سنگین حدود ۴۸ ساعت فاصله بگذارید. با ۳ حرکت، هرکدام ۲ تا ۴ ست و ۶ تا ۱۵ تکرار شروع کنید؛ ۱ تا ۳ تکرار توان اضافه باقی بگذارید و تکرار/وزنه را تدریجی افزایش دهید.")).append("\n\n")
-      .append(tg("FOOD — start near maintenance or a small surplus; spread protein across 3–4 meals, eat enough carbohydrates for training, and include vegetables, fruit and healthy fats. Review progress every 2–3 weeks.","تغذیه — نزدیک کالری نگهدارنده یا با مازاد اندک شروع کنید؛ پروتئین را در ۳ تا ۴ وعده تقسیم کنید، کربوهیدرات کافی برای تمرین بخورید و سبزی، میوه و چربی مفید مصرف کنید. هر ۲ تا ۳ هفته پیشرفت را بررسی کنید."));
+    double maintenance=bmr*activityMultiplier(act);
+    double target=g==0?(bmi<18.5?maintenance:Math.max(1200,maintenance-300)):g==1?maintenance:maintenance+200;
+    target=Math.max(1200,target);
+    double protein=kg*(g==2?1.8:1.5);
+    StringBuilder areaBuilder=new StringBuilder();
+    for(int selectedRegion:selectedRegions){if(areaBuilder.length()>0)areaBuilder.append(" + ");areaBuilder.append(regionLabel(selectedRegion));}
+    String area=areaBuilder.toString();
+    ArrayList<ArrayList<String[]>> movementsByRegion=new ArrayList<>();
+    int availableMovements=0;
+    for(int selectedRegion:selectedRegions){
+     ArrayList<String[]> regionMovements=new ArrayList<>();
+     for(String[] movement:movementsForRegion(selectedRegion))regionMovements.add(movement.clone());
+     movementsByRegion.add(regionMovements);availableMovements+=regionMovements.size();
     }
-    out.append("\n\n").append(tg("Safety: these are rough estimates, not medical advice. The formula does not account for illness, medication, pregnancy or eating-disorder history. This guide is for adults; seek professional advice if needed.","ایمنی: این اعداد تخمینی‌اند و توصیهٔ پزشکی نیستند. بیماری، دارو، بارداری یا سابقهٔ اختلال خوردن در فرمول لحاظ نشده‌اند. این راهنما برای بزرگسالان است؛ در صورت نیاز با متخصص مشورت کنید."));
-    new AlertDialog.Builder(a).setTitle(tg("Your training & food guide","راهنمای تمرین و تغذیهٔ شما")).setMessage(out.toString()).setPositiveButton(android.R.string.ok,null).show();
-   }catch(Exception ex){message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, and weight 30–300 kg.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰ سانتی‌متر و وزن ۳۰ تا ۳۰۰ کیلوگرم وارد کنید."));}
+    int movementLimit=movementLimitForSession(mins,availableMovements,selectedRegions.size(),selectedRegions.contains(0));
+    ArrayList<String[]> movementList=new ArrayList<>();
+    HashSet<String> seenMovements=new HashSet<>();
+    for(int depth=0;movementList.size()<movementLimit;depth++){
+     boolean addedAtDepth=false;
+     for(ArrayList<String[]> regionMovements:movementsByRegion){
+      if(depth>=regionMovements.size())continue;
+      String[] movement=regionMovements.get(depth);
+      String movementKey=movement[0].toLowerCase(Locale.ROOT);
+      if(seenMovements.add(movementKey))movementList.add(movement.clone());
+      addedAtDepth=true;
+      if(movementList.size()>=movementLimit)break;
+     }
+     if(!addedAtDepth)break;
+    }
+    if(movementList.isEmpty())throw new IllegalArgumentException("No movements for selected body areas");
+    if(eq==0){
+     for(String[] ex:movementList){
+      if(ex[0].equals(tg("Overhead press","پرس سرشانه")))ex[0]=tg("Pike push-up","شنا پایک");
+      else if(ex[0].equals(tg("Chest press","پرس سینه")))ex[0]=tg("Push-up","شنا سوئدی");
+      else if(ex[0].equals(tg("Incline press","پرس بالاسینه")))ex[0]=tg("Incline push-up","شنا روی سطح بلند");
+      else if(ex[0].equals(tg("Lateral raise","نشر جانب")))ex[0]=tg("Arm raise without weights","بالا آوردن دست بدون وزنه");
+      else if(ex[0].equals(tg("Row","پارویی")))ex[0]=tg("Backpack row","پارویی با کوله‌پشتی");
+     }
+    }
+    movementList=deduplicateMovementRows(movementList);
+    int setsBase=lvl==0?2:lvl==1?3:4;
+    setsBase=setsForSessionDuration(setsBase,mins);
+    int repsBase=g==0?12:g==1?10:8;
+    String planName=tg("Smart plan","برنامه هوشمند")+" - "+goal.getSelectedItem()+" - "+area;
+    planId=db.addPlan(planName);
+    for(int i=0;i<movementList.size();i++){
+     int sets=setsBase;
+     if(lvl==0)sets=Math.min(3,sets);
+     int reps=repsBase;
+     if(g==0)reps=12;else if(g==1)reps=10;else reps=8+(lvl==0?2:0);
+     if(movementList.get(i)[0].contains("Plank")||movementList.get(i)[0].contains("پلانک"))reps=30;
+     db.addExercise(planId,movementList.get(i)[0],sets,reps);
+    }
+    a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putInt("fitness_level",lvl).putString("fitness_regions",selectedRegions.toString()).putInt("fitness_region",selectedRegions.get(0)).putInt("fitness_equipment",eq).putInt("nutrition_preference",veg?1:0).putInt("nutrition_target_kcal",(int)Math.round(target)).putInt("nutrition_protein_g",(int)Math.round(protein)).apply();
+    String trainingSchedule=tg("Weekly schedule: ","تقسیم هفتگی: ")+n+" "+tg("sessions; leave a recovery day between hard sessions for the same muscle.","جلسه؛ برای یک عضله بین جلسات سنگین روز ریکاوری بگذارید.");
+    String progression=tg("Progression: when every set reaches the top of the rep range with good technique, increase resistance slightly. Keep 1–3 reps in reserve and stop if you feel sharp pain.","پیشرفت: وقتی همه ست‌ها با تکنیک صحیح به سقف تکرار رسیدند، مقاومت را کمی افزایش دهید. ۱ تا ۳ تکرار ذخیره نگه دارید و در صورت درد تیز تمرین را متوقف کنید.");
+    String nutrition;
+    if(g==0)nutrition=tg("Nutrition: use a modest deficit, not a crash diet. Build meals around vegetables, fruit, legumes/whole grains and a protein source. Review the trend after 2–3 weeks.","تغذیه: کسری کالری ملایم داشته باشید، نه رژیم شدید. وعده‌ها را بر پایه سبزی، میوه، حبوبات/غلات کامل و منبع پروتئین بچینید. پس از ۲ تا ۳ هفته روند را بررسی کنید.");
+    else if(g==2)nutrition=tg("Nutrition: start near maintenance or a small surplus. Spread protein across 3–4 meals and include carbohydrates around training.","تغذیه: نزدیک کالری نگهدارنده یا با مازاد اندک شروع کنید. پروتئین را در ۳ تا ۴ وعده تقسیم کنید و کربوهیدرات کافی اطراف تمرین مصرف کنید.");
+    else nutrition=tg("Nutrition: start near maintenance and include protein, vegetables, whole-food carbohydrates and unsaturated fats at regular meals.","تغذیه: نزدیک کالری نگهدارنده شروع کنید و در وعده‌های منظم پروتئین، سبزی، کربوهیدرات کامل و چربی غیراشباع بگنجانید.");
+    String mealExample=veg?tg("Example day: oats with milk/fortified soy and fruit; lentils or beans with rice and salad; yogurt/soy yogurt and nuts; tofu, eggs or beans with potatoes/whole grains.","نمونه روز: جو دوسر با شیر یا شیر سویای غنی‌شده و میوه؛ عدس یا لوبیا با برنج و سالاد؛ ماست یا ماست سویا و مغزها؛ توفو، تخم‌مرغ یا حبوبات با سیب‌زمینی/غلات کامل."):tg("Example day: eggs or yogurt with whole-grain bread and fruit; chicken, fish or beans with rice and vegetables; fruit and nuts; a protein source with potatoes or whole grains.","نمونه روز: تخم‌مرغ یا ماست با نان سبوس‌دار و میوه؛ مرغ، ماهی یا حبوبات با برنج و سبزیجات؛ میوه و مغزها؛ منبع پروتئین با سیب‌زمینی یا غلات کامل.");
+    StringBuilder out=new StringBuilder();
+    out.append(tg("PLAN SAVED","برنامه ذخیره شد")).append(": ").append(planName).append("\n").append(tg("Find it under Plans & exercises.","آن را در بخش برنامه‌ها و حرکات ببینید.")).append("\n\n")
+     .append(tg("Estimated BMI (screening only)","BMI تخمینی (فقط غربالگری)")).append(": ").append(String.format(Locale.getDefault(),"%.1f",bmi)).append("\n")
+     .append(tg("Estimated maintenance","کالری نگهدارنده تخمینی")).append(": ").append(Math.round(maintenance)).append(" kcal/day\n")
+     .append(tg("Starting energy target","هدف اولیه انرژی")).append(": ").append(Math.round(target)).append(" kcal/day\n")
+     .append(tg("Protein guide","راهنمای پروتئین")).append(": ").append(Math.round(protein)).append(" g/day\n")
+     .append(tg("Selected body areas","بخش‌های انتخاب‌شده")).append(": ").append(area).append("\n")
+     .append(tg("Exercises","حرکت‌ها")).append(": ").append(movementList.size()).append("\n")
+     .append(tg("Training volume","حجم تمرین")).append(": ").append(setsBase).append(" ").append(tg("sets per movement","ست برای هر حرکت")).append("\n")
+     .append(trainingSchedule).append("\n\n").append(tg("TRAINING PROGRESSION","پیشرفت تمرین")).append("\n").append(progression).append("\n\n")
+     .append(tg("NUTRITION","تغذیه")).append("\n").append(nutrition).append("\n\n").append(mealExample).append("\n\n");
+    if(g==0&&bmi<18.5)out.append(tg("BMI is below 18.5; this plan does not prescribe a calorie deficit. Consider professional advice if weight loss is unintended.","BMI کمتر از ۱۸٫۵ است؛ این برنامه کسری کالری تجویز نمی‌کند. اگر کاهش وزن ناخواسته است، مشورت با متخصص را در نظر بگیرید.")).append("\n\n");
+    out.append(tg("Safety: estimates are for adults and are not medical advice. Illness, medication, pregnancy and eating-disorder history are not accounted for. Consult a qualified professional when appropriate.","ایمنی: این تخمین‌ها برای بزرگسالان و غیرپزشکی‌اند. بیماری، دارو، بارداری و سابقه اختلال خوردن لحاظ نشده‌اند. در صورت نیاز با متخصص واجد صلاحیت مشورت کنید."));
+    ScrollView resultScroll=new ScrollView(a);LinearLayout resultContent=column();TextView resultText=new TextView(a);resultText.setText(out.toString());resultText.setTextSize(16);int pad=(int)(14*a.getResources().getDisplayMetrics().density);resultText.setPadding(pad,pad,pad,pad);resultContent.addView(resultText);
+    TextView movementHeading=new TextView(a);movementHeading.setText(tg("MOVEMENTS — tap to view the matching GIF","حرکت‌ها — برای دیدن گیف مرتبط لمس کنید"));movementHeading.setTextSize(18);movementHeading.setPadding(0,pad,pad,pad);resultContent.addView(movementHeading);
+    for(String[] movement:movementList){
+     LinearLayout movementRow=new LinearLayout(a);movementRow.setOrientation(LinearLayout.HORIZONTAL);movementRow.setGravity(Gravity.CENTER_VERTICAL);
+     TextView movementLabel=new TextView(a);movementLabel.setText(movement[0]+"  ·  "+setsBase+" × "+movement[2]);movementLabel.setTextSize(15);movementRow.addView(movementLabel,new LinearLayout.LayoutParams(0, -2, 1));
+     Button gifButton=new Button(a);gifButton.setText(tg("View GIF","نمایش گیف"));gifButton.setOnClickListener(v->showMovementGif(movement[0]));movementRow.addView(gifButton);
+     resultContent.addView(movementRow);
+    }
+    resultScroll.addView(resultContent);
+    new AlertDialog.Builder(a).setTitle(tg("Your saved training & nutrition plan","برنامه ذخیره‌شده تمرین و تغذیه")).setView(resultScroll).setPositiveButton(android.R.string.ok,null).show();
+   }catch(Exception ex){if(planId>0){try{db.deletePlan(planId);}catch(Exception ignored){}}message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, weight 30–300 kg, 1–7 training days and 10–180 minutes per session.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰، وزن ۳۰ تا ۳۰۰ کیلوگرم، ۱ تا ۷ روز تمرین و ۱۰ تا ۱۸۰ دقیقه برای هر جلسه وارد کنید."));}
   }).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ static ArrayList<String[]> deduplicateMovementRows(List<String[]> movements){
+  ArrayList<String[]> unique=new ArrayList<>();
+  HashSet<String> seen=new HashSet<>();
+  if(movements==null)return unique;
+  for(String[] movement:movements){
+   if(movement==null||movement.length==0||movement[0]==null)continue;
+   String key=movement[0].toLowerCase(Locale.ROOT).replaceAll("\\s+"," ").trim();
+   if(!key.isEmpty()&&seen.add(key))unique.add(movement.clone());
+  }
+  return unique;
+ }
+ static int movementLimitForSession(int minutes,int totalMovements,int selectedRegionCount,boolean fullBody){
+  if(totalMovements<=0)return 0;
+  int minimum=fullBody?Math.min(3,totalMovements):Math.min(Math.max(1,selectedRegionCount),totalMovements);
+  int durationLimit=Math.max(1,minutes/5);
+  return Math.min(totalMovements,Math.max(minimum,durationLimit));
+ }
+ static int setsForSessionDuration(int baseSets,int minutes){
+  int extra=minutes>=120?2:minutes>=75?1:0;
+  return Math.min(5,Math.max(1,baseSets)+extra);
+ }
+ static double activityMultiplier(int activity){
+  if(activity<=0)return 1.35;
+  if(activity==1)return 1.55;
+  return 1.725;
  }
  private String tg(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
 

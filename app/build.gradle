@@ -4,6 +4,55 @@ def stableDebugStorePassword = System.getenv('FIT_YAR_RELEASE_STORE_PASSWORD') ?
 def stableDebugKeyAlias = System.getenv('FIT_YAR_RELEASE_KEY_ALIAS') ?: "androiddebugkey"
 def stableDebugKeyPassword = System.getenv('FIT_YAR_RELEASE_KEY_PASSWORD') ?: "android"
 
+def coreGifAliases = [
+    'Air Squat (VERSION 2)_[471413].gif': 'squat.gif',
+    'Push-up_[288113].gif': 'pushup.gif',
+    'Bodyweight Reverse Lunge with Overhead..._[655113].gif': 'lunge.gif',
+    'Bodyweight Front Plank to Downward Dog_[450013].gif': 'plank.gif',
+    'Band Bent Over Wide Grip Row (male)_[445213].gif': 'row.gif',
+    'Briskly Walking_[300413].gif': 'walk.gif'
+]
+
+tasks.register('prepareCoreExerciseGifs') {
+    def sourceDir = file('src/main/assets/exercises')
+    def outputDir = file("$buildDir/generated/coreExerciseAssets/core_exercises")
+    inputs.files(coreGifAliases.keySet().collect { new File(sourceDir, it) })
+    outputs.dir(outputDir)
+    doLast {
+        delete(outputDir)
+        outputDir.mkdirs()
+        coreGifAliases.each { sourceName, aliasName ->
+            def source = new File(sourceDir, sourceName)
+            def target = new File(outputDir, aliasName)
+            if (source.isFile()) {
+                copy {
+                    from source
+                    into outputDir
+                    rename { aliasName }
+                }
+            } else {
+                // Sparse CI checkouts intentionally omit the full GIF catalogue.
+                // Fetch only the six small offline core GIFs needed by the APK.
+                def encoded = java.net.URLEncoder.encode(sourceName, 'UTF-8').replace('+', '%20')
+                def url = new URL("https://raw.githubusercontent.com/cognitive-kernel/android-fit/c3f658cf3329ece6d4231044c3d4e3ed72c54805/app/src/main/assets/exercises/" + encoded)
+                def connection = url.openConnection()
+                connection.setConnectTimeout(10000)
+                connection.setReadTimeout(20000)
+                connection.getInputStream().withCloseable { input ->
+                    target.withOutputStream { output -> input.transferTo(output) }
+                }
+            }
+            if (!target.isFile() || target.length() < 6) throw new GradleException("Missing or empty core exercise GIF: $sourceName")
+            def header = new byte[6]
+            target.withInputStream { input ->
+                if (input.read(header) != 6 || !(new String(header, 'US-ASCII').startsWith('GIF87a') || new String(header, 'US-ASCII').startsWith('GIF89a'))) {
+                    throw new GradleException("Invalid GIF data for core exercise: $sourceName")
+                }
+            }
+        }
+    }
+}
+
 android {
     namespace 'com.cognitivekernel.androidfit'
     compileSdk 36
@@ -32,15 +81,24 @@ android {
         applicationId 'com.cognitivekernel.androidfit'
         minSdk 23
         targetSdk 36
-        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('108').toInteger()
-        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.12')
+        versionCode providers.gradleProperty('FIT_YAR_VERSION_CODE').getOrElse('111').toInteger()
+        versionName providers.gradleProperty('FIT_YAR_VERSION_NAME').getOrElse('1.1.15')
         testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+    }
+    sourceSets {
+        main {
+            assets {
+                srcDir "$buildDir/generated/coreExerciseAssets"
+            }
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
 }
+tasks.named('preBuild').configure { dependsOn 'prepareCoreExerciseGifs' }
+
 dependencies {
     implementation 'androidx.core:core:1.15.0'
     testImplementation 'junit:junit:4.13.2'

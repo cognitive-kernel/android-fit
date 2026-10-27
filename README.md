@@ -1,4 +1,6 @@
 # فیت‌یار | FitYar
+> **نامزد آزمون 1.1.15 با اصلاح نمایش GIF:** [دانلود artifact کامل APK از اجرای موفق GitHub Actions](https://github.com/cognitive-kernel/android-fit/actions/runs/40492366409) — artifact `fityar-release-candidate-1.1.15`، `versionCode=111`، حجم APK برابر 736,757,996 بایت، شامل ۶۵۵۶ GIF و امضاشده با گواهی دائمی قفل‌شده. در CI مربوط به commit `c767e678`، آزمون واحد، Lint، آزمون ابزاری شبیه‌ساز، بررسی APK آزمایشی و اعتبارسنجی گواهی موفق شدند. آزمون جدید بارگذاری renderer بومی GIF نیز در مجموعهٔ ابزاری قرار دارد. **نصب به‌روزرسانی و حفظ داده‌ها روی گوشی کاربر هنوز دستی تأیید نشده است؛ برنامه را حذف نکنید و پیش از نصب پشتیبان بگیرید.** جزئیات در [ROADMAP.md](ROADMAP.md) و [راهنمای امضا و به‌روزرسانی](docs/ANDROID_SIGNING.md) ثبت شده است.
+
 
 فیت‌یار یک برنامهٔ اندرویدی فارسی/انگلیسی برای برنامه‌ریزی تمرین، ثبت فعالیت و پیگیری پیشرفت است. امکانات برنامه فعلاً **کاملاً رایگان** هستند؛ پرداخت درون‌برنامه‌ای، اشتراک و تبلیغات در برنامه وجود ندارد. برنامه و سوابق آن به‌صورت محلی روی گوشی نگهداری می‌شوند. ویدئو به برنامه اضافه نشده است.
 
@@ -8,13 +10,14 @@
 - ساخت و ویرایش برنامه‌های تمرینی و حرکت‌ها
 - سازندهٔ برنامهٔ شخصی بر اساس هدف، سطح آمادگی، تجهیزات، تعداد روزها و زمان هر جلسه
 - ثبت تمرین با تاریخ، ست، تکرار، وزنه، استراحت بین ست‌ها، سختی تمرین (RPE) و یادداشت
-- کتابخانهٔ حرکات شامل GIFهای متحرکِ سبک برای اسکوات، شنا، لانج، پلانک، پارویی دمبل و پیاده‌روی؛ فایل‌ها داخل برنامه بسته‌بندی شده‌اند و اینترنت لازم ندارند. این تصویرسازی‌های شماتیک برای نمایش کلی حرکت‌اند و راهنمای تخصصی فرم صحیح نیستند
+- کتابخانهٔ GymVisual با دسته‌بندی نوع حرکت، عضو بدن، وسیله و جنسیت؛ APK نامزد اصلی شامل کل کاتالوگ ۶۵۵۶تایی GIF است و حرکات به‌صورت آفلاین در دسترس‌اند. در صورت نبود فایل محلی، دانلود جایگزین انجام و در cache حداکثر ۱۲۸ مگابایتی نگهداری می‌شود. لمس GIF نمایشگر تمام‌صفحه را باز می‌کند؛ لمس GIF بزرگ یا دکمهٔ × آن را می‌بندد و به همان صفحه برمی‌گردد. در Android 9 به بالا، رمزگشایی GIF در پس‌زمینه با ImageDecoder انجام می‌شود و Movie مسیر جایگزین است؛ فایل اصلی بازفشرده نمی‌شود و نسبت تصویر حفظ می‌شود
 - مربی آفلاین قاعده‌محور با پیشنهادهای عمومی برای استمرار، ریکاوری و افزایش تدریجی بار تمرین
 
 ### هدف‌های تمرینی جدید
 - سه مسیر: کاهش وزن، فیتنس و عضله‌سازی
-- انتخاب ناحیهٔ عضله‌سازی: سرشانه، بازو، شکم، پا، سینه، پشت یا کل بدن
-- راهنمای تمرین و تغذیه بر پایهٔ سن، قد، وزن، جنسیت و سطح فعالیت؛ برآورد کالری و پروتئین تقریبی است
+- انتخاب چند ناحیهٔ عضلانی به‌صورت هم‌زمان یا انتخاب کل بدن
+- کنار هر حرکت، گزینهٔ مشاهدهٔ GIF مرتبط قرار می‌گیرد؛ فقط تطبیق‌های قابل‌اعتماد نمایش داده می‌شوند و برای حرکت بدون GIF تأییدشده، انیمیشن نامرتبط نشان داده نمی‌شود
+- راهنمای تمرین و تغذیه بر پایهٔ هدف، ناحیه‌های انتخاب‌شده، سطح تمرین، تجهیزات، تعداد روز و مدت جلسه؛ سن، قد، وزن، جنسیت و سطح فعالیت در برآورد تغذیه لحاظ می‌شوند. کالری و پروتئین تقریبی هستند
 
 ### فعالیت و سلامت شخصی
 - قدم‌شمار با کنترل شروع، مکث، ادامه و پایان؛ در گوشی‌های دارای حسگر سازگار می‌تواند در پس‌زمینه شمارش کند
@@ -57,7 +60,6 @@ gradle test lintDebug assembleDebug
 gradle connectedDebugAndroidTest
 ```
 
-خروجی APK امضاشده فقط زمانی منتشر می‌شود که کلید اصلی و اثرانگشت ثبت‌شده در دسترس باشد؛ در حال حاضر Cache کلید پیدا نشده و مرحلهٔ انتشار APK عمداً متوقف است، اما آزمون‌ها جداگانه اجرا می‌شوند. این APK فقط وقتی به‌روزرسانی نصب موجود را می‌پذیرد که گواهی امضای آن با برنامهٔ نصب‌شده یکی باشد و شمارهٔ نسخه پایین‌تر نباشد. برای نسخهٔ نصب‌شده از قبل، **برنامه را حذف نکنید** و قبل از نصب، اثرانگشت گواهی را با APK فعلی مقایسه کنید. کلید امضا را نباید عوض کرد یا در مخزن عمومی قرار داد. جزئیات در [راهنمای امضا و به‌روزرسانی](docs/ANDROID_SIGNING.md) آمده است.
 
 ## نقشهٔ راه
 
@@ -73,4 +75,4 @@ gradle connectedDebugAndroidTest
 
 ## English summary
 
-FitYar is a free Persian/English offline workout and personal activity tracker. It includes workout plans and logs, weight-loss, fitness and muscle-building paths, body-area-specific training (shoulders, arms, abs, legs/glutes, chest and back), approximate age/height/weight-based nutrition guidance, six bundled offline animated exercise GIF illustrations (squat, push-up, lunge, plank, row and walking), an offline rule-based coach, progress charts, a background-capable step counter, daily step and weekly workout goals, reminders, sleep and body-measurement logs, blood-pressure/pulse logs, CSV export, selective JSON backup/restore for workouts, health records, step-counter history and preferences, and compatibility with legacy full-database backups. No ads, subscriptions, in-app purchases, or videos are included. Cloud sync and Health Connect are not currently implemented.
+FitYar is a free Persian/English workout and activity tracker. The production candidate bundles the full 6,556-GIF GymVisual exercise catalogue for offline access, alongside categorized exercise search, multi-area workout plans, GIF fullscreen viewing, approximate goal-based nutrition guidance, workout logs, progress charts, step counting, reminders, health records, CSV export, selective JSON backup/restore, and legacy database backup support. No ads, subscriptions, in-app purchases, or videos are included. Cloud sync and Health Connect are not currently implemented.
