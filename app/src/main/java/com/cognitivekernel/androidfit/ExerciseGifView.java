@@ -1,6 +1,7 @@
 package com.cognitivekernel.androidfit;
 
 import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Movie;
@@ -19,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /** Offline animated-GIF view with asynchronous native decoding on Android 9+. */
+@SuppressLint("WrongThread")
 public final class ExerciseGifView extends View {
     private static final ExecutorService DECODER = Executors.newFixedThreadPool(2);
     private final String assetName;
