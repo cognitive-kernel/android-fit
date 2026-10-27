@@ -154,8 +154,9 @@ public final class ExerciseGifView extends View {
         return movie != null || animatedDrawable != null;
     }
 
+    @TargetApi(28)
     boolean hasNativeGifRendererForTests() {
-        return animatedDrawable instanceof AnimatedImageDrawable;
+        return Build.VERSION.SDK_INT >= 28 && animatedDrawable instanceof AnimatedImageDrawable;
     }
 
     /** Maps catalogue filenames to the six GIF aliases bundled for offline use. */
