@@ -2,8 +2,6 @@ package com.cognitivekernel.androidfit;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.view.View;
-import android.widget.ScrollView;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -26,8 +24,8 @@ public class SmartGoalPlanSelectionTest {
         String previous = prefs.getString("language", "fa");
         prefs.edit().putString("language", "fa").commit();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            scenario.onActivity(activity -> ((ScrollView) activity.findViewById(R.id.rootContainer)).fullScroll(View.FOCUS_DOWN));
-            Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withId(R.id.goalNutritionButton)).perform(click());
+            scenario.onActivity(activity -> activity.findViewById(R.id.goalNutritionButton).performClick());
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
             Espresso.onView(withText("کل بدن")).check(matches(isChecked()));
             Espresso.onView(withText("سرشانه")).perform(click());
