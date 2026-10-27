@@ -3,12 +3,16 @@ package com.cognitivekernel.androidfit;
 import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.drawable.AnimatedImageDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.ImageDecoder;
 import android.graphics.Color;
 import android.graphics.Movie;
 import android.graphics.Paint;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.SystemClock;
+import android.os.Build;
 import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
@@ -44,6 +48,7 @@ public final class ExerciseGifView extends View {
     }
 
     private volatile Movie movie;
+    private volatile Drawable animatedDrawable;
     private final long startedAt;
     private final String assetName;
     private volatile boolean loadFailed;
@@ -53,32 +58,84 @@ public final class ExerciseGifView extends View {
         this.assetName = assetName == null ? "" : assetName;
         Movie decoded = null;
         String coreAlias = bundledCoreAlias(this.assetName);
-        try (InputStream in = context.getAssets().open("core_exercises/" + (coreAlias == null ? this.assetName : coreAlias))) {
-            decoded = Movie.decodeStream(in);
-        } catch (Exception ignored) { }
-        if (decoded == null) {
-            try (InputStream in = context.getAssets().open("exercises/" + this.assetName)) {
+        String corePath = "core_exercises/" + (coreAlias == null ? this.assetName : coreAlias);
+        animatedDrawable = decodeAssetDrawable(context, corePath);
+        if (animatedDrawable == null) {
+            try (InputStream in = context.getAssets().open(corePath)) {
                 decoded = Movie.decodeStream(in);
             } catch (Exception ignored) { }
         }
-        if (decoded == null) {
+        if (animatedDrawable == null && decoded == null) {
+            animatedDrawable = decodeAssetDrawable(context, "exercises/" + this.assetName);
+            if (animatedDrawable == null) {
+                try (InputStream in = context.getAssets().open("exercises/" + this.assetName)) {
+                    decoded = Movie.decodeStream(in);
+                } catch (Exception ignored) { }
+            }
+        }
+        if (animatedDrawable == null && decoded == null) {
             File cached = cachedFile(context, this.assetName);
             if (cached.isFile()) {
-                try (InputStream in = new FileInputStream(cached)) {
-                    decoded = Movie.decodeStream(in);
-                    if (decoded != null) cached.setLastModified(System.currentTimeMillis());
-                } catch (Exception ignored) { }
+                animatedDrawable = decodeFileDrawable(context, cached);
+                if (animatedDrawable == null) {
+                    try (InputStream in = new FileInputStream(cached)) {
+                        decoded = Movie.decodeStream(in);
+                    } catch (Exception ignored) { }
+                }
+                if (animatedDrawable != null || decoded != null) cached.setLastModified(System.currentTimeMillis());
             }
         }
         movie = decoded;
         startedAt = SystemClock.uptimeMillis();
         setContentDescription(this.assetName.replace(".gif", "").replace('_', ' ')
-                + (decoded == null ? " — loading GIF" : " — tap to enlarge"));
-        setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                + (animatedDrawable == null && decoded == null ? " — loading GIF" : " — tap to enlarge"));
+        if (animatedDrawable != null) {
+            animatedDrawable.setCallback(new Drawable.Callback() {
+                @Override public void invalidateDrawable(Drawable who) { postInvalidateOnAnimation(); }
+                @Override public void scheduleDrawable(Drawable who, Runnable what, long when) {
+                    postDelayed(what, Math.max(0, when - SystemClock.uptimeMillis()));
+                }
+                @Override public void unscheduleDrawable(Drawable who, Runnable what) { removeCallbacks(what); }
+            });
+            if (animatedDrawable instanceof AnimatedImageDrawable) ((AnimatedImageDrawable) animatedDrawable).start();
+        } else {
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
         setClickable(true);
         setFocusable(true);
         setOnClickListener(v -> showFullScreen());
         if (decoded == null && !this.assetName.isEmpty()) downloadIfNeeded(context.getApplicationContext());
+    }
+
+    private Drawable decodeAssetDrawable(Context context, String path) {
+        if (Build.VERSION.SDK_INT < 28) return null;
+        try {
+            Drawable drawable = ImageDecoder.decodeDrawable(
+                    ImageDecoder.createSource(context.getAssets(), path));
+            if (drawable instanceof AnimatedImageDrawable) {
+                ((AnimatedImageDrawable) drawable).setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
+            }
+            return drawable;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private Drawable decodeFileDrawable(Context context, File file) {
+        if (Build.VERSION.SDK_INT < 28) return null;
+        try {
+            Drawable drawable = ImageDecoder.decodeDrawable(ImageDecoder.createSource(file));
+            if (drawable instanceof AnimatedImageDrawable) {
+                ((AnimatedImageDrawable) drawable).setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
+            }
+            return drawable;
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    boolean hasDecodedGifForTests() {
+        return movie != null || animatedDrawable != null;
     }
 
     /** Maps catalogue filenames to the six GIF aliases bundled for offline use. */
@@ -110,8 +167,14 @@ public final class ExerciseGifView extends View {
             try {
                 File target = cachedFile(context, assetName);
                 if (target.isFile() && target.length() > 0) {
-                    try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
-                    if (movie != null) {
+                    animatedDrawable = decodeFileDrawable(context, target);
+                    if (animatedDrawable != null) {
+                        attachAnimatedDrawable(animatedDrawable);
+                        if (animatedDrawable instanceof AnimatedImageDrawable) ((AnimatedImageDrawable) animatedDrawable).start();
+                    } else {
+                        try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
+                    }
+                    if (movie != null || animatedDrawable != null) {
                         target.setLastModified(System.currentTimeMillis());
                         postInvalidate();
                         return;
@@ -141,12 +204,18 @@ public final class ExerciseGifView extends View {
                 }
                 if (target.exists() && !target.delete()) throw new IllegalStateException("Cannot replace cache");
                 if (!temporary.renameTo(target)) throw new IllegalStateException("Cannot save GIF");
-                try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
-                if (movie != null) {
+                animatedDrawable = decodeFileDrawable(context, target);
+                if (animatedDrawable != null) {
+                    attachAnimatedDrawable(animatedDrawable);
+                    if (animatedDrawable instanceof AnimatedImageDrawable) ((AnimatedImageDrawable) animatedDrawable).start();
+                } else {
+                    try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
+                }
+                if (movie != null || animatedDrawable != null) {
                     target.setLastModified(System.currentTimeMillis());
                     trimCache(context, target);
                 }
-                loadFailed = movie == null;
+                loadFailed = movie == null && animatedDrawable == null;
             } catch (Exception ignored) {
                 loadFailed = true;
             } finally {
@@ -155,10 +224,20 @@ public final class ExerciseGifView extends View {
                 IN_FLIGHT.remove(assetName);
                 post(() -> {
                     setContentDescription(assetName.replace(".gif", "").replace('_', ' ')
-                            + (movie == null ? " — GIF unavailable" : " — tap to enlarge"));
+                            + (movie == null && animatedDrawable == null ? " — GIF unavailable" : " — tap to enlarge"));
                     invalidate();
                 });
             }
+        });
+    }
+
+    private void attachAnimatedDrawable(Drawable drawable) {
+        drawable.setCallback(new Drawable.Callback() {
+            @Override public void invalidateDrawable(Drawable who) { postInvalidateOnAnimation(); }
+            @Override public void scheduleDrawable(Drawable who, Runnable what, long when) {
+                postDelayed(what, Math.max(0, when - SystemClock.uptimeMillis()));
+            }
+            @Override public void unscheduleDrawable(Drawable who, Runnable what) { removeCallbacks(what); }
         });
     }
 
@@ -179,7 +258,7 @@ public final class ExerciseGifView extends View {
     }
 
     private void showFullScreen() {
-        if (movie == null) return;
+        if (movie == null && animatedDrawable == null) return;
         Context context = getContext();
         Dialog dialog = new Dialog(context);
         FrameLayout root = new FrameLayout(context);
@@ -239,6 +318,19 @@ public final class ExerciseGifView extends View {
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         Movie current = movie;
+        Drawable currentDrawable = animatedDrawable;
+        if (currentDrawable != null) {
+            int iw = Math.max(1, currentDrawable.getIntrinsicWidth());
+            int ih = Math.max(1, currentDrawable.getIntrinsicHeight());
+            float scale = Math.min(getWidth() / (float) iw, getHeight() / (float) ih);
+            int width = Math.max(1, Math.round(iw * scale));
+            int height = Math.max(1, Math.round(ih * scale));
+            int left = (getWidth() - width) / 2;
+            int top = (getHeight() - height) / 2;
+            currentDrawable.setBounds(left, top, left + width, top + height);
+            currentDrawable.draw(canvas);
+            return;
+        }
         if (current == null) {
             canvas.drawColor(0xFFF1F1F1);
             Paint placeholder = new Paint(Paint.ANTI_ALIAS_FLAG);
