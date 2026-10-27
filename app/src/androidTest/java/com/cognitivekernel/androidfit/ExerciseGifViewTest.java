@@ -74,7 +74,11 @@ public class ExerciseGifViewTest {
         java.util.concurrent.atomic.AtomicReference<ExerciseGifView> reference =
                 new java.util.concurrent.atomic.AtomicReference<>();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            scenario.onActivity(activity -> reference.set(new ExerciseGifView(activity, TEST_GIF)));
+            scenario.onActivity(activity -> {
+                ExerciseGifView view = new ExerciseGifView(activity, TEST_GIF);
+                reference.set(view);
+                activity.addContentView(view, new ViewGroup.LayoutParams(240, 180));
+            });
             long deadline = android.os.SystemClock.uptimeMillis() + 5000;
             boolean nativeRendererReady = false;
             while (android.os.SystemClock.uptimeMillis() < deadline) {
