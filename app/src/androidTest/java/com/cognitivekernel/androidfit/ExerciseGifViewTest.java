@@ -5,6 +5,7 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.Espresso;
 import androidx.test.espresso.matcher.RootMatchers;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static androidx.test.espresso.action.ViewActions.click;
@@ -58,6 +59,7 @@ public class ExerciseGifViewTest {
                 activity.addContentView(preview, new ViewGroup.LayoutParams(240, 180));
                 preview.performClick();
             });
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync();
             Espresso.onView(isAssignableFrom(ExerciseGifView.class))
                     .inRoot(RootMatchers.isDialog()).check(matches(isDisplayed())).perform(click());
             Espresso.onView(withContentDescription("Close enlarged GIF")).check(doesNotExist());
