@@ -30,28 +30,34 @@ public final class ExerciseImages {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
         ArrayList<String> files = files(context.getAssets());
         String wanted = normalize(exerciseName);
-        if (wanted.isEmpty()) wanted = normalize(transliteratePersian(exerciseName));
-        if (wanted.isEmpty()) return null;
+        String wantedLatin = normalize(transliteratePersian(exerciseName));
+        if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
         String best = null;
         int bestScore = 0;
         for (String file : files) {
             String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String candidate = normalize(base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", ""));
-            if (candidate.isEmpty()) continue;
-            if (candidate.equals(wanted)) return file;
+            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
+            String candidate = normalize(cleanBase);
+            String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
+            String matchWanted = wanted.isEmpty() ? wantedLatin : wanted;
+            String matchCandidate = wanted.isEmpty() ? candidate : (wanted.matches(".*[\\u0600-\\u06FF].*") ? localizedCandidate : candidate);
+            if (matchCandidate.isEmpty()) matchCandidate = candidate;
+            if (matchCandidate.isEmpty()) continue;
+            if (matchCandidate.equals(matchWanted) || localizedCandidate.equals(wanted)) return file;
             int score = 0;
-            if (wanted.contains(candidate) || candidate.contains(wanted)) {
-                score = Math.min(wanted.length(), candidate.length()) * 3;
+            if (matchWanted.contains(matchCandidate) || matchCandidate.contains(matchWanted)) {
+                score = Math.min(matchWanted.length(), matchCandidate.length()) * 3;
             } else {
-                String[] a = wanted.split(" ");
-                String[] b = candidate.split(" ");
+                String[] a = matchWanted.split(" ");
+                String[] b = matchCandidate.split(" ");
                 for (String token : a) if (token.length() > 2) {
                     for (String other : b) if (token.equals(other)) { score += token.length() * 2; break; }
                 }
             }
             if (score > bestScore) { bestScore = score; best = file; }
         }
-        int minimum = Math.max(9, wanted.replace(" ", "").length() / 2);
+        String scoringName = wanted.isEmpty() ? wantedLatin : wanted;
+        int minimum = Math.max(5, scoringName.replace(" ", "").length() / 3);
         return bestScore >= minimum ? best : null;
     }
 
@@ -64,7 +70,7 @@ public final class ExerciseImages {
 
     private static String normalize(String value) {
         return value.toLowerCase(Locale.ROOT).replaceAll("\\.gif$", "")
-            .replaceAll("[_\\-]+", " ").replaceAll("[^a-z0-9 ]", " ")
+            .replaceAll("[_\\-]+", " ").replaceAll("[^a-z0-9\\u0600-\\u06FF ]", " ")
             .replaceAll("\\s+", " ").trim();
     }
 
