@@ -18,16 +18,20 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.WeakHashMap;
 
 /** Resolves bundled exercise GIFs and displays them without dismissing the screen underneath. */
 public final class ExerciseImages {
     private static volatile ArrayList<String> cachedFiles;
+    private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
     public static String findGif(Context context, String exerciseName) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
         ArrayList<String> files = files(context.getAssets());
         String wanted = normalize(exerciseName);
+        if (wanted.isEmpty()) wanted = normalize(transliteratePersian(exerciseName));
+        if (wanted.isEmpty()) return null;
         String best = null;
         int bestScore = 0;
         for (String file : files) {
@@ -49,6 +53,13 @@ public final class ExerciseImages {
         }
         int minimum = Math.max(9, wanted.replace(" ", "").length() / 2);
         return bestScore >= minimum ? best : null;
+    }
+
+    private static String transliteratePersian(String value) {
+        String[][] pairs = {{"آ","a"},{"ا","a"},{"ب","b"},{"پ","p"},{"ت","t"},{"ث","s"},{"ج","j"},{"چ","ch"},{"ح","h"},{"خ","kh"},{"د","d"},{"ذ","z"},{"ر","r"},{"ز","z"},{"ژ","zh"},{"س","s"},{"ش","sh"},{"ص","s"},{"ض","z"},{"ط","t"},{"ظ","z"},{"ع",""},{"غ","gh"},{"ف","f"},{"ق","gh"},{"ک","k"},{"گ","g"},{"ل","l"},{"م","m"},{"ن","n"},{"و","w"},{"ه","h"},{"ی","y"},{"ئ","y"},{"ء",""}};
+        String result = value == null ? "" : value;
+        for (String[] pair : pairs) result = result.replace(pair[0], pair[1]);
+        return result;
     }
 
     private static String normalize(String value) {
@@ -83,7 +94,17 @@ public final class ExerciseImages {
 
     public static void showFullscreen(Activity activity, String assetPath, String title) {
         if (activity == null || activity.isFinishing() || assetPath == null || assetPath.trim().isEmpty()) return;
+        synchronized (OPEN_FULLSCREEN) {
+            Dialog existing = OPEN_FULLSCREEN.get(activity);
+            if (existing != null && existing.isShowing()) return;
+        }
         Dialog dialog = new Dialog(activity);
+        synchronized (OPEN_FULLSCREEN) { OPEN_FULLSCREEN.put(activity, dialog); }
+        dialog.setOnDismissListener(ignored -> {
+            synchronized (OPEN_FULLSCREEN) {
+                if (OPEN_FULLSCREEN.get(activity) == dialog) OPEN_FULLSCREEN.remove(activity);
+            }
+        });
         LinearLayout root = new LinearLayout(activity);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.BLACK);
