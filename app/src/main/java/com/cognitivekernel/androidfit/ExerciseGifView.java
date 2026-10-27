@@ -97,14 +97,16 @@ public final class ExerciseGifView extends View {
         setClickable(true);
         setFocusable(true);
         setOnClickListener(v -> showFullScreen());
-        if (!this.assetName.isEmpty() && decoded == null) {
+        if (!this.assetName.isEmpty()) {
             Context app = context.getApplicationContext();
             if (Build.VERSION.SDK_INT >= 28) {
-                // Use ImageDecoder only when Movie cannot decode this GIF.
-                // Keep Movie as the primary renderer to avoid replacing a working animation
-                // with a platform Drawable that may render inconsistently on some devices.
-                loadLocalDrawableAsync(app, corePath, "exercises/" + this.assetName, true);
-            } else {
+                // Prefer Android's native animated drawable renderer on Android 9+.
+                // Keep Movie as a fallback while decoding happens off the UI thread.
+                // Only use the network if neither local renderer can decode the bundled asset.
+                loadLocalDrawableAsync(app, corePath, "exercises/" + this.assetName, decoded == null);
+            } else if (decoded == null) {
+                // Legacy Android uses Movie for local GIFs; try the cache/network only if
+                // the bundled asset could not be decoded.
                 downloadIfNeeded(app);
             }
         }
@@ -357,7 +359,9 @@ public final class ExerciseGifView extends View {
         super.onDraw(canvas);
         Movie current = movie;
         Drawable currentDrawable = animatedDrawable;
-        if (current == null && currentDrawable != null) {
+        // Prefer AnimatedImageDrawable when available; it is Android's native GIF renderer.
+        // Movie remains a fallback for older Android versions and decode failures.
+        if (currentDrawable != null) {
             int iw = Math.max(1, currentDrawable.getIntrinsicWidth());
             int ih = Math.max(1, currentDrawable.getIntrinsicHeight());
             float scale = Math.min(getWidth() / (float) iw, getHeight() / (float) ih);
