@@ -69,6 +69,26 @@ public class ExerciseGifViewTest {
         }
     }
 
+    @Test public void nativeAnimatedDrawableLoadsForBundledGifOnAndroid9AndAbove() throws Exception {
+        if (android.os.Build.VERSION.SDK_INT < 28) return;
+        java.util.concurrent.atomic.AtomicReference<ExerciseGifView> reference =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            scenario.onActivity(activity -> reference.set(new ExerciseGifView(activity, TEST_GIF)));
+            long deadline = android.os.SystemClock.uptimeMillis() + 5000;
+            boolean nativeRendererReady = false;
+            while (android.os.SystemClock.uptimeMillis() < deadline) {
+                ExerciseGifView view = reference.get();
+                if (view != null && view.hasNativeGifRendererForTests()) {
+                    nativeRendererReady = true;
+                    break;
+                }
+                android.os.SystemClock.sleep(50);
+            }
+            assertTrue("Android 9+ should load the native animated GIF renderer", nativeRendererReady);
+        }
+    }
+
     @Test public void tappingFullscreenGifClosesIt() {
         ExerciseGifView.setAnimationPlaybackEnabledForTests(false);
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
