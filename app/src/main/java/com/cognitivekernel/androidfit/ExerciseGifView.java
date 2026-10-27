@@ -97,12 +97,14 @@ public final class ExerciseGifView extends View {
         setClickable(true);
         setFocusable(true);
         setOnClickListener(v -> showFullScreen());
-        if (!this.assetName.isEmpty()) {
+        if (!this.assetName.isEmpty() && decoded == null) {
             Context app = context.getApplicationContext();
             if (Build.VERSION.SDK_INT >= 28) {
-                // Decode with ImageDecoder off the UI thread; Movie remains an immediate fallback.
-                loadLocalDrawableAsync(app, corePath, "exercises/" + this.assetName, decoded == null);
-            } else if (decoded == null) {
+                // Use ImageDecoder only when Movie cannot decode this GIF.
+                // Keep Movie as the primary renderer to avoid replacing a working animation
+                // with a platform Drawable that may render inconsistently on some devices.
+                loadLocalDrawableAsync(app, corePath, "exercises/" + this.assetName, true);
+            } else {
                 downloadIfNeeded(app);
             }
         }
@@ -355,7 +357,7 @@ public final class ExerciseGifView extends View {
         super.onDraw(canvas);
         Movie current = movie;
         Drawable currentDrawable = animatedDrawable;
-        if (currentDrawable != null) {
+        if (current == null && currentDrawable != null) {
             int iw = Math.max(1, currentDrawable.getIntrinsicWidth());
             int ih = Math.max(1, currentDrawable.getIntrinsicHeight());
             float scale = Math.min(getWidth() / (float) iw, getHeight() / (float) ih);
