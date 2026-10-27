@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static androidx.test.espresso.action.ViewActions.click;
-import static androidx.test.espresso.action.ViewActions.scrollTo;
+import static androidx.test.espresso.action.ViewActions.swipeUp;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isChecked;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
@@ -24,7 +24,8 @@ public class SmartGoalPlanSelectionTest {
         String previous = prefs.getString("language", "fa");
         prefs.edit().putString("language", "fa").commit();
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-            Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withId(R.id.goalNutritionButton)).perform(scrollTo(), click());
+            Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withId(R.id.rootContainer)).perform(swipeUp(), swipeUp(), swipeUp());
+            Espresso.onView(androidx.test.espresso.matcher.ViewMatchers.withId(R.id.goalNutritionButton)).perform(click());
 
             Espresso.onView(withText("کل بدن")).check(matches(isChecked()));
             Espresso.onView(withText("سرشانه")).perform(click());
