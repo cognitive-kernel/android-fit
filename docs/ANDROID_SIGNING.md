@@ -95,4 +95,4 @@ The isolated test APK uses package `com.cognitivekernel.androidfit.test2` and ca
 
 ## Historical note
 
-The permanent signing certificate is pinned and re-verified in CI. Latest candidate build: [FitYar release candidate APK](https://github.com/${repo}/actions/runs/40462096719/artifacts/12714863722). CI verified package `com.cognitivekernel.androidfit`, `versionCode=110`, `versionName=1.1.14`, all 6,556 GymVisual GIFs and the pinned certificate. The current phone still must be used for the final in-place update test; this documentation and CI cannot independently inspect its installed APK.
+The permanent signing certificate is pinned and re-verified in CI. Latest candidate build: [FitYar release candidate APK](https://github.com/cognitive-kernel/android-fit/actions/workflows/build-release-candidate.yml). CI verified package `com.cognitivekernel.androidfit`, `versionCode=110`, `versionName=1.1.14`, all 6,556 GymVisual GIFs and the pinned certificate. The current phone still must be used for the final in-place update test; this documentation and CI cannot independently inspect its installed APK.
