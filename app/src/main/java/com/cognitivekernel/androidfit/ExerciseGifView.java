@@ -1,6 +1,7 @@
 package com.cognitivekernel.androidfit;
 
 import android.app.Dialog;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.AnimatedImageDrawable;
@@ -97,7 +98,7 @@ public final class ExerciseGifView extends View {
                 }
                 @Override public void unscheduleDrawable(Drawable who, Runnable what) { removeCallbacks(what); }
             });
-            if (animatedDrawable instanceof AnimatedImageDrawable) ((AnimatedImageDrawable) animatedDrawable).start();
+            startAnimatedDrawable(animatedDrawable);
         } else {
             setLayerType(View.LAYER_TYPE_SOFTWARE, null);
         }
@@ -107,6 +108,7 @@ public final class ExerciseGifView extends View {
         if (decoded == null && !this.assetName.isEmpty()) downloadIfNeeded(context.getApplicationContext());
     }
 
+    @TargetApi(28)
     private Drawable decodeAssetDrawable(Context context, String path) {
         if (Build.VERSION.SDK_INT < 28) return null;
         try {
@@ -121,6 +123,7 @@ public final class ExerciseGifView extends View {
         }
     }
 
+    @TargetApi(28)
     private Drawable decodeFileDrawable(Context context, File file) {
         if (Build.VERSION.SDK_INT < 28) return null;
         try {
@@ -131,6 +134,13 @@ public final class ExerciseGifView extends View {
             return drawable;
         } catch (Exception ignored) {
             return null;
+        }
+    }
+
+    @TargetApi(28)
+    private void startAnimatedDrawable(Drawable drawable) {
+        if (Build.VERSION.SDK_INT >= 28 && drawable instanceof AnimatedImageDrawable) {
+            ((AnimatedImageDrawable) drawable).start();
         }
     }
 
