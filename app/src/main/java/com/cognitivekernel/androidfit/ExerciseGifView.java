@@ -1,5 +1,6 @@
 package com.cognitivekernel.androidfit;
 
+import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -14,6 +15,7 @@ import java.io.InputStream;
 
 /** Offline animated-GIF view with native animated-image decoding on Android 9+. */
 @TargetApi(Build.VERSION_CODES.P)
+@SuppressLint("NewApi")
 public final class ExerciseGifView extends View {
     private final Movie movie;
     private final Drawable animatedDrawable;
