@@ -217,7 +217,7 @@ public final class ExerciseGifView extends View {
                 animatedDrawable = decodeFileDrawable(context, target);
                 if (animatedDrawable != null) {
                     attachAnimatedDrawable(animatedDrawable);
-                    if (animatedDrawable instanceof AnimatedImageDrawable) ((AnimatedImageDrawable) animatedDrawable).start();
+                    startAnimatedDrawable(animatedDrawable);
                 } else {
                     try (InputStream in = new FileInputStream(target)) { movie = Movie.decodeStream(in); }
                 }
