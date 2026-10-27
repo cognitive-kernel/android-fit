@@ -20,7 +20,7 @@ import static org.junit.Assert.assertNotNull;
 public class ExerciseGifViewTest {
     // This file is present in app/src/main/assets/exercises and does not require network access.
     private static final String TEST_GIF = "squat.gif";
-    private static final String CATALOG_GIF = "1 2 Stick Drill (male)_[596513].gif";
+    private static final String CATALOG_GIF = "Air Squat (VERSION 2)_[471413].gif";
 
     @Test public void bundledGifOpensFullscreenAndCloseButtonReturnsToPreviousScreen() {
         ExerciseGifView.setAnimationPlaybackEnabledForTests(false);
@@ -40,11 +40,11 @@ public class ExerciseGifViewTest {
         }
     }
 
-    @Test public void catalogueGifDecodesDirectlyFromAssetsWithoutNetwork() {
+    @Test public void catalogueExerciseAliasDecodesOfflineWithoutNetwork() {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             scenario.onActivity(activity -> {
                 ExerciseGifView preview = new ExerciseGifView(activity, CATALOG_GIF);
-                assertTrue("A real catalogue GIF must decode from assets", preview.hasDecodedGifForTests());
+                assertTrue("A catalogue exercise must resolve to its bundled offline GIF", preview.hasDecodedGifForTests());
             });
         }
     }
