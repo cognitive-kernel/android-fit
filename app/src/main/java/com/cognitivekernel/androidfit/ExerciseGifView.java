@@ -141,7 +141,7 @@ public final class ExerciseGifView extends View {
 
     @TargetApi(28)
     private void startAnimatedDrawable(Drawable drawable) {
-        if (Build.VERSION.SDK_INT >= 28 && drawable instanceof AnimatedImageDrawable) {
+        if (Build.VERSION.SDK_INT >= 28 && animationPlaybackEnabled && drawable instanceof AnimatedImageDrawable) {
             ((AnimatedImageDrawable) drawable).start();
         }
     }
