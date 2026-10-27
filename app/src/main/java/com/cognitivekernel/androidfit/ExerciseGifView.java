@@ -65,7 +65,7 @@ public final class ExerciseGifView extends View {
             startedAt = SystemClock.uptimeMillis();
             if (animatedDrawable != null) {
                 animatedDrawable.setCallback(this);
-                if (attached && animatedDrawable instanceof AnimatedImageDrawable) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && attached && animatedDrawable instanceof AnimatedImageDrawable) {
                     startNative((AnimatedImageDrawable) animatedDrawable);
                 }
             }
