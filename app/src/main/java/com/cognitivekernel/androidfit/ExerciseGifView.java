@@ -14,6 +14,7 @@ import android.os.SystemClock;
 import android.view.View;
 import androidx.annotation.WorkerThread;
 import java.io.InputStream;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -74,7 +75,7 @@ public final class ExerciseGifView extends View {
 
     @WorkerThread
     @TargetApi(Build.VERSION_CODES.P)
-    private Drawable decodeNative(Context context) {
+    private Drawable decodeNative(Context context) throws IOException {
         ImageDecoder.Source source = ImageDecoder.createSource(context.getAssets(), "exercises/" + assetName);
         Drawable candidate = ImageDecoder.decodeDrawable(source);
         if (candidate instanceof AnimatedImageDrawable) {
