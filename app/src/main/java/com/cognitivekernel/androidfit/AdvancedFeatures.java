@@ -17,6 +17,7 @@ public final class AdvancedFeatures {
  private final Activity a; private final WorkoutDb db;
  private static final int BACKUP=4101, RESTORE=4102, NOTIFY=4103;
  private static final int MAX_BACKUP_BYTES=25*1024*1024;
+ private static final WeakHashMap<Activity,AlertDialog> OPEN_EXERCISE_DETAILS=new WeakHashMap<>();
  public AdvancedFeatures(Activity activity, WorkoutDb database){a=activity;db=database;}
  private String s(String key){int id=a.getResources().getIdentifier(key,"string",a.getPackageName());return id==0?key:a.getString(id);}
  private String selectedLanguage(){String language=a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language",null);if(language==null)language=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getString("language","fa");return "en".equalsIgnoreCase(language)?"en":"fa";}
@@ -357,7 +358,7 @@ public final class AdvancedFeatures {
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{
    ExerciseLibraryRow selected=adapter.getItem(position);
-   if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId,false);
+   if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);
   });
   libraryDialog.show();
  }
@@ -414,15 +415,24 @@ public final class AdvancedFeatures {
   return result;
  }
 
- private void showExerciseDetail(String name,String details,String gif,String sourceId){showExerciseDetail(name,details,gif,sourceId,false);}
- private void showExerciseDetail(String name,String details,String gif,String sourceId,boolean returnToLibrary){
+ private void showExerciseDetail(String name,String details,String gif,String sourceId){
+  // Keep the library dialog underneath this detail dialog; never dismiss or recreate its parent.
+  synchronized(OPEN_EXERCISE_DETAILS){
+   AlertDialog existing=OPEN_EXERCISE_DETAILS.get(a);
+   if(existing!=null&&existing.isShowing())return;
+  }
   LinearLayout l=column();ExerciseGifView image=new ExerciseGifView(a,gif);image.setContentDescription(name);image.setOnClickListener(v->ExerciseImages.showFullscreen(a,gif,name));
   l.addView(image,new LinearLayout.LayoutParams(-1,(int)(220*a.getResources().getDisplayMetrics().density)));
   TextView title=new TextView(a);title.setText(name);title.setTextSize(20);l.addView(title);
   if(details!=null&&!details.trim().isEmpty()){TextView body=new TextView(a);body.setText(details);l.addView(body);}
   if(sourceId!=null&&!sourceId.isEmpty()){TextView attribution=new TextView(a);attribution.setText("© Gym visual — https://gymvisual.com/");l.addView(attribution);}
   AlertDialog detailDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(l).setPositiveButton(android.R.string.ok,null).create();
-  if(returnToLibrary)detailDialog.setOnDismissListener(dialog->{if(!a.isFinishing()&&!a.isDestroyed())showLibrary();});
+  synchronized(OPEN_EXERCISE_DETAILS){OPEN_EXERCISE_DETAILS.put(a,detailDialog);}
+  detailDialog.setOnDismissListener(dialog->{
+   synchronized(OPEN_EXERCISE_DETAILS){
+    if(OPEN_EXERCISE_DETAILS.get(a)==detailDialog)OPEN_EXERCISE_DETAILS.remove(a);
+   }
+  });
   detailDialog.show();
  }
 
