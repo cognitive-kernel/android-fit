@@ -2,7 +2,7 @@
 
 ## CI checks
 
-The GitHub Actions workflow runs these checks on the latest commit:
+The latest successful validation is [Android CI run 40483246108](https://github.com/cognitive-kernel/android-fit/actions/runs/40483246108), commit `84d2727551b9f0d5cec4d2885101edfc54f5311f`: unit tests, Lint, test APK build/signature checks and all 32 API 34 emulator tests passed. The full release-candidate APK is [artifact 12723044501](https://github.com/cognitive-kernel/android-fit/actions/runs/40483240276/artifacts/12723044501). The workflow runs these checks on each applicable CI event:
 
 1. Java 17 / Gradle 8.11.1 build.
 2. JVM unit tests for Gregorian-to-Jalali conversion, including Nowruz boundaries, zero padding, and invalid dates, localized numeric parsing, and UTF-8 CSV quoting/formula-injection protection.
@@ -19,8 +19,8 @@ The GitHub Actions workflow runs these checks on the latest commit:
    - Legacy SQLite backup validation: valid FitYar schema accepted; corrupt, unrelated, and newer-version databases rejected.
    - Conservative exercise GIF matching: exact matches and safe equipment/position variants are accepted; unrelated variants are rejected.
    - All six bundled core GIFs decode; the plank animation has a non-zero duration.
-   - `ExerciseGifView` resolves a catalogue exercise to its bundled offline GIF, opens fullscreen, and closes by × or by tapping the enlarged GIF.
-   - On Android 9+, GIFs are decoded with `ImageDecoder` on a background executor, with `Movie` as fallback; real-device playback and the network/cache fallback remain manual checks.
+   - `ExerciseGifView` decodes the six bundled core GIFs and a real non-core GymVisual catalogue GIF from `assets/exercises/`, opens fullscreen, and closes by × or by tapping the enlarged GIF.
+   - On Android 9+, `Movie` is the primary renderer when it can decode the source; `ImageDecoder` runs in the background only as fallback. Real-device playback and network/cache fallback remain manual checks.
 
 ## Local commands
 
