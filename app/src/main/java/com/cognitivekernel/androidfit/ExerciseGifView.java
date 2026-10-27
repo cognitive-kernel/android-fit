@@ -2,6 +2,7 @@ package com.cognitivekernel.androidfit;
 
 import android.app.Dialog;
 import android.annotation.TargetApi;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.drawable.AnimatedImageDrawable;
@@ -60,30 +61,21 @@ public final class ExerciseGifView extends View {
         Movie decoded = null;
         String coreAlias = bundledCoreAlias(this.assetName);
         String corePath = "core_exercises/" + (coreAlias == null ? this.assetName : coreAlias);
-        animatedDrawable = decodeAssetDrawable(context, corePath);
-        if (animatedDrawable == null) {
-            try (InputStream in = context.getAssets().open(corePath)) {
+        try (InputStream in = context.getAssets().open(corePath)) {
+            decoded = Movie.decodeStream(in);
+        } catch (Exception ignored) { }
+        if (decoded == null) {
+            try (InputStream in = context.getAssets().open("exercises/" + this.assetName)) {
                 decoded = Movie.decodeStream(in);
             } catch (Exception ignored) { }
         }
-        if (animatedDrawable == null && decoded == null) {
-            animatedDrawable = decodeAssetDrawable(context, "exercises/" + this.assetName);
-            if (animatedDrawable == null) {
-                try (InputStream in = context.getAssets().open("exercises/" + this.assetName)) {
-                    decoded = Movie.decodeStream(in);
-                } catch (Exception ignored) { }
-            }
-        }
-        if (animatedDrawable == null && decoded == null) {
+        if (decoded == null) {
             File cached = cachedFile(context, this.assetName);
             if (cached.isFile()) {
-                animatedDrawable = decodeFileDrawable(context, cached);
-                if (animatedDrawable == null) {
-                    try (InputStream in = new FileInputStream(cached)) {
-                        decoded = Movie.decodeStream(in);
-                    } catch (Exception ignored) { }
-                }
-                if (animatedDrawable != null || decoded != null) cached.setLastModified(System.currentTimeMillis());
+                try (InputStream in = new FileInputStream(cached)) {
+                    decoded = Movie.decodeStream(in);
+                } catch (Exception ignored) { }
+                if (decoded != null) cached.setLastModified(System.currentTimeMillis());
             }
         }
         movie = decoded;
@@ -105,10 +97,18 @@ public final class ExerciseGifView extends View {
         setClickable(true);
         setFocusable(true);
         setOnClickListener(v -> showFullScreen());
-        if (decoded == null && !this.assetName.isEmpty()) downloadIfNeeded(context.getApplicationContext());
+        if (decoded == null && !this.assetName.isEmpty()) {
+            Context app = context.getApplicationContext();
+            if (Build.VERSION.SDK_INT >= 28) {
+                loadLocalDrawableAsync(app, corePath, "exercises/" + this.assetName);
+            } else {
+                downloadIfNeeded(app);
+            }
+        }
     }
 
     @TargetApi(28)
+    @SuppressLint("WrongThread") // Called only from the background loader or download executor.
     private Drawable decodeAssetDrawable(Context context, String path) {
         if (Build.VERSION.SDK_INT < 28) return null;
         try {
@@ -124,6 +124,7 @@ public final class ExerciseGifView extends View {
     }
 
     @TargetApi(28)
+    @SuppressLint("WrongThread") // Called only from the background loader or download executor.
     private Drawable decodeFileDrawable(Context context, File file) {
         if (Build.VERSION.SDK_INT < 28) return null;
         try {
@@ -167,6 +168,28 @@ public final class ExerciseGifView extends View {
             if (!file.getCanonicalPath().startsWith(rootPath)) return new File(root, "invalid.gif");
         } catch (Exception ignored) { return new File(root, "invalid.gif"); }
         return file;
+    }
+
+    private void loadLocalDrawableAsync(Context context, String corePath, String exercisePath) {
+        DOWNLOADS.execute(() -> {
+            Drawable decoded = decodeAssetDrawable(context, corePath);
+            if (decoded == null) decoded = decodeAssetDrawable(context, exercisePath);
+            File cached = cachedFile(context, assetName);
+            if (decoded == null && cached.isFile()) decoded = decodeFileDrawable(context, cached);
+            final Drawable result = decoded;
+            if (result != null) {
+                post(() -> {
+                    animatedDrawable = result;
+                    attachAnimatedDrawable(result);
+                    startAnimatedDrawable(result);
+                    loadFailed = false;
+                    setContentDescription(assetName.replace(".gif", "").replace('_', ' ') + " — tap to enlarge");
+                    invalidate();
+                });
+            } else {
+                downloadIfNeeded(context);
+            }
+        });
     }
 
     private void downloadIfNeeded(Context context) {
