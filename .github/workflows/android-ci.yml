@@ -176,6 +176,8 @@ jobs:
 
   release-key-corrected-apk:
     # Candidate-key APK from the exercise-library feature branch for device testing.
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -230,6 +232,24 @@ jobs:
             exit 1
           fi
           sha256sum artifacts/fityar-large-library-v112.apk > artifacts/SHA256SUMS.txt
+      - name: Publish verified APK as a direct GitHub Release download
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v1.1.16 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v1.1.16 already exists; leaving its published assets unchanged."
+            exit 0
+          fi
+          gh release create v1.1.16 \
+            artifacts/fityar-large-library-v112.apk \
+            artifacts/signature.txt \
+            artifacts/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "FitYar 1.1.16" \
+            --notes "FitYar 1.1.16. Version code 112. The APK is signed with the verified FitYar release certificate."
       - uses: actions/upload-artifact@v4
         with:
           name: fityar-large-library-v112
