@@ -33,8 +33,8 @@ jobs:
         run: gradle test lintDebug compileDebugAndroidTestJavaWithJavac
 
   instrumented-tests:
-    # Ubuntu 24.04 is more reliable for nested KVM/emulator startup than the latest runner image.
-    runs-on: ubuntu-24.04
+    # Use the stable Ubuntu 22.04 hosted image for Android emulator/KVM compatibility.
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -74,12 +74,13 @@ jobs:
           arch: x86_64
           target: google_apis
           profile: pixel_2
-          emulator-boot-timeout: 600
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 2048 -cores 2 -partition-size 2048
-          disable-animations: false
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 4 -partition-size 2048
+          disable-animations: true
           script: |
-            # Use a fresh, lower-memory API 30 emulator; do not retry installation on a persistently offline device.
-            set -eu; adb wait-for-device; ready=false; for boot_attempt in $(seq 1 180); do state="$(adb get-state 2>/dev/null || true)"; booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"; package_service="$(adb shell service check package 2>/dev/null || true)"; if [ "$state" = "device" ] && [ "$booted" = "1" ] && echo "$package_service" | grep -q "found"; then ready=true; break; fi; sleep 2; done; if [ "$ready" != true ]; then echo "Emulator did not become ready"; adb devices -l || true; exit 1; fi; gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
+            # The emulator runner already waits for boot completion; avoid extra ADB polling that can stall ddmlib.
+            set -eu
+            gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
