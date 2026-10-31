@@ -78,8 +78,8 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 2 -partition-size 4096
           disable-animations: false
           script: |
-            # android-emulator-runner executes script lines through separate POSIX sh invocations; keep compound shell syntax on one line.
-            set -eu; adb wait-for-device; for attempt in $(seq 1 90); do booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"; package_service="$(adb shell service check package 2>/dev/null || true)"; if [ "$booted" = "1" ] && echo "$package_service" | grep -q "found"; then break; fi; sleep 2; done; test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"; adb shell service check package | grep -q "found"; gradle connectedDebugAndroidTest
+            # android-emulator-runner invokes POSIX sh; retry transient adb disconnects.
+            set -eu; for attempt in 1 2 3; do adb reconnect offline >/dev/null 2>&1 || true; adb wait-for-device; ready=false; for boot_attempt in $(seq 1 180); do state="$(adb get-state 2>/dev/null || true)"; booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"; package_service="$(adb shell service check package 2>/dev/null || true)"; if [ "$state" = "device" ] && [ "$booted" = "1" ] && echo "$package_service" | grep -q "found"; then ready=true; break; fi; sleep 2; done; if [ "$ready" != true ]; then echo "Emulator not ready on attempt $attempt"; adb devices -l || true; continue; fi; if gradle connectedDebugAndroidTest; then exit 0; fi; echo "Instrumented tests failed on attempt $attempt; reconnecting adb"; adb reconnect offline || true; sleep 5; done; echo "Instrumented tests failed after 3 attempts"; exit 1
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
