@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          packages=( "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64" )
+          packages=( "platforms;android-30" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-30;google_apis;x86_64" )
           installed=false
           for attempt in 1 2 3; do
             if sdkmanager "${packages[@]}"; then
@@ -70,14 +70,27 @@ jobs:
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 30
           arch: x86_64
           target: google_apis
           profile: pixel_2
           emulator-boot-timeout: 900
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 2 -partition-size 4096
           disable-animations: true
-          script: gradle connectedDebugAndroidTest
+          script: |
+            set -euo pipefail
+            adb wait-for-device
+            for attempt in $(seq 1 90); do
+              booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+              package_service="$(adb shell service check package 2>/dev/null || true)"
+              if [ "$booted" = "1" ] && echo "$package_service" | grep -q "found"; then
+                break
+              fi
+              sleep 2
+            done
+            test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+            adb shell service check package | grep -q "found"
+            gradle connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
