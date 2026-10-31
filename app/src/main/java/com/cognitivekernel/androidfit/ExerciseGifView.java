@@ -62,6 +62,11 @@ public final class ExerciseGifView extends View {
         });
     }
 
+    /** Package-private test hook: true only after Movie decoded the bundled GIF. */
+    boolean hasDecodedImage() {
+        return movie != null;
+    }
+
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         Movie current = movie;

@@ -33,8 +33,8 @@ jobs:
         run: gradle test lintDebug compileDebugAndroidTestJavaWithJavac
 
   instrumented-tests:
-    # Ubuntu 24.04 is more reliable for nested KVM/emulator startup than the latest runner image.
-    runs-on: ubuntu-24.04
+    # Use the stable Ubuntu 22.04 hosted image for Android emulator/KVM compatibility.
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -51,8 +51,8 @@ jobs:
       - name: Install Android SDK
         shell: bash
         run: |
-          set -euo pipefail
-          packages=( "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64" )
+          set -eu
+          packages=( "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-30;google_apis;x86_64" )
           installed=false
           for attempt in 1 2 3; do
             if sdkmanager "${packages[@]}"; then
@@ -70,14 +70,17 @@ jobs:
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 34
+          api-level: 30
           arch: x86_64
           target: google_apis
           profile: pixel_2
           emulator-boot-timeout: 900
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 4 -partition-size 2048
           disable-animations: true
-          script: gradle connectedDebugAndroidTest
+          script: |
+            # The emulator runner already waits for boot completion; avoid extra ADB polling that can stall ddmlib.
+            set -eu
+            gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
@@ -217,21 +220,21 @@ jobs:
           test -n "${FIT_YAR_RELEASE_KEY_PASSWORD:-}" || { echo "::error::Release key password secret is missing."; exit 1; }
           test -n "${FIT_YAR_RELEASE_STORE_PASSWORD:-}" || { echo "::error::Release store password secret is missing."; exit 1; }
           keytool -list -v -keystore "$FIT_YAR_SIGNING_KEYSTORE" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" | grep -E 'Alias name:|SHA1:|SHA256:|Valid from:'
-          gradle -PFIT_YAR_VERSION_CODE=114 -PFIT_YAR_VERSION_NAME=1.1.18 assembleDebug
+          gradle -PFIT_YAR_VERSION_CODE=115 -PFIT_YAR_VERSION_NAME=1.1.19 assembleDebug
           APK="app/build/outputs/apk/debug/app-debug.apk"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='114'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionName='1.1.18'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='115'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionName='1.1.19'"
           mkdir -p artifacts
-          cp "$APK" artifacts/fityar-large-library-v114.apk
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v114.apk | tee artifacts/signature.txt
+          cp "$APK" artifacts/fityar-large-library-v115.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v115.apk | tee artifacts/signature.txt
           ACTUAL_CERT="$(sed -n 's/.*certificate SHA-256 digest: //p' artifacts/signature.txt | head -n1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
           EXPECTED_CERT="61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
           if [ "$ACTUAL_CERT" != "$EXPECTED_CERT" ]; then
             echo "::error::APK certificate does not match the previously distributed FitYar signing certificate."
             exit 1
           fi
-          sha256sum artifacts/fityar-large-library-v114.apk > artifacts/SHA256SUMS.txt
+          sha256sum artifacts/fityar-large-library-v115.apk > artifacts/SHA256SUMS.txt
       - name: Publish verified APK as a direct GitHub Release download
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         env:
@@ -239,20 +242,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if gh release view v1.1.18 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release v1.1.18 already exists; leaving its published assets unchanged."
+          if gh release view v1.1.19 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v1.1.19 already exists; leaving its published assets unchanged."
             exit 0
           fi
-          gh release create v1.1.18 \
-            artifacts/fityar-large-library-v114.apk \
+          gh release create v1.1.19 \
+            artifacts/fityar-large-library-v115.apk \
             artifacts/signature.txt \
             artifacts/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
-            --title "FitYar 1.1.18" \
-            --notes "FitYar 1.1.18. Version code 114. The APK is signed with the verified FitYar release certificate."
+            --title "FitYar 1.1.19" \
+            --notes "FitYar 1.1.19. Version code 115. The APK is signed with the verified FitYar release certificate."
       - uses: actions/upload-artifact@v4
         with:
-          name: fityar-large-library-v114
+          name: fityar-large-library-v115
           path: artifacts/*
           if-no-files-found: error
           retention-days: 14
