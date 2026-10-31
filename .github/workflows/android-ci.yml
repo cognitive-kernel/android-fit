@@ -78,7 +78,8 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 2 -partition-size 4096
           disable-animations: false
           script: |
-            set -euo pipefail
+            # POSIX sh is used by android-emulator-runner; do not use pipefail.
+            set -eu
             adb wait-for-device
             for attempt in $(seq 1 90); do
               booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
