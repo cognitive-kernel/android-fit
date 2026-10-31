@@ -52,6 +52,7 @@ public final class ExerciseGifView extends View {
         DECODER.execute(() -> decode(context.getApplicationContext()));
     }
 
+    @WorkerThread
     private void decode(Context context) {
         Drawable decodedDrawable = null;
         Movie decodedMovie = null;
