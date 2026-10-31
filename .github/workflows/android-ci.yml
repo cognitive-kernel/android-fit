@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -eu
-          packages=( "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" )
+          packages=( "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-30;google_apis;x86_64" )
           installed=false
           for attempt in 1 2 3; do
             if sdkmanager "${packages[@]}"; then
@@ -70,16 +70,16 @@ jobs:
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 30
           arch: x86_64
           target: google_apis
           profile: pixel_2
-          emulator-boot-timeout: 900
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 2 -partition-size 4096
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 2048 -cores 2 -partition-size 2048
           disable-animations: false
           script: |
-            # android-emulator-runner invokes POSIX sh; retry transient adb disconnects.
-            set -eu; for attempt in 1 2 3; do adb reconnect offline >/dev/null 2>&1 || true; adb wait-for-device; ready=false; for boot_attempt in $(seq 1 180); do state="$(adb get-state 2>/dev/null || true)"; booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"; package_service="$(adb shell service check package 2>/dev/null || true)"; if [ "$state" = "device" ] && [ "$booted" = "1" ] && echo "$package_service" | grep -q "found"; then ready=true; break; fi; sleep 2; done; if [ "$ready" != true ]; then echo "Emulator not ready on attempt $attempt"; adb devices -l || true; continue; fi; if gradle connectedDebugAndroidTest; then exit 0; fi; echo "Instrumented tests failed on attempt $attempt; reconnecting adb"; adb reconnect offline || true; sleep 5; done; echo "Instrumented tests failed after 3 attempts"; exit 1
+            # Use a fresh, lower-memory API 30 emulator; do not retry installation on a persistently offline device.
+            set -eu; adb wait-for-device; ready=false; for boot_attempt in $(seq 1 180); do state="$(adb get-state 2>/dev/null || true)"; booted="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"; package_service="$(adb shell service check package 2>/dev/null || true)"; if [ "$state" = "device" ] && [ "$booted" = "1" ] && echo "$package_service" | grep -q "found"; then ready=true; break; fi; sleep 2; done; if [ "$ready" != true ]; then echo "Emulator did not become ready"; adb devices -l || true; exit 1; fi; gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
