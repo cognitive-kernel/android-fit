@@ -94,8 +94,11 @@ public final class ExerciseGifView extends View {
             startedAt = SystemClock.uptimeMillis();
             if (drawable != null) {
                 drawable.setCallback(this);
-                setLayerType(drawable instanceof AnimatedImageDrawable
-                    ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_SOFTWARE, null);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    configureNativeLayer(drawable);
+                } else {
+                    setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
                     attached && drawable instanceof AnimatedImageDrawable) {
                     startAnimation((AnimatedImageDrawable) drawable);
@@ -105,6 +108,12 @@ public final class ExerciseGifView extends View {
             }
             invalidate();
         });
+    }
+
+    @TargetApi(Build.VERSION_CODES.P)
+    private void configureNativeLayer(Drawable image) {
+        setLayerType(image instanceof AnimatedImageDrawable
+            ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_SOFTWARE, null);
     }
 
     @TargetApi(Build.VERSION_CODES.P)
