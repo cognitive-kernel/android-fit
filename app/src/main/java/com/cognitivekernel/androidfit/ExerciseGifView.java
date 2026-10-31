@@ -16,6 +16,7 @@ import android.os.Looper;
 import android.os.SystemClock;
 import android.util.Log;
 import android.view.View;
+import androidx.annotation.WorkerThread;
 import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -116,6 +117,7 @@ public final class ExerciseGifView extends View {
             ? View.LAYER_TYPE_HARDWARE : View.LAYER_TYPE_SOFTWARE, null);
     }
 
+    @WorkerThread
     @TargetApi(Build.VERSION_CODES.P)
     private Drawable decodeNative(Context context) throws Exception {
         ImageDecoder.Source source = ImageDecoder.createSource(context.getAssets(), assetPath);
