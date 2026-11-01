@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -eu
-          packages=( "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-30;google_apis;x86_64" )
+          packages=( "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" )
           installed=false
           for attempt in 1 2 3; do
             if sdkmanager "${packages[@]}"; then
@@ -70,7 +70,7 @@ jobs:
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 30
+          api-level: 35
           arch: x86_64
           target: google_apis
           profile: pixel_2
@@ -78,8 +78,25 @@ jobs:
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 4 -partition-size 2048
           disable-animations: true
           script: |
-            # The emulator runner already waits for boot completion; avoid extra ADB polling that can stall ddmlib.
+            # Wait for Android's package manager to answer, not only sys.boot_completed.
             set -eu
+            ready=false
+            for attempt in $(seq 1 180); do
+              state="$(timeout 10s adb -s emulator-5554 get-state 2>/dev/null || true)"
+              package_service="$(timeout 10s adb -s emulator-5554 shell service check package 2>/dev/null || true)"
+              package_path="$(timeout 10s adb -s emulator-5554 shell pm path android 2>/dev/null || true)"
+              if [ "$state" = "device" ] && echo "$package_service" | grep -q "found" && echo "$package_path" | grep -q "package:"; then
+                ready=true
+                break
+              fi
+              echo "Waiting for Android package manager (attempt $attempt/180; state=$state; service=$package_service)"
+              sleep 5
+            done
+            if [ "$ready" != true ]; then
+              echo "::error::Android package manager did not become responsive."
+              adb devices -l || true
+              exit 1
+            fi
             gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
@@ -89,6 +106,8 @@ jobs:
           # Bound diagnostics so they cannot consume the entire job timeout.
           timeout 15s adb devices -l || true
           timeout 20s adb -s emulator-5554 shell getprop sys.boot_completed || true
+          timeout 20s adb -s emulator-5554 shell service check package || true
+          timeout 20s adb -s emulator-5554 shell pm path android || true
           timeout 20s adb -s emulator-5554 logcat -d -t 6000 || true
 
   test-install-apk:
