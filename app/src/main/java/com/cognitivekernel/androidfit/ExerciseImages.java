@@ -99,6 +99,14 @@ public final class ExerciseImages {
     }
 
     public static void showFullscreen(Activity activity, String assetPath, String title) {
+        showFullscreenInternal(activity, assetPath, title, true);
+    }
+
+    static void showFullscreenForTest(Activity activity, String assetPath, String title) {
+        showFullscreenInternal(activity, assetPath, title, false);
+    }
+
+    private static void showFullscreenInternal(Activity activity, String assetPath, String title, boolean decodeImage) {
         if (activity == null || activity.isFinishing() || assetPath == null || assetPath.trim().isEmpty()) return;
         synchronized (OPEN_FULLSCREEN) {
             Dialog existing = OPEN_FULLSCREEN.get(activity);
@@ -133,7 +141,7 @@ public final class ExerciseImages {
         toolbar.addView(close, new LinearLayout.LayoutParams(
             (int)(52 * activity.getResources().getDisplayMetrics().density), -2));
         root.addView(toolbar, new LinearLayout.LayoutParams(-1, -2));
-        ExerciseGifView image = new ExerciseGifView(activity, assetPath);
+        ExerciseGifView image = new ExerciseGifView(activity, assetPath, decodeImage);
         image.setBackgroundColor(Color.BLACK);
         root.addView(image, new LinearLayout.LayoutParams(-1, 0, 1));
         close.setOnClickListener(v -> dialog.dismiss());
