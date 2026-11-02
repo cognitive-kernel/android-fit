@@ -76,18 +76,289 @@ jobs:
           sysctl kern.hv_support
           "$ANDROID_HOME/emulator/emulator" -accel-check
       - name: Create and start Android emulator
+        timeout-minutes: 7
         shell: bash
         run: |
           set -euo pipefail
-          echo "no" | avdmanager create avd -n fit-yar-ci -k "system-images;android-34;google_apis;x86_64" -d pixel_2
+          echo "Creating Android Virtual Device..."
+          timeout 90s bash -c 'echo "no" | avdmanager create avd -n fit-yar-ci -k "system-images;android-34;google_apis;x86_64" -d pixel_2'
           nohup "$ANDROID_HOME/emulator/emulator" -avd fit-yar-ci -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 4096 -cores 3 > "$RUNNER_TEMP/emulator.log" 2>&1 &
           echo $! > "$RUNNER_TEMP/emulator.pid"
-          for i in $(seq 1 300); do
-            if adb shell getprop sys.boot_completed 2>/dev/null | grep -q '^1$'; then
-              echo "Emulator boot completed after approximately $i seconds."
-              adb shell settings put global animator_duration_scale 0
-              adb shell settings put global transition_animation_scale 0
-              adb shell settings put global window_animation_scale 0
+          adb start-server
+          start_time=$SECONDS
+          while [ $((SECONDS - start_time)) -lt 300 ]; do
+            if timeout 5s adb -s emulator-5554 shell getprop sys.boot_completed 2>/dev/null | grep -q '^1
+      - name: Run GIF and fullscreen instrumentation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          adb devices -l
+          gradle --no-daemon --max-workers=2 connectedDebugAndroidTest --info
+      - name: Capture emulator diagnostics on test failure
+        if: failure()
+        shell: bash
+        run: |
+          # Emulator startup failures can leave adb commands waiting forever.
+          # Bound diagnostics so they cannot consume the entire job timeout.
+          timeout 15s adb devices -l || true
+          timeout 20s adb -s emulator-5554 shell getprop sys.boot_completed || true
+          timeout 20s adb -s emulator-5554 shell service check package || true
+          timeout 20s adb -s emulator-5554 shell pm path android || true
+          timeout 20s adb -s emulator-5554 logcat -d -t 6000 || true
+
+  test-install-apk:
+    # Deliberately separate from signed-apk: this APK has its own package ID
+    # and is for side-by-side testing only, never an update to the production install.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Build isolated test APK
+        run: gradle -PFIT_YAR_TEST_INSTALL=true assembleDebug
+      - name: Verify test APK package and signature
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit.test2'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs "$APK"
+          mkdir -p artifacts
+          cp "$APK" artifacts/fityar-test-side-by-side.apk
+          sha256sum artifacts/fityar-test-side-by-side.apk > artifacts/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fityar-test-side-by-side
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
+  signing-key-diagnostic:
+    # Reports availability only; never prints or uploads the private keystore.
+    # This is informational and does not block tests or publish an APK.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Restore candidate signing-key cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fit-yar-debug-signing-key-v2
+      - name: Check original signing key availability without exposing it
+        shell: bash
+        env:
+          FIT_YAR_DEBUG_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_DEBUG_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
+          KEY="$HOME/.android/debug.keystore"
+          if [ -f "$KEY" ] && keytool -list -v -keystore "$KEY" -storepass android -alias androiddebugkey 2>/dev/null | grep -Fq "$EXPECTED_SHA256"; then
+            echo "::notice::Original signing key is available in the Actions cache."
+            exit 0
+          fi
+          found_secret=false
+          for candidate in "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" "${ANDROID_KEYSTORE_BASE64:-}" "${KEYSTORE_BASE64:-}"; do
+            [ -n "$candidate" ] || continue
+            found_secret=true
+            TEMP_KEY="$(mktemp)"
+            if printf '%s' "$candidate" | base64 --decode > "$TEMP_KEY" 2>/dev/null \
+              && keytool -list -v -keystore "$TEMP_KEY" -storepass android -alias androiddebugkey 2>/dev/null | grep -Fq "$EXPECTED_SHA256"; then
+              echo "::notice::A configured Actions secret contains the expected signing key."
+              rm -f "$TEMP_KEY"
+              exit 0
+            fi
+            rm -f "$TEMP_KEY"
+          done
+          if [ "$found_secret" = true ]; then
+            echo "::warning::Configured keystore secret candidates do not match the registered certificate or cannot be opened."
+          else
+            echo "::warning::No matching signing key was found in the Actions cache or configured secret. Production APK signing remains blocked."
+          fi
+
+  release-key-corrected-apk:
+    # Candidate-key APK from the exercise-library feature branch for device testing.
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Restore candidate release keystore
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_RELEASE_KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          test -n "${FIT_YAR_RELEASE_KEYSTORE_BASE64:-}" || { echo "::error::Release keystore secret is missing."; exit 1; }
+          mkdir -p "$HOME/.android"
+          printf '%s' "$FIT_YAR_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$HOME/.android/fityar-release-test.jks"
+          test -s "$HOME/.android/fityar-release-test.jks" || { echo "::error::Decoded keystore is empty."; exit 1; }
+      - name: Build and verify feature APK with candidate key
+        shell: bash
+        env:
+          FIT_YAR_RELEASE_KEY_ALIAS: ${{ secrets.FIT_YAR_RELEASE_KEY_ALIAS }}
+          FIT_YAR_RELEASE_KEY_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_KEY_PASSWORD }}
+          FIT_YAR_RELEASE_STORE_PASSWORD: ${{ secrets.FIT_YAR_RELEASE_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          export FIT_YAR_SIGNING_KEYSTORE="$HOME/.android/fityar-release-test.jks"
+          test -n "${FIT_YAR_RELEASE_KEY_ALIAS:-}" || { echo "::error::Release key alias secret is missing."; exit 1; }
+          test -n "${FIT_YAR_RELEASE_KEY_PASSWORD:-}" || { echo "::error::Release key password secret is missing."; exit 1; }
+          test -n "${FIT_YAR_RELEASE_STORE_PASSWORD:-}" || { echo "::error::Release store password secret is missing."; exit 1; }
+          keytool -list -v -keystore "$FIT_YAR_SIGNING_KEYSTORE" -storepass "$FIT_YAR_RELEASE_STORE_PASSWORD" -alias "$FIT_YAR_RELEASE_KEY_ALIAS" | grep -E 'Alias name:|SHA1:|SHA256:|Valid from:'
+          gradle -PFIT_YAR_VERSION_CODE=115 -PFIT_YAR_VERSION_NAME=1.1.19 assembleDebug
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='115'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionName='1.1.19'"
+          mkdir -p artifacts
+          cp "$APK" artifacts/fityar-large-library-v115.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v115.apk | tee artifacts/signature.txt
+          ACTUAL_CERT="$(sed -n 's/.*certificate SHA-256 digest: //p' artifacts/signature.txt | head -n1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
+          EXPECTED_CERT="61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
+          if [ "$ACTUAL_CERT" != "$EXPECTED_CERT" ]; then
+            echo "::error::APK certificate does not match the previously distributed FitYar signing certificate."
+            exit 1
+          fi
+          sha256sum artifacts/fityar-large-library-v115.apk > artifacts/SHA256SUMS.txt
+      - name: Publish verified APK as a direct GitHub Release download
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view v1.1.19 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v1.1.19 already exists; leaving its published assets unchanged."
+            exit 0
+          fi
+          gh release create v1.1.19 \
+            artifacts/fityar-large-library-v115.apk \
+            artifacts/signature.txt \
+            artifacts/SHA256SUMS.txt \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "FitYar 1.1.19" \
+            --notes "FitYar 1.1.19. Version code 115. The APK is signed with the verified FitYar release certificate."
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fityar-large-library-v115
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
+
+  signed-apk:
+    # Signing/update work is intentionally deferred until the original key is recovered.
+    # Enable this job by setting repository variable ENABLE_SIGNED_APK=true.
+    if: ${{ vars.ENABLE_SIGNED_APK == 'true' }}
+    needs: [unit-tests-and-lint, instrumented-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - name: Restore original signing key
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fit-yar-debug-signing-key-v2
+      - name: Verify original signing key is available
+        shell: bash
+        env:
+          FIT_YAR_DEBUG_KEYSTORE_BASE64: ${{ secrets.FIT_YAR_DEBUG_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.android"
+          EXPECTED_SHA256="57:82:64:31:52:17:B7:96:51:A8:6F:36:07:C6:EC:5A:9C:0A:17:85:D4:61:AA:D5:76:A4:CB:EC:A4:D3:64:47"
+          # Accept only a candidate whose certificate exactly matches the installed app.
+          # Never replace the cache with an unverified or mismatched key.
+          for candidate in "${FIT_YAR_DEBUG_KEYSTORE_BASE64:-}" "${ANDROID_KEYSTORE_BASE64:-}" "${KEYSTORE_BASE64:-}"; do
+            [ -n "$candidate" ] || continue
+            TEMP_KEY="$(mktemp)"
+            if printf '%s' "$candidate" | base64 --decode > "$TEMP_KEY" 2>/dev/null \
+              && keytool -list -v -keystore "$TEMP_KEY" -storepass android -alias androiddebugkey 2>/dev/null | grep -Fq "$EXPECTED_SHA256"; then
+              mv "$TEMP_KEY" "$HOME/.android/debug.keystore"
+              break
+            fi
+            rm -f "$TEMP_KEY"
+          done
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            echo "::error::Original signing key is unavailable. Tests can run, but no installable APK will be published."
+            echo "::error::Restore the original keystore securely; do not generate a replacement key."
+            exit 1
+          fi
+          CERT_INFO="$(keytool -list -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey)"
+          echo "$CERT_INFO" | grep -E 'SHA1:|SHA256:|Valid from:'
+          if ! echo "$CERT_INFO" | grep -Fq "$EXPECTED_SHA256"; then
+            echo "::error::Signing certificate mismatch. Refusing to publish an APK."
+            exit 1
+          fi
+      - name: Save verified original signing key
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: fit-yar-debug-signing-key-v2
+      - name: Install Android SDK
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Build and verify signed APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle assembleDebug
+          mkdir -p artifacts
+          cp app/build/outputs/apk/debug/app-debug.apk artifacts/fit-yar-v1.1.8.apk
+          APKSIGNER="$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" verify --print-certs artifacts/fit-yar-v1.1.8.apk | tee /tmp/apk-certs.txt
+          grep -F "Signer #1 certificate SHA-256 digest: 578264315217b79651a86f3607c6ec5a9c0a1785d461aad576a4cbeca4d36447" /tmp/apk-certs.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fit-yar-v1.1.8
+          path: artifacts/fit-yar-v1.1.8.apk
+          if-no-files-found: error
+; then
+              echo "Emulator boot completed after $((SECONDS - start_time)) seconds."
+              timeout 10s adb -s emulator-5554 shell settings put global animator_duration_scale 0
+              timeout 10s adb -s emulator-5554 shell settings put global transition_animation_scale 0
+              timeout 10s adb -s emulator-5554 shell settings put global window_animation_scale 0
               exit 0
             fi
             if ! kill -0 "$(cat "$RUNNER_TEMP/emulator.pid")" 2>/dev/null; then
