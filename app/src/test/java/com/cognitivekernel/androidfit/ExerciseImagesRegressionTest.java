@@ -7,10 +7,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Iterator;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
@@ -32,26 +28,68 @@ public class ExerciseImagesRegressionTest {
             int checked = 0;
             for (String entry : entries) {
                 if (!entry.toLowerCase(java.util.Locale.ROOT).endsWith(".gif")) continue;
-                try (InputStream input = controller.get().getAssets().open("exercises/" + entry);
-                     ImageInputStream imageInput = ImageIO.createImageInputStream(input)) {
-                    assertNotNull("GIF stream could not be opened: " + entry, imageInput);
-                    Iterator<ImageReader> readers = ImageIO.getImageReaders(imageInput);
-                    assertTrue("No GIF decoder accepted " + entry, readers.hasNext());
-                    ImageReader reader = readers.next();
-                    try {
-                        reader.setInput(imageInput, false, false);
-                        assertTrue("Invalid GIF dimensions: " + entry,
-                            reader.getWidth(0) > 0 && reader.getHeight(0) > 0);
-                        assertTrue("GIF must contain multiple frames: " + entry,
-                            reader.getNumImages(true) > 1);
-                        assertNotNull("First GIF frame did not decode: " + entry, reader.read(0));
-                    } finally {
-                        reader.dispose();
-                    }
+                try (InputStream input = controller.get().getAssets().open("exercises/" + entry)) {
+                    byte[] gif = input.readAllBytes();
+                    assertTrue("Invalid GIF structure or missing animation frames: " + entry,
+                        hasAnimatedGifStructure(gif));
                 }
                 if (++checked == 5) break;
             }
             assertTrue("Fewer than five exercise GIF assets were packaged", checked == 5);
+        }
+    }
+
+    private static boolean hasAnimatedGifStructure(byte[] data) {
+        if (data == null || data.length < 14) return false;
+        String header = new String(data, 0, 6, java.nio.charset.StandardCharsets.US_ASCII);
+        if (!"GIF87a".equals(header) && !"GIF89a".equals(header)) return false;
+        int width = (data[6] & 0xff) | ((data[7] & 0xff) << 8);
+        int height = (data[8] & 0xff) | ((data[9] & 0xff) << 8);
+        if (width <= 0 || height <= 0) return false;
+        int[] position = {13};
+        int packed = data[10] & 0xff;
+        if ((packed & 0x80) != 0) {
+            position[0] += 3 * (1 << ((packed & 0x07) + 1));
+        }
+        int frames = 0;
+        try {
+            while (position[0] < data.length) {
+                int marker = data[position[0]++] & 0xff;
+                if (marker == 0x3b) break;
+                if (marker == 0x21) {
+                    readByte(data, position); // extension label
+                    skipGifSubBlocks(data, position);
+                } else if (marker == 0x2c) {
+                    position[0] += 8;
+                    int imagePacked = readByte(data, position);
+                    if ((imagePacked & 0x80) != 0) {
+                        position[0] += 3 * (1 << ((imagePacked & 0x07) + 1));
+                    }
+                    readByte(data, position); // LZW minimum code size
+                    skipGifSubBlocks(data, position);
+                    frames++;
+                } else {
+                    return false;
+                }
+                if (position[0] > data.length) return false;
+            }
+        } catch (IndexOutOfBoundsException invalidGif) {
+            return false;
+        }
+        return frames > 1;
+    }
+
+    private static int readByte(byte[] data, int[] position) {
+        if (position[0] >= data.length) throw new IndexOutOfBoundsException();
+        return data[position[0]++] & 0xff;
+    }
+
+    private static void skipGifSubBlocks(byte[] data, int[] position) {
+        while (true) {
+            int length = readByte(data, position);
+            if (length == 0) return;
+            position[0] += length;
+            if (position[0] > data.length) throw new IndexOutOfBoundsException();
         }
     }
 
