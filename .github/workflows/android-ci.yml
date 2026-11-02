@@ -33,8 +33,8 @@ jobs:
         run: gradle test lintDebug compileDebugAndroidTestJavaWithJavac
 
   instrumented-tests:
-    # Use the stable Ubuntu 22.04 hosted image for Android emulator/KVM compatibility.
-    runs-on: ubuntu-22.04
+    # Use the current hosted image with hardware acceleration for reliable emulator startup.
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -76,7 +76,8 @@ jobs:
           profile: pixel_2
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 3072 -cores 2
-          disable-animations: false
+          disable-animations: true
+          disable-linux-hw-accel: false
           script: gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
