@@ -99,6 +99,14 @@ public final class ExerciseImages {
     }
 
     public static void showFullscreen(Activity activity, String assetPath, String title) {
+        showFullscreenInternal(activity, assetPath, title, true);
+    }
+
+    static void showFullscreenForTest(Activity activity, String assetPath, String title) {
+        showFullscreenInternal(activity, assetPath, title, false);
+    }
+
+    private static void showFullscreenInternal(Activity activity, String assetPath, String title, boolean decodeImage) {
         if (activity == null || activity.isFinishing() || assetPath == null || assetPath.trim().isEmpty()) return;
         synchronized (OPEN_FULLSCREEN) {
             Dialog existing = OPEN_FULLSCREEN.get(activity);
@@ -133,7 +141,7 @@ public final class ExerciseImages {
         toolbar.addView(close, new LinearLayout.LayoutParams(
             (int)(52 * activity.getResources().getDisplayMetrics().density), -2));
         root.addView(toolbar, new LinearLayout.LayoutParams(-1, -2));
-        ExerciseGifView image = new ExerciseGifView(activity, assetPath);
+        ExerciseGifView image = new ExerciseGifView(activity, assetPath, decodeImage);
         image.setBackgroundColor(Color.BLACK);
         root.addView(image, new LinearLayout.LayoutParams(-1, 0, 1));
         close.setOnClickListener(v -> dialog.dismiss());
@@ -148,6 +156,15 @@ public final class ExerciseImages {
             dialog.getWindow().setLayout(WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT);
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.black);
+            // Keep the image viewer immersive while retaining its own visible close control.
+            dialog.getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            );
         }
     }
 
