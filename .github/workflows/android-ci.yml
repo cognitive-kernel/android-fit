@@ -75,17 +75,37 @@ jobs:
           echo "Runner architecture: $(uname -m)"
           sysctl kern.hv_support
           "$ANDROID_HOME/emulator/emulator" -accel-check
-      - name: Run instrumented tests on emulator
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          arch: x86_64
-          target: google_apis
-          profile: pixel_2
-          emulator-boot-timeout: 900
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 4096 -cores 3
-          disable-animations: true
-          script: gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
+      - name: Create and start Android emulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "no" | avdmanager create avd -n fit-yar-ci -k "system-images;android-34;google_apis;x86_64" -d pixel_2
+          nohup "$ANDROID_HOME/emulator/emulator" -avd fit-yar-ci -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 4096 -cores 3 > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/emulator.pid"
+          for i in $(seq 1 300); do
+            if adb shell getprop sys.boot_completed 2>/dev/null | grep -q '^1$'; then
+              echo "Emulator boot completed after approximately $i seconds."
+              adb shell settings put global animator_duration_scale 0
+              adb shell settings put global transition_animation_scale 0
+              adb shell settings put global window_animation_scale 0
+              exit 0
+            fi
+            if ! kill -0 "$(cat "$RUNNER_TEMP/emulator.pid")" 2>/dev/null; then
+              echo "::error::Emulator process exited before boot completed."
+              cat "$RUNNER_TEMP/emulator.log"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "::error::Emulator did not finish booting within 300 seconds."
+          cat "$RUNNER_TEMP/emulator.log"
+          exit 1
+      - name: Run GIF and fullscreen instrumentation tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          adb devices -l
+          gradle --no-daemon --max-workers=2 connectedDebugAndroidTest --info
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
