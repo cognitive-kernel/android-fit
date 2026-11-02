@@ -77,27 +77,7 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 4 -partition-size 2048
           disable-animations: true
-          script: |
-            # Wait for Android's package manager to answer, not only sys.boot_completed.
-            set -eu
-            ready=false
-            for attempt in $(seq 1 180); do
-              state="$(timeout 10s adb -s emulator-5554 get-state 2>/dev/null || true)"
-              package_service="$(timeout 10s adb -s emulator-5554 shell service check package 2>/dev/null || true)"
-              package_path="$(timeout 10s adb -s emulator-5554 shell pm path android 2>/dev/null || true)"
-              if [ "$state" = "device" ] && echo "$package_service" | grep -q "found" && echo "$package_path" | grep -q "package:"; then
-                ready=true
-                break
-              fi
-              echo "Waiting for Android package manager (attempt $attempt/180; state=$state; service=$package_service)"
-              sleep 5
-            done
-            if [ "$ready" != true ]; then
-              echo "::error::Android package manager did not become responsive."
-              adb devices -l || true
-              exit 1
-            fi
-            gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
+          script: gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
