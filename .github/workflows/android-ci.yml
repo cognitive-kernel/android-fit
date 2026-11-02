@@ -77,24 +77,7 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 3072 -cores 2
           disable-animations: false
-          script: |
-            set -eu
-            adb start-server
-            adb reconnect offline || true
-            adb wait-for-device
-            for attempt in 1 2 3 4 5; do
-              state="$(adb get-state 2>/dev/null || true)"
-              boot="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
-              if [ "$state" = "device" ] && [ "$boot" = "1" ]; then
-                break
-              fi
-              echo "Emulator is not ready (attempt $attempt/5): state=$state boot=$boot"
-              adb reconnect offline || true
-              sleep 10
-            done
-            test "$(adb get-state)" = "device"
-            test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
-            gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
+          script: gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
