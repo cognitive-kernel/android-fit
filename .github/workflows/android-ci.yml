@@ -52,7 +52,7 @@ jobs:
         shell: bash
         run: |
           set -eu
-          packages=( "platforms;android-35" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-35;google_apis;x86_64" )
+          packages=( "platforms;android-34" "platforms;android-36" "build-tools;36.0.0" "platform-tools" "emulator" "system-images;android-34;google_apis;x86_64" )
           installed=false
           for attempt in 1 2 3; do
             if sdkmanager "${packages[@]}"; then
@@ -70,14 +70,31 @@ jobs:
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 35
+          api-level: 34
           arch: x86_64
           target: google_apis
           profile: pixel_2
           emulator-boot-timeout: 900
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -memory 4096 -cores 4 -partition-size 2048
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 3072 -cores 2
           disable-animations: true
-          script: gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
+          script: |
+            set -eu
+            adb start-server
+            adb reconnect offline || true
+            adb wait-for-device
+            for attempt in 1 2 3 4 5; do
+              state="$(adb get-state 2>/dev/null || true)"
+              boot="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
+              if [ "$state" = "device" ] && [ "$boot" = "1" ]; then
+                break
+              fi
+              echo "Emulator is not ready (attempt $attempt/5): state=$state boot=$boot"
+              adb reconnect offline || true
+              sleep 10
+            done
+            test "$(adb get-state)" = "device"
+            test "$(adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+            gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
         shell: bash
