@@ -35,6 +35,10 @@ public final class ExerciseGifView extends View {
     private volatile boolean attached;
 
     public ExerciseGifView(Context context, String name) {
+        this(context, name, true);
+    }
+
+    ExerciseGifView(Context context, String name, boolean decodeImmediately) {
         super(context);
         String normalized = name == null ? "" : name.trim();
         while (normalized.startsWith("/")) normalized = normalized.substring(1);
@@ -43,7 +47,7 @@ public final class ExerciseGifView extends View {
         setContentDescription(normalized.substring(normalized.lastIndexOf('/') + 1)
             .replace(".gif", "").replace('_', ' '));
         setWillNotDraw(false);
-        DECODER.execute(() -> decode(context.getApplicationContext()));
+        if (decodeImmediately) DECODER.execute(() -> decode(context.getApplicationContext()));
     }
 
     @WorkerThread
