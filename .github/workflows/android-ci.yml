@@ -33,8 +33,9 @@ jobs:
         run: gradle test lintDebug compileDebugAndroidTestJavaWithJavac
 
   instrumented-tests:
-    # Use the current hosted image with hardware acceleration for reliable emulator startup.
-    runs-on: ubuntu-latest
+    # Linux hosted runners in this repository do not expose KVM. Use an Intel macOS
+    # runner where Android Emulator can use Apple's Hypervisor.framework for x86_64.
+    runs-on: macos-15-intel
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
@@ -67,6 +68,13 @@ jobs:
             echo "Android SDK installation failed after 3 attempts."
             exit 1
           fi
+      - name: Verify native Android Emulator acceleration
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Runner architecture: $(uname -m)"
+          sysctl kern.hv_support
+          "$ANDROID_HOME/emulator/emulator" -accel-check
       - name: Run instrumented tests on emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -75,9 +83,8 @@ jobs:
           target: google_apis
           profile: pixel_2
           emulator-boot-timeout: 900
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 3072 -cores 2
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader -no-snapshot -memory 4096 -cores 3
           disable-animations: true
-          disable-linux-hw-accel: false
           script: gradle --no-daemon --max-workers=2 connectedDebugAndroidTest
       - name: Capture emulator diagnostics on test failure
         if: failure()
