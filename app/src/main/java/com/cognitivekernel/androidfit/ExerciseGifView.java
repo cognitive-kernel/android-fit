@@ -88,19 +88,30 @@ public final class ExerciseGifView extends View {
             startedAt = SystemClock.uptimeMillis();
             if (drawable != null) {
                 drawable.setCallback(this);
-                if (drawable instanceof AnimatedImageDrawable) {
-                    setLayerType(View.LAYER_TYPE_HARDWARE, null);
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && attached) {
-                        startAnimation((AnimatedImageDrawable) drawable);
-                    }
-                } else {
-                    setLayerType(View.LAYER_TYPE_SOFTWARE, null);
-                }
+                configureDecodedDrawable(drawable);
             } else {
                 setLayerType(View.LAYER_TYPE_SOFTWARE, null);
             }
             invalidate();
         });
+    }
+
+    private void configureDecodedDrawable(Drawable image) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            configureApi28Drawable(image);
+        } else {
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.P)
+    private void configureApi28Drawable(Drawable image) {
+        if (image instanceof AnimatedImageDrawable) {
+            setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            if (attached) startAnimation((AnimatedImageDrawable) image);
+        } else {
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
     }
 
     @TargetApi(Build.VERSION_CODES.P)
