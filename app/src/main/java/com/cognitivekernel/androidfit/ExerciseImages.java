@@ -144,6 +144,7 @@ public final class ExerciseImages {
         ExerciseGifView image = new ExerciseGifView(activity, assetPath, decodeImage);
         image.setBackgroundColor(Color.BLACK);
         root.addView(image, new LinearLayout.LayoutParams(-1, 0, 1));
+        addDiagnosticPanel(activity, root, image);
         close.setOnClickListener(v -> dialog.dismiss());
         dialog.setContentView(root);
         Window window = dialog.getWindow();
@@ -166,6 +167,40 @@ public final class ExerciseImages {
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
             );
         }
+    }
+
+    /** Adds a visible, selectable diagnostic report and a one-tap copy action. */
+    public static void addDiagnosticPanel(Context context, LinearLayout parent, ExerciseGifView image) {
+        TextView heading = new TextView(context);
+        heading.setText("گزارش وضعیت تصویر (برای ارسال کپی کنید)");
+        heading.setTextColor(0xFFFFB74D);
+        heading.setTextSize(14);
+        heading.setPadding(12, 10, 12, 4);
+        parent.addView(heading, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView report = new TextView(context);
+        report.setText(image.getDiagnosticReport());
+        report.setTextColor(0xFFFFFFFF);
+        report.setTextSize(11);
+        report.setTextIsSelectable(true);
+        report.setPadding(12, 8, 12, 8);
+        report.setBackgroundColor(0xFF252525);
+        parent.addView(report, new LinearLayout.LayoutParams(-1, -2));
+        image.setDiagnosticListener(value -> report.setText(value));
+
+        Button copy = new Button(context);
+        copy.setText("کپی گزارش خطا");
+        copy.setOnClickListener(v -> {
+            android.content.ClipboardManager clipboard =
+                (android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            if (clipboard != null) {
+                clipboard.setPrimaryClip(android.content.ClipData.newPlainText("FitYar GIF diagnostic",
+                    image.getDiagnosticReport()));
+                android.widget.Toast.makeText(context, "گزارش کپی شد؛ آن را در گفتگو ارسال کنید.",
+                    android.widget.Toast.LENGTH_SHORT).show();
+            }
+        });
+        parent.addView(copy, new LinearLayout.LayoutParams(-1, -2));
     }
 
     public static ExerciseGifView thumbnail(Context context, String assetPath, String title, int heightDp) {
