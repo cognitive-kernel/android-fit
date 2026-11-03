@@ -21,12 +21,12 @@ import static org.junit.Assert.*;
 @Config(sdk = 34)
 public class ExerciseImagesRegressionTest {
     @Test
-    public void smallGifUpscalingIsBoundedForFullScreenDetails() {
+    public void smallGifUsesOriginalFullscreenSizing() {
         Rect destination = ExerciseGifView.fitRect(180, 180, 1080, 1566);
-        assertEquals(540, destination.width());
-        assertEquals(540, destination.height());
-        assertEquals(270, destination.left);
-        assertEquals(513, destination.top);
+        assertEquals(1080, destination.width());
+        assertEquals(1080, destination.height());
+        assertEquals(0, destination.left);
+        assertEquals(243, destination.top);
     }
 
     @Test
