@@ -33,6 +33,17 @@ public final class ExerciseGifView extends View {
     private volatile Bitmap bitmap;
     private volatile long startedAt;
     private volatile boolean attached;
+    private volatile String diagnostic = "در حال بررسی فایل تصویر...";
+    private DiagnosticListener diagnosticListener;
+
+    interface DiagnosticListener { void onDiagnostic(String report); }
+
+    String getDiagnosticReport() { return diagnostic; }
+
+    void setDiagnosticListener(DiagnosticListener listener) {
+        diagnosticListener = listener;
+        if (listener != null) listener.onDiagnostic(diagnostic);
+    }
 
     public ExerciseGifView(Context context, String name) {
         this(context, name, true);
@@ -55,23 +66,45 @@ public final class ExerciseGifView extends View {
         Drawable decodedDrawable = null;
         Movie decodedMovie = null;
         Bitmap decodedBitmap = null;
+        StringBuilder report = new StringBuilder();
+        report.append("FitYar GIF diagnostic\\n")
+            .append("Device: ").append(Build.MANUFACTURER).append(" ").append(Build.MODEL).append("\\n")
+            .append("Android API: ").append(Build.VERSION.SDK_INT).append("\\n")
+            .append("Asset: ").append(assetPath).append("\\n");
+        try (InputStream probe = context.getAssets().open(assetPath)) {
+            report.append("Asset access: OK; bytes available=").append(probe.available()).append("\\n");
+        } catch (Throwable error) {
+            report.append("Asset access: FAILED: ").append(error.getClass().getName())
+                .append(": ").append(error.getMessage()).append("\\n");
+        }
 
+        String decoder = "none";
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             try {
                 decodedDrawable = decodeNative(context);
-            } catch (Exception error) {
+                if (decodedDrawable != null) decoder = decodedDrawable instanceof AnimatedImageDrawable
+                    ? "Android ImageDecoder / AnimatedImageDrawable" : "Android ImageDecoder / Drawable";
+            } catch (Throwable error) {
+                report.append("ImageDecoder: FAILED: ").append(error.getClass().getName())
+                    .append(": ").append(error.getMessage()).append("\\n");
                 Log.w(TAG, "Native GIF decoder failed for " + assetPath, error);
             }
+        } else {
+            report.append("ImageDecoder: SKIPPED (requires Android 9+)\\n");
         }
 
         if (decodedDrawable == null) {
             try (InputStream input = context.getAssets().open(assetPath)) {
                 decodedMovie = Movie.decodeStream(input);
-                if (decodedMovie != null &&
-                    (decodedMovie.width() <= 0 || decodedMovie.height() <= 0)) {
+                if (decodedMovie != null && decodedMovie.width() > 0 && decodedMovie.height() > 0) {
+                    decoder = "android.graphics.Movie";
+                } else {
                     decodedMovie = null;
+                    report.append("Movie decoder: returned null/invalid dimensions\\n");
                 }
-            } catch (Exception error) {
+            } catch (Throwable error) {
+                report.append("Movie decoder: FAILED: ").append(error.getClass().getName())
+                    .append(": ").append(error.getMessage()).append("\\n");
                 Log.w(TAG, "Movie GIF decoder failed for " + assetPath, error);
             }
         }
@@ -79,18 +112,40 @@ public final class ExerciseGifView extends View {
         if (decodedDrawable == null && decodedMovie == null) {
             try (InputStream input = context.getAssets().open(assetPath)) {
                 decodedBitmap = BitmapFactory.decodeStream(input);
-            } catch (Exception error) {
+                if (decodedBitmap != null) decoder = "BitmapFactory (static fallback)";
+                else report.append("BitmapFactory: returned null\\n");
+            } catch (Throwable error) {
+                report.append("BitmapFactory: FAILED: ").append(error.getClass().getName())
+                    .append(": ").append(error.getMessage()).append("\\n");
                 Log.e(TAG, "Static image fallback failed for " + assetPath, error);
             }
+        }
+
+        if (decodedDrawable != null) {
+            report.append("RESULT: SUCCESS\\nDecoder: ").append(decoder).append("\\n")
+                .append("Dimensions: ").append(decodedDrawable.getIntrinsicWidth()).append("x")
+                .append(decodedDrawable.getIntrinsicHeight());
+        } else if (decodedMovie != null) {
+            report.append("RESULT: SUCCESS\\nDecoder: ").append(decoder).append("\\n")
+                .append("Dimensions: ").append(decodedMovie.width()).append("x").append(decodedMovie.height())
+                .append("\\nDuration: ").append(decodedMovie.duration()).append(" ms");
+        } else if (decodedBitmap != null) {
+            report.append("RESULT: PARTIAL (static image only)\\nDecoder: ").append(decoder).append("\\n")
+                .append("Dimensions: ").append(decodedBitmap.getWidth()).append("x").append(decodedBitmap.getHeight());
+        } else {
+            report.append("RESULT: FAILED - no decoder produced an image");
         }
 
         final Drawable resultDrawable = decodedDrawable;
         final Movie resultMovie = decodedMovie;
         final Bitmap resultBitmap = decodedBitmap;
+        final String resultReport = report.toString();
         MAIN.post(() -> {
             drawable = resultDrawable;
             movie = resultMovie;
             bitmap = resultBitmap;
+            diagnostic = resultReport;
+            if (diagnosticListener != null) diagnosticListener.onDiagnostic(diagnostic);
             startedAt = SystemClock.uptimeMillis();
             if (drawable != null) {
                 drawable.setCallback(this);
