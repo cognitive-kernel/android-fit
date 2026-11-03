@@ -113,7 +113,9 @@ public final class ExerciseGifView extends View {
     @TargetApi(Build.VERSION_CODES.P)
     private void configureApi28Drawable(Drawable image) {
         if (image instanceof AnimatedImageDrawable) {
-            setLayerType(View.LAYER_TYPE_HARDWARE, null);
+            // AnimatedImageDrawable already renders on the hardware-accelerated window canvas.
+            // A separate hardware layer allocates a full-size off-screen surface for the detail view.
+            setLayerType(View.LAYER_TYPE_NONE, null);
             if (attached) startAnimation((AnimatedImageDrawable) image);
         } else {
             setLayerType(View.LAYER_TYPE_SOFTWARE, null);
@@ -192,11 +194,12 @@ public final class ExerciseGifView extends View {
             int sourceWidth = currentMovie.width();
             int sourceHeight = currentMovie.height();
             int duration = Math.max(1, currentMovie.duration());
-            float scale = Math.min(width / (float) sourceWidth, height / (float) sourceHeight);
+            Rect destination = fitRect(sourceWidth, sourceHeight, width, height);
+            float scaleX = destination.width() / (float) sourceWidth;
+            float scaleY = destination.height() / (float) sourceHeight;
             canvas.save();
-            canvas.translate((width - sourceWidth * scale) / 2f,
-                (height - sourceHeight * scale) / 2f);
-            canvas.scale(scale, scale);
+            canvas.translate(destination.left, destination.top);
+            canvas.scale(scaleX, scaleY);
             currentMovie.setTime((int) ((SystemClock.uptimeMillis() - startedAt) % duration));
             currentMovie.draw(canvas, 0, 0);
             canvas.restore();
@@ -214,8 +217,11 @@ public final class ExerciseGifView extends View {
         drawPlaceholder(canvas, width, height);
     }
 
-    private static Rect fitRect(int sourceWidth, int sourceHeight, int width, int height) {
-        float scale = Math.min(width / (float) sourceWidth, height / (float) sourceHeight);
+    static Rect fitRect(int sourceWidth, int sourceHeight, int width, int height) {
+        // Exercise GIFs are commonly only 180x180. Cap upscaling at 3x while still
+        // downscaling large GIFs to fit the available view bounds.
+        float scale = Math.min(3f,
+            Math.min(width / (float) sourceWidth, height / (float) sourceHeight));
         int drawWidth = Math.max(1, Math.round(sourceWidth * scale));
         int drawHeight = Math.max(1, Math.round(sourceHeight * scale));
         int left = (width - drawWidth) / 2;
