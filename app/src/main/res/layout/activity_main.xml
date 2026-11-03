@@ -172,6 +172,18 @@
             <Button android:id="@+id/backupButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="پشتیبان‌گیری" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
             <Button android:id="@+id/restoreButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="بازیابی پشتیبان / دیتابیس" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#FFF2D9" />
             <Button
+                android:id="@+id/diagnosticsButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="گزارش خطاها و عیب‌یابی"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#8A2D24"
+                android:backgroundTint="#FCE8E6"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
+            <Button
                 android:id="@+id/exportButton"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
