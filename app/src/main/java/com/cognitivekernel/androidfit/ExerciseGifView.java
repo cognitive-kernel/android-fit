@@ -218,10 +218,9 @@ public final class ExerciseGifView extends View {
     }
 
     static Rect fitRect(int sourceWidth, int sourceHeight, int width, int height) {
-        // Exercise GIFs are commonly only 180x180. Cap upscaling at 3x while still
-        // downscaling large GIFs to fit the available view bounds.
-        float scale = Math.min(3f,
-            Math.min(width / (float) sourceWidth, height / (float) sourceHeight));
+        // Preserve the original fullscreen behavior: fit the GIF to the available
+        // view bounds without an artificial upscaling cap.
+        float scale = Math.min(width / (float) sourceWidth, height / (float) sourceHeight);
         int drawWidth = Math.max(1, Math.round(sourceWidth * scale));
         int drawHeight = Math.max(1, Math.round(sourceHeight * scale));
         int left = (width - drawWidth) / 2;
