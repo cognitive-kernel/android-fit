@@ -75,6 +75,7 @@ public final class ExerciseGifView extends View {
         try (InputStream probe = context.getAssets().open(assetPath)) {
             report.append("Asset access: OK; bytes available=").append(probe.available()).append("\n");
         } catch (Throwable error) {
+            AppDiagnostics.record("GIF_ASSET","Could not open "+assetPath,error);
             report.append("Asset access: FAILED: ").append(error.getClass().getName())
                 .append(": ").append(error.getMessage()).append("\n");
         }
@@ -86,6 +87,7 @@ public final class ExerciseGifView extends View {
                 if (decodedDrawable != null) decoder = decodedDrawable instanceof AnimatedImageDrawable
                     ? "Android ImageDecoder / AnimatedImageDrawable" : "Android ImageDecoder / Drawable";
             } catch (Throwable error) {
+                AppDiagnostics.record("GIF_IMAGE_DECODER","ImageDecoder failed for "+assetPath,error);
                 report.append("ImageDecoder: FAILED: ").append(error.getClass().getName())
                     .append(": ").append(error.getMessage()).append("\n");
                 Log.w(TAG, "Native GIF decoder failed for " + assetPath, error);
@@ -104,6 +106,7 @@ public final class ExerciseGifView extends View {
                     report.append("Movie decoder: returned null/invalid dimensions\n");
                 }
             } catch (Throwable error) {
+                AppDiagnostics.record("GIF_MOVIE_DECODER","Movie decoder failed for "+assetPath,error);
                 report.append("Movie decoder: FAILED: ").append(error.getClass().getName())
                     .append(": ").append(error.getMessage()).append("\n");
                 Log.w(TAG, "Movie GIF decoder failed for " + assetPath, error);
@@ -116,6 +119,7 @@ public final class ExerciseGifView extends View {
                 if (decodedBitmap != null) decoder = "BitmapFactory (static fallback)";
                 else report.append("BitmapFactory: returned null\n");
             } catch (Throwable error) {
+                AppDiagnostics.record("GIF_BITMAP_DECODER","BitmapFactory failed for "+assetPath,error);
                 report.append("BitmapFactory: FAILED: ").append(error.getClass().getName())
                     .append(": ").append(error.getMessage()).append("\n");
                 Log.e(TAG, "Static image fallback failed for " + assetPath, error);
@@ -146,6 +150,7 @@ public final class ExerciseGifView extends View {
             movie = resultMovie;
             bitmap = resultBitmap;
             diagnostic = resultReport;
+            AppDiagnostics.record("GIF_DECODE", "Decode finished for "+assetPath+": "+(resultDrawable!=null?"drawable":resultMovie!=null?"movie":resultBitmap!=null?"bitmap":"FAILED"));
             if (diagnosticListener != null) diagnosticListener.onDiagnostic(diagnostic);
             startedAt = SystemClock.uptimeMillis();
             if (drawable != null) {
@@ -290,6 +295,7 @@ public final class ExerciseGifView extends View {
             status.append("\nAnimation running: ").append(((AnimatedImageDrawable) current).isRunning());
         }
         diagnostic = status.toString();
+        AppDiagnostics.record("GIF_RENDER", "First draw result for "+assetPath+": "+renderedType+"; attached="+isAttachedToWindow()+", shown="+isShown()+", size="+getWidth()+"x"+getHeight());
         if (diagnosticListener != null) diagnosticListener.onDiagnostic(diagnostic);
     }
 
