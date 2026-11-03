@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.view.View;
 import android.view.ViewGroup;
+import android.graphics.Rect;
 import android.widget.Button;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -19,6 +20,24 @@ import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 34)
 public class ExerciseImagesRegressionTest {
+    @Test
+    public void smallGifUpscalingIsBoundedForFullScreenDetails() {
+        Rect destination = ExerciseGifView.fitRect(180, 180, 1080, 1566);
+        assertEquals(540, destination.width());
+        assertEquals(540, destination.height());
+        assertEquals(270, destination.left);
+        assertEquals(513, destination.top);
+    }
+
+    @Test
+    public void largeGifIsDownscaledToFitItsView() {
+        Rect destination = ExerciseGifView.fitRect(1200, 900, 600, 500);
+        assertEquals(600, destination.width());
+        assertEquals(450, destination.height());
+        assertEquals(0, destination.left);
+        assertEquals(25, destination.top);
+    }
+
     @Test
     public void bundledGifsArePackagedAndContainAnimationFrames() throws Exception {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
