@@ -3,18 +3,36 @@ package com.cognitivekernel.androidfit;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.widget.FrameLayout;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /** Verifies that the production GIF view decodes and actually paints image pixels. */
 @RunWith(AndroidJUnit4.class)
 public class ExerciseGifRenderingTest {
+    @Test public void smallGifIsNotUpscaledToFullScreenResolution() {
+        Rect destination = ExerciseGifView.fitRect(180, 180, 1080, 1566);
+        assertEquals(540, destination.width());
+        assertEquals(540, destination.height());
+        assertEquals(270, destination.left);
+        assertEquals(513, destination.top);
+    }
+
+    @Test public void largeGifIsDownscaledToFitItsView() {
+        Rect destination = ExerciseGifView.fitRect(1200, 900, 600, 500);
+        assertEquals(600, destination.width());
+        assertEquals(450, destination.height());
+        assertEquals(0, destination.left);
+        assertEquals(25, destination.top);
+    }
+
     @Test public void bundledExerciseImageIsDecodedAndDrawnToCanvas() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             final ExerciseGifView[] image = new ExerciseGifView[1];
