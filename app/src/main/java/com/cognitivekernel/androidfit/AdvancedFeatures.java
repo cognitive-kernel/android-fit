@@ -55,7 +55,7 @@ public final class AdvancedFeatures {
   java.util.concurrent.Future<ArrayList<ExerciseLibraryRow>> future=ensureLibraryFuture(a.getApplicationContext());
   if(future.isDone()){
    try{showLoadedExerciseLibrary(future.get());}
-   catch(Exception ex){message(s("error"),tr("Could not load the exercise library.","بارگذاری کتابخانه حرکات انجام نشد."));}
+   catch(Exception ex){AppDiagnostics.record("EXERCISE_LIBRARY","Could not load exercise library synchronously",ex);message(s("error"),tr("Could not load the exercise library.","بارگذاری کتابخانه حرکات انجام نشد."));}
    return;
   }
   final ProgressDialog loading=new ProgressDialog(a);
@@ -67,12 +67,12 @@ public final class AdvancedFeatures {
   final android.os.Handler main=new android.os.Handler(android.os.Looper.getMainLooper());
   LIBRARY_EXECUTOR.execute(()->{
    ArrayList<ExerciseLibraryRow> rows=null;String error=null;
-   try{rows=future.get();}catch(Exception ex){error=ex.getClass().getSimpleName();}
+   try{rows=future.get();}catch(Exception ex){AppDiagnostics.record("EXERCISE_LIBRARY","Background library load failed",ex);error=ex.getClass().getSimpleName()+": "+String.valueOf(ex.getMessage());}
    final ArrayList<ExerciseLibraryRow> result=rows;final String loadError=error;
    main.post(()->{
     if(a.isFinishing()||(Build.VERSION.SDK_INT>=17&&a.isDestroyed())){loading.dismiss();return;}
     loading.dismiss();
-    if(loadError!=null){message(s("error"),tr("Could not load the exercise library.","بارگذاری کتابخانه حرکات انجام نشد."));return;}
+    if(loadError!=null){AppDiagnostics.record("EXERCISE_LIBRARY","Library load returned error: "+loadError);message(s("error"),tr("Could not load the exercise library.","بارگذاری کتابخانه حرکات انجام نشد."));return;}
     showLoadedExerciseLibrary(result==null?new ArrayList<>():result);
    });
   });
