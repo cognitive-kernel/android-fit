@@ -58,7 +58,7 @@ final class ExerciseThumbnailView extends android.widget.ImageView {
         });
     }
 
-    private static Bitmap decodeFirstFrame(Context context, String path) throws Exception {
+    static Bitmap decodeFirstFrame(Context context, String path) throws Exception {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) return decodeWithImageDecoder(context, path);
         try (InputStream input = context.getAssets().open(path)) {
             Movie movie = Movie.decodeStream(input);
