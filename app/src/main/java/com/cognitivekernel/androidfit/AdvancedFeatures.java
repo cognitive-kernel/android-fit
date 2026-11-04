@@ -447,16 +447,21 @@ public final class AdvancedFeatures {
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(l).setPositiveButton(s("create_plan"),(d,w)->{
    try{
     int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());if(n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
-    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem();
-    long id=db.addPlan(planName);String eq=(String)equipment.getSelectedItem();
-    String[][] exercises;
-    if(eq.equals(s("equipment_none")))exercises=new String[][]{{s("lib_squat"),"3","10"},{s("lib_pushup"),"3","8"},{s("lib_lunge"),"2","10"},{s("lib_plank"),"3","30"}};
-    else if(eq.equals(s("equipment_home")))exercises=new String[][]{{s("lib_squat"),"3","12"},{s("lib_pushup"),"3","10"},{s("lib_dumbbell_row"),"3","10"},{s("lib_lunge"),"3","10"},{s("lib_plank"),"3","30"}};
-    else exercises=new String[][]{{s("lib_squat"),"4","8"},{s("lib_pushup"),"3","10"},{s("lib_dumbbell_row"),"4","10"},{s("lib_lunge"),"3","10"},{s("lib_plank"),"3","40"}};
-    int goalIndex=goal.getSelectedItemPosition();
-    if(mins<=20&&exercises.length>3)exercises=Arrays.copyOf(exercises,3);
-    int scale=level.getSelectedItemPosition()==0?0:(level.getSelectedItemPosition()==1?1:2);
-    for(String[] ex:exercises){int sets=Integer.parseInt(ex[1])+scale;int reps=Integer.parseInt(ex[2]);if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);db.addExercise(id,ex[0],sets,reps);}
+    OfflineCoachEngine.Input input=new OfflineCoachEngine.Input();
+    input.daysPerWeek=n;input.sessionMinutes=mins;
+    input.goal=goal.getSelectedItemPosition()==0?OfflineCoachEngine.Goal.STRENGTH:
+      goal.getSelectedItemPosition()==1?OfflineCoachEngine.Goal.MUSCLE:
+      goal.getSelectedItemPosition()==3?OfflineCoachEngine.Goal.WEIGHT:OfflineCoachEngine.Goal.FITNESS;
+    input.level=level.getSelectedItemPosition()==0?OfflineCoachEngine.Level.BEGINNER:
+      level.getSelectedItemPosition()==1?OfflineCoachEngine.Level.INTERMEDIATE:OfflineCoachEngine.Level.ADVANCED;
+    input.equipment=equipment.getSelectedItemPosition()==0?OfflineCoachEngine.Equipment.NONE:
+      equipment.getSelectedItemPosition()==1?OfflineCoachEngine.Equipment.HOME:OfflineCoachEngine.Equipment.GYM;
+    OfflineCoachEngine.Plan generated=OfflineCoachEngine.build(input);
+    for(OfflineCoachEngine.Session session:generated.sessions){
+     long planId=db.addPlan(s("personal_plan_name")+" - "+session.day+" - "+session.focus);
+     for(String exercise:session.exercises)
+      db.addExercise(planId,exercise,session.sets,session.repsMax);
+    }
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putInt("fitness_level",level.getSelectedItemPosition()).putString("equipment",eq).apply();
     message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+n+"\n"+s("session_minutes")+": "+mins);
    }catch(Exception ex){message(s("error"),s("invalid_plan_values"));}
