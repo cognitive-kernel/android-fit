@@ -219,6 +219,7 @@ public final class AdvancedFeatures {
  }
  private final class ExerciseLibraryAdapter extends ArrayAdapter<ExerciseLibraryRow>{
   ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> initial){super(a,android.R.layout.simple_list_item_1,initial);}
+  void setRows(List<ExerciseLibraryRow> values){clear();addAll(values);notifyDataSetChanged();}
   @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
    LinearLayout row;
    ExerciseLibraryRowHolder holder;
