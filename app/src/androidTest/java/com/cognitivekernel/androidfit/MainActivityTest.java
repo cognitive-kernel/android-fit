@@ -33,6 +33,8 @@ public class MainActivityTest {
     assertNotNull(activity.findViewById(R.id.reminderButton));
     assertNotNull(activity.findViewById(R.id.backupButton));
     assertNotNull(activity.findViewById(R.id.restoreButton));
+    assertNotNull(activity.findViewById(R.id.errorsButton));
+    assertEquals("نمایش خطاها", ((Button) activity.findViewById(R.id.errorsButton)).getText().toString());
     assertNotNull(activity.findViewById(R.id.heroIllustration));
     assertNotNull(activity.findViewById(R.id.goalNutritionButton));
    });
@@ -44,7 +46,10 @@ public class MainActivityTest {
   String previous=prefs.getString("language","fa");
   prefs.edit().putString("language","en").commit();
   try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
-   scenario.onActivity(activity -> assertEquals("Plans & exercises",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString()));
+   scenario.onActivity(activity -> {
+    assertEquals("Plans & exercises",((Button)activity.findViewById(R.id.managePlansButton)).getText().toString());
+    assertEquals("Show application errors",((Button)activity.findViewById(R.id.errorsButton)).getText().toString());
+   });
   } finally { prefs.edit().putString("language",previous).commit(); }
  }
 
