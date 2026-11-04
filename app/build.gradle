@@ -16,7 +16,7 @@ tasks.register("generateExerciseAssetIndex") {
         def paths = fileTree(exerciseRoot).matching { include "**/*.gif" }.files
             .collect { "exercises/" + exerciseRoot.toPath().relativize(it.toPath()).toString().replace(File.separator, "/") }
             .sort { left, right -> left.compareToIgnoreCase(right) }
-        output.withWriter("UTF-8") { writer -> paths.each { writer.write(it); writer.write("\\n") } }
+        output.withWriter("UTF-8") { writer -> paths.each { writer.write(it); writer.write("\n") } }
         logger.lifecycle("Generated exercise asset index: ${paths.size()} GIF files")
     }
 }
