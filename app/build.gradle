@@ -4,7 +4,25 @@ def stableDebugStorePassword = System.getenv('FIT_YAR_RELEASE_STORE_PASSWORD') ?
 def stableDebugKeyAlias = System.getenv('FIT_YAR_RELEASE_KEY_ALIAS') ?: "androiddebugkey"
 def stableDebugKeyPassword = System.getenv('FIT_YAR_RELEASE_KEY_PASSWORD') ?: "android"
 
+def generatedExerciseAssets = layout.buildDirectory.dir("generated/exercise-index/assets")
+
+tasks.register("generateExerciseAssetIndex") {
+    inputs.dir("src/main/assets/exercises")
+    outputs.file(generatedExerciseAssets.map { it.file("exercise-index.txt") })
+    doLast {
+        def exerciseRoot = file("src/main/assets/exercises")
+        def output = generatedExerciseAssets.get().file("exercise-index.txt").asFile
+        output.parentFile.mkdirs()
+        def paths = fileTree(exerciseRoot).matching { include "**/*.gif" }.files
+            .collect { "exercises/" + exerciseRoot.toPath().relativize(it.toPath()).toString().replace(File.separator, "/") }
+            .sort { left, right -> left.compareToIgnoreCase(right) }
+        output.withWriter("UTF-8") { writer -> paths.each { writer.write(it); writer.write("\\n") } }
+        logger.lifecycle("Generated exercise asset index: ${paths.size()} GIF files")
+    }
+}
+
 android {
+    sourceSets { main.assets.srcDir(generatedExerciseAssets) }
     namespace 'com.cognitivekernel.androidfit'
     compileSdk 36
     signingConfigs {
@@ -48,3 +66,5 @@ dependencies {
     androidTestImplementation 'androidx.test:core:1.6.1'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.6.1'
 }
+
+ tasks.named('preBuild').configure { dependsOn tasks.named('generateExerciseAssetIndex') }
