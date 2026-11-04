@@ -18,47 +18,49 @@ import android.widget.TextView;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.WeakHashMap;
 
 /** Resolves bundled exercise GIFs and displays them without dismissing the screen underneath. */
 public final class ExerciseImages {
     private static volatile ArrayList<String> cachedFiles;
+    private static volatile Map<String, String> indexedPaths;
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
     public static String findGif(Context context, String exerciseName) {
-        if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
-        ArrayList<String> files = files(context.getAssets());
+        if (context == null || exerciseName == null || exerciseName.trim().isEmpty()) return null;
+        Map<String, String> index = imageIndex(context);
         String wanted = normalize(exerciseName);
-        String wantedLatin = normalize(transliteratePersian(exerciseName));
-        if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
-        String best = null;
-        int bestScore = 0;
-        for (String file : files) {
-            String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
-            String candidate = normalize(cleanBase);
-            String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
-            String matchWanted = wanted.isEmpty() ? wantedLatin : wanted;
-            String matchCandidate = wanted.isEmpty() ? candidate : (wanted.matches(".*[\\u0600-\\u06FF].*") ? localizedCandidate : candidate);
-            if (matchCandidate.isEmpty()) matchCandidate = candidate;
-            if (matchCandidate.isEmpty()) continue;
-            if (matchCandidate.equals(matchWanted) || localizedCandidate.equals(wanted)) return file;
-            int score = 0;
-            if (matchWanted.contains(matchCandidate) || matchCandidate.contains(matchWanted)) {
-                score = Math.min(matchWanted.length(), matchCandidate.length()) * 3;
-            } else {
-                String[] a = matchWanted.split(" ");
-                String[] b = matchCandidate.split(" ");
-                for (String token : a) if (token.length() > 2) {
-                    for (String other : b) if (token.equals(other)) { score += token.length() * 2; break; }
-                }
+        String latin = normalize(transliteratePersian(exerciseName));
+        String result = index.get(wanted);
+        if (result == null && !latin.isEmpty()) result = index.get(latin);
+        return result;
+    }
+
+    /** Build the lookup once per process; subsequent exercise lookups are constant-time. */
+    private static Map<String, String> imageIndex(Context context) {
+        Map<String, String> result = indexedPaths;
+        if (result != null) return result;
+        synchronized (ExerciseImages.class) {
+            if (indexedPaths != null) return indexedPaths;
+            Map<String, String> built = new HashMap<>();
+            for (String file : files(context.getApplicationContext().getAssets())) {
+                String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
+                String clean = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
+                addAlias(built, clean, file);
+                addAlias(built, AdvancedFeatures.persianExerciseName(clean), file);
+                addAlias(built, transliteratePersian(clean), file);
             }
-            if (score > bestScore) { bestScore = score; best = file; }
+            indexedPaths = built;
+            return built;
         }
-        String scoringName = wanted.isEmpty() ? wantedLatin : wanted;
-        int minimum = Math.max(5, scoringName.replace(" ", "").length() / 3);
-        return bestScore >= minimum ? best : null;
+    }
+
+    private static void addAlias(Map<String, String> index, String alias, String path) {
+        String key = normalize(alias);
+        if (!key.isEmpty() && !index.containsKey(key)) index.put(key, path);
     }
 
     private static String transliteratePersian(String value) {
