@@ -106,7 +106,7 @@ public final class AdvancedFeatures {
    }
    String english=title.replace('_',' ').replaceAll("\\s+"," ").trim();
    if(english.isEmpty())continue;
-   rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
+   rows.add(new ExerciseLibraryRow(english,null,file,sourceId));
   }
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
   return rows;
