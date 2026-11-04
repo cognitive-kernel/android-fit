@@ -94,6 +94,17 @@ public class ExerciseImagesRegressionTest {
     }
 
     @Test
+    public void generatedIndexLoadsTheCompleteExerciseLibraryWithoutDirectoryWalk() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            java.util.List<String> paths = ExerciseAssetIndex.get(controller.get());
+            assertTrue("Generated exercise index is missing or incomplete: " + paths.size(),
+                paths.size() >= 6000);
+            assertTrue("Expected exercise GIF is absent from generated index",
+                paths.contains("exercises/Air Squat (VERSION 2)_[471413].gif"));
+        }
+    }
+
+    @Test
     public void resolverFindsExpectedExerciseGifAssets() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity = controller.get();
