@@ -63,11 +63,33 @@ public class MainActivity extends Activity implements SensorEventListener {
    public View getView(int position,View convertView,android.view.ViewGroup parent){
     int pad=(int)(12*getResources().getDisplayMetrics().density);
     if(position<3){TextView item=convertView instanceof TextView?(TextView)convertView:new TextView(MainActivity.this);item.setPadding(pad,pad,pad,pad);item.setTextSize(16);item.setMinHeight((int)(48*getResources().getDisplayMetrics().density));item.setText(position==0?tr("+ Add exercise","+ افزودن حرکت"):position==1?tr("Rename plan","ویرایش نام برنامه"):tr("Delete plan","حذف برنامه"));return item;}
+    LinearLayout item;
+    ExerciseThumbnailView image;
+    TextView label;
+    if(convertView instanceof LinearLayout && convertView.getTag() instanceof Object[]){
+     item=(LinearLayout)convertView;
+     Object[] holder=(Object[])item.getTag();
+     image=(ExerciseThumbnailView)holder[0];
+     label=(TextView)holder[1];
+    }else{
+     float density=getResources().getDisplayMetrics().density;
+     item=new LinearLayout(MainActivity.this);item.setOrientation(LinearLayout.HORIZONTAL);item.setGravity(Gravity.CENTER_VERTICAL);item.setPadding(pad,pad,pad,pad);
+     image=new ExerciseThumbnailView(MainActivity.this);
+     LinearLayout.LayoutParams imageParams=new LinearLayout.LayoutParams((int)(88*density),(int)(76*density));
+     imageParams.setMargins(0,0,(int)(10*density),0);item.addView(image,imageParams);
+     label=new TextView(MainActivity.this);label.setTextSize(15);label.setPadding(pad,0,pad,0);
+     item.addView(label,new LinearLayout.LayoutParams(0,-2,1));
+     item.setTag(new Object[]{image,label});
+    }
     String[] exercise=rows.get(position-3);
-    LinearLayout item=new LinearLayout(MainActivity.this);item.setOrientation(LinearLayout.HORIZONTAL);item.setGravity(Gravity.CENTER_VERTICAL);item.setPadding(pad,pad,pad,pad);
     String gif=ExerciseImages.findGif(MainActivity.this,exercise[1]);
-    if(gif!=null){ExerciseGifView image=ExerciseImages.thumbnail(MainActivity.this,gif,exercise[1],76);item.addView(image,new LinearLayout.LayoutParams((int)(104*getResources().getDisplayMetrics().density),(int)(76*getResources().getDisplayMetrics().density)));}
-    TextView label=new TextView(MainActivity.this);label.setText(exercise[1]+"\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));label.setTextSize(15);label.setPadding(pad,0,pad,0);item.addView(label,new LinearLayout.LayoutParams(0,-2,1));return item;
+    image.setVisibility(gif==null?View.GONE:View.VISIBLE);
+    image.load(gif);
+    image.setContentDescription(exercise[1]);
+    if(gif!=null)image.setOnClickListener(v->ExerciseImages.showFullscreen(MainActivity.this,gif,exercise[1]));
+    else image.setOnClickListener(null);
+    label.setText(exercise[1]+"\\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));
+    return item;
    }
   };
   list.setAdapter(adapterRef[0]);
