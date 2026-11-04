@@ -122,6 +122,19 @@ public class ExerciseImagesRegressionTest {
     }
 
     @Test
+    public void applicationErrorLogPersistsTimestampTypeMessageAndStackTrace() throws Exception {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            AppErrorLog.record(activity, "TEST_ERROR", "resolver regression", new IllegalStateException("sample stack"));
+            String logs = AppErrorLog.readAll(activity);
+            assertTrue(logs.contains("TEST_ERROR"));
+            assertTrue(logs.contains("resolver regression"));
+            assertTrue(logs.contains("IllegalStateException: sample stack"));
+            assertTrue(logs.matches("(?s).*\\d{4}-\\d{2}-\\d{2}.*"));
+        }
+    }
+
+    @Test
     public void fullscreenCloseDismissesOnlyTheImageDialog() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity = controller.get();
