@@ -105,6 +105,30 @@ public class ExerciseImagesRegressionTest {
     }
 
     @Test
+    public void firstFrameDecoderProducesVisibleBitmapsForBundledGifs() throws Exception {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            String[] samples = {
+                "exercises/Air Squat (VERSION 2)_[471413].gif",
+                "exercises/Push-up_[288113].gif",
+                "exercises/World Greatest Stretch_[000000].gif"
+            };
+            int decoded = 0;
+            for (String path : samples) {
+                if (Arrays.asList(activity.getAssets().list("exercises")).contains(
+                        path.substring("exercises/".length()))) {
+                    android.graphics.Bitmap bitmap =
+                        ExerciseThumbnailView.decodeFirstFrame(activity, path);
+                    assertNotNull("Thumbnail decoder returned no image for " + path, bitmap);
+                    assertTrue(bitmap.getWidth() > 0 && bitmap.getHeight() > 0);
+                    decoded++;
+                }
+            }
+            assertTrue("No bundled sample GIF could be decoded", decoded > 0);
+        }
+    }
+
+    @Test
     public void resolverFindsExpectedExerciseGifAssets() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity = controller.get();
