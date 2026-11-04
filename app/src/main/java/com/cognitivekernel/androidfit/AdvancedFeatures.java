@@ -123,16 +123,22 @@ public final class AdvancedFeatures {
  }
 
  private static final class ExerciseLibraryRow{
-  final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment,gender;
+  final String englishName,file,sourceId,exerciseType,bodyPart,equipment,gender;
+  private volatile String persianName;
   ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId){
-   this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
+   this.englishName=englishName;this.persianName=null;this.file=file;this.sourceId=sourceId;
    this.exerciseType=classifyExerciseType(englishName);
    this.bodyPart=classifyBodyPart(englishName);
    this.equipment=classifyEquipment(englishName);
    String lower=englishName.toLowerCase(Locale.ROOT);
    this.gender=containsAny(lower,"(male)"," male","male ","(female)"," female","female ")?(containsAny(lower,"(female)"," female","female ")?"Female":"Male"):"All";
   }
-  String displayName(boolean english){return english?englishName:persianName;}
+  String displayName(boolean english){
+   if(english)return englishName;
+   String translated=persianName;
+   if(translated==null){translated=persianExerciseName(englishName);persianName=translated;}
+   return translated;
+  }
   @Override public String toString(){return englishName+" "+persianName;}
  }
 
