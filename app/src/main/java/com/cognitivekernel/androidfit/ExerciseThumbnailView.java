@@ -5,21 +5,17 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Movie;
-import android.graphics.drawable.Drawable;
 import android.graphics.ImageDecoder;
 import android.os.Build;
-import android.util.AttributeSet;
 import android.util.LruCache;
 import android.util.Log;
-import android.view.View;
-import android.widget.ImageView;
 import androidx.annotation.Nullable;
 import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /** First-frame-only, bounded thumbnail loader. It never decodes or animates a full GIF in a list row. */
-final class ExerciseThumbnailView extends androidx.appcompat.widget.AppCompatImageView {
+final class ExerciseThumbnailView extends android.widget.ImageView {
     private static final String TAG = "ExerciseThumbnail";
     private static final int EDGE_PX = 192;
     private static final ExecutorService WORKERS = Executors.newFixedThreadPool(2);
@@ -31,7 +27,6 @@ final class ExerciseThumbnailView extends androidx.appcompat.widget.AppCompatIma
     private String boundPath;
 
     ExerciseThumbnailView(Context context) { super(context); init(); }
-    ExerciseThumbnailView(Context context, @Nullable AttributeSet attrs) { super(context, attrs); init(); }
 
     private void init() {
         setScaleType(ScaleType.CENTER_CROP);
