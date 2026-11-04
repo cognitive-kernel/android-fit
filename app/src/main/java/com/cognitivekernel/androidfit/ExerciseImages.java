@@ -26,6 +26,19 @@ public final class ExerciseImages {
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
+    /** Warm the complete GIF alias index away from the UI thread during application startup. */
+    public static void preload(Context context) {
+        if (context == null || indexedPaths != null) return;
+        INDEX_EXECUTOR.execute(() -> imageIndex(context.getApplicationContext()));
+    }
+
+    private static final java.util.concurrent.ExecutorService INDEX_EXECUTOR =
+        java.util.concurrent.Executors.newSingleThreadExecutor(runnable -> {
+            Thread thread = new Thread(runnable, "exercise-image-index");
+            thread.setPriority(Thread.NORM_PRIORITY - 1);
+            return thread;
+        });
+
     public static String findGif(Context context, String exerciseName) {
         if (context == null || exerciseName == null || exerciseName.trim().isEmpty()) return null;
         Map<String, String> index = imageIndex(context);
