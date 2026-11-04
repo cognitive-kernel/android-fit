@@ -6,5 +6,6 @@ public final class FitYarApplication extends Application {
     @Override public void onCreate() {
         super.onCreate();
         AppErrorLog.initialize(this);
+        new MainThreadWatchdog(this);
     }
 }
