@@ -3,7 +3,6 @@ package com.cognitivekernel.androidfit;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
-import android.content.res.AssetManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.view.Gravity;
@@ -15,7 +14,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.HashMap;
@@ -24,7 +22,6 @@ import java.util.WeakHashMap;
 
 /** Resolves bundled exercise GIFs and displays them without dismissing the screen underneath. */
 public final class ExerciseImages {
-    private static volatile ArrayList<String> cachedFiles;
     private static volatile Map<String, String> indexedPaths;
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
@@ -94,17 +91,6 @@ public final class ExerciseImages {
         return new ArrayList<>(ExerciseAssetIndex.get(context));
     }
 
-    private static void collect(AssetManager assets, String directory, ArrayList<String> out) {
-        try {
-            String[] children = assets.list(directory);
-            if (children == null) return;
-            for (String child : children) {
-                String path = directory + "/" + child;
-                if (child.toLowerCase(Locale.ROOT).endsWith(".gif")) out.add(path);
-                else collect(assets, path, out);
-            }
-        } catch (IOException ignored) { }
-    }
 
     public static void showFullscreen(Activity activity, String assetPath, String title) {
         showFullscreenInternal(activity, assetPath, title, true);
