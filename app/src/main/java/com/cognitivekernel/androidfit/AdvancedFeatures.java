@@ -360,7 +360,7 @@ public final class AdvancedFeatures {
     if(!"All".equals(body)&&!body.equals(row.bodyPart))continue;
     if(!"All".equals(equipment)&&!equipment.equals(row.equipment))continue;
     if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
-    if(!query.isEmpty()&&!row.englishName.toLowerCase(Locale.ROOT).contains(query)&&!row.persianName.toLowerCase(Locale.ROOT).contains(query))continue;
+    if(!query.isEmpty()&&!row.englishName.toLowerCase(Locale.ROOT).contains(query)&&!row.displayName(false).toLowerCase(Locale.ROOT).contains(query))continue;
     filtered.add(row);
    }
    adapter.setRows(filtered);
