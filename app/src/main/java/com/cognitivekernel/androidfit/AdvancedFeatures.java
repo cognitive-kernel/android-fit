@@ -526,14 +526,29 @@ public final class AdvancedFeatures {
  private String tg(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
 
  public void showCoach(){
-  int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
-  int days=db.weeklyTrainingDays();
-  String advice;
-  if(days==0)advice=s("coach_start");
-  else if(days<goal)advice=s("coach_consistency")+" "+(goal-days)+" "+s("sessions_left");
-  else advice=s("coach_progress");
-  try(Cursor c=db.recentLogs()){if(c.moveToFirst()){int rpe=c.getInt(5);if(rpe>=9)advice+="\n\n"+s("coach_recovery");else if(rpe<=5)advice+="\n\n"+s("coach_maybe_progress");}}
-  message(s("smart_coach"),advice+"\n\n"+s("coach_safety"));
+  OfflineCoachEngine.Input input=new OfflineCoachEngine.Input();
+  input.daysPerWeek=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
+  input.sessionsCompletedThisWeek=db.weeklyTrainingDays();
+  try(Cursor cursor=db.recentLogs()){if(cursor.moveToFirst())input.recentRpe=Math.max(1,Math.min(10,cursor.getInt(5)));}
+  input.goal=OfflineCoachEngine.Goal.FITNESS;
+  input.level=OfflineCoachEngine.Level.BEGINNER;
+  input.equipment=OfflineCoachEngine.Equipment.HOME;
+  OfflineCoachEngine.Plan plan=OfflineCoachEngine.build(input);
+  StringBuilder advice=new StringBuilder();
+  advice.append(s("smart_coach")).append("\n");
+  if(input.sessionsCompletedThisWeek<input.daysPerWeek)
+   advice.append(s("coach_consistency")).append(" ").append(input.daysPerWeek-input.sessionsCompletedThisWeek).append(" ").append(s("sessions_left")).append("\n\n");
+  else advice.append(s("coach_progress")).append("\n\n");
+  for(OfflineCoachEngine.Session session:plan.sessions){
+   advice.append(session.focus).append(" — ").append(session.sets).append(" × ")
+    .append(session.repsMin).append("-").append(session.repsMax).append(" reps; rest ")
+    .append(session.restSeconds).append("s; target RPE ").append(session.targetRpe).append("\n");
+   for(String exercise:session.exercises)advice.append(" • ").append(exercise).append("\n");
+   advice.append("\n");
+  }
+  advice.append(plan.progression).append("\n\n").append(plan.safetyMessage)
+   .append("\n\n").append(tg("Offline educational guidance; not a diagnosis or physiotherapy treatment.","راهنمای آموزشی آفلاین است و جایگزین تشخیص یا درمان فیزیوتراپی نیست."));
+  message(s("smart_coach"),advice.toString());
  }
 
  public void showWeeklyGoal(){
