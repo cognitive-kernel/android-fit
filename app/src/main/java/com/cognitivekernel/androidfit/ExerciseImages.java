@@ -33,6 +33,7 @@ public final class ExerciseImages {
         String latin = normalize(transliteratePersian(exerciseName));
         String result = index.get(wanted);
         if (result == null && !latin.isEmpty()) result = index.get(latin);
+        if (result == null) result = knownPersianAlias(index, wanted);
         if (result == null) {
             String wantedPersian = normalize(exerciseName);
             for (String file : files(context.getApplicationContext())) {
@@ -45,6 +46,18 @@ public final class ExerciseImages {
             }
         }
         return result;
+    }
+
+    private static String knownPersianAlias(Map<String, String> index, String normalizedName) {
+        if (normalizedName.equals(normalize("شنا سوئدی"))
+                || normalizedName.equals(normalize("شنا"))
+                || normalizedName.equals(normalize("پوش آپ"))
+                || normalizedName.equals(normalize("پوشاپ"))) {
+            String path = index.get(normalize("Push-up"));
+            if (path == null) path = index.get(normalize("Push up"));
+            return path;
+        }
+        return null;
     }
 
     /** Build the lookup once per process; subsequent exercise lookups are constant-time. */
