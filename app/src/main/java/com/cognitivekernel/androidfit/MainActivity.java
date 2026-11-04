@@ -169,9 +169,10 @@ if("START".equals(action)||"RESUME".equals(action)){if(step==null){msg(tr("Unava
   String logs;
   try{logs=AppErrorLog.readAll(this);}catch(java.io.IOException error){AppErrorLog.record(this,"ERROR_LOG_READ","Unable to read application error log",error);logs=tr("The error log could not be read.","خواندن گزارش خطاها انجام نشد.");}
   if(logs.trim().isEmpty())logs=tr("No application errors have been recorded.","هیچ خطایی از برنامه ثبت نشده است.");
-  TextView content=new TextView(this);content.setText(logs);content.setTextIsSelectable(true);content.setTextSize(12);content.setPadding(20,16,20,16);content.setGravity(Gravity.START);
+  final String logText=logs;
+  TextView content=new TextView(this);content.setText(logText);content.setTextIsSelectable(true);content.setTextSize(12);content.setPadding(20,16,20,16);content.setGravity(Gravity.START);
   ScrollView scroll=new ScrollView(this);scroll.addView(content);
-  new AlertDialog.Builder(this).setTitle(tr("Application errors","خطاهای برنامه")).setView(scroll).setPositiveButton(tr("Close","بستن"),null).setNeutralButton(tr("Copy","کپی"),(dialog,which)->{android.content.ClipboardManager clipboard=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);clipboard.setPrimaryClip(ClipData.newPlainText("FitYar application errors",logs));}).show();
+  new AlertDialog.Builder(this).setTitle(tr("Application errors","خطاهای برنامه")).setView(scroll).setPositiveButton(tr("Close","بستن"),null).setNeutralButton(tr("Copy","کپی"),(dialog,which)->{android.content.ClipboardManager clipboard=(android.content.ClipboardManager)getSystemService(CLIPBOARD_SERVICE);clipboard.setPrimaryClip(ClipData.newPlainText("FitYar application errors",logText));}).show();
  }
  void export(){Intent i=new Intent(Intent.ACTION_CREATE_DOCUMENT);i.addCategory(Intent.CATEGORY_OPENABLE);i.setType("text/csv");i.putExtra(Intent.EXTRA_TITLE,"fit-yar-all-reports.csv");startActivityForResult(i,EXPORT);}
 private void writeCsvRow(OutputStream out,String... cells)throws IOException{
