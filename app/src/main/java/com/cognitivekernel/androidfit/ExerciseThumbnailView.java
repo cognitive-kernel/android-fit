@@ -89,10 +89,21 @@ final class ExerciseThumbnailView extends android.widget.ImageView {
     }
 
     static Bitmap decodeFirstFrame(Context context, String path) throws Exception {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) return decodeWithImageDecoder(context, path);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            try {
+                Bitmap decoded = decodeWithImageDecoder(context, path);
+                if (decoded != null) return decoded;
+            } catch (Exception error) {
+                // Some platform GIF decoders reject animated sources in decodeBitmap().
+                // Fall through to Movie rather than leaving every thumbnail blank.
+                Log.w(TAG, "ImageDecoder first-frame fallback for " + path, error);
+            }
+        }
         try (InputStream input = context.getAssets().open(path)) {
             Movie movie = Movie.decodeStream(input);
-            if (movie == null || movie.width() <= 0 || movie.height() <= 0) return null;
+            if (movie == null || movie.width() <= 0 || movie.height() <= 0) {
+                throw new java.io.IOException("Unsupported or corrupt GIF asset: " + path);
+            }
             float scale = Math.min(1f, EDGE_PX / (float) Math.max(movie.width(), movie.height()));
             Bitmap bitmap = Bitmap.createBitmap(Math.max(1, Math.round(movie.width() * scale)),
                     Math.max(1, Math.round(movie.height() * scale)), Bitmap.Config.RGB_565);
