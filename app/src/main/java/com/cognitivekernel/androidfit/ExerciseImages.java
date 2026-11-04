@@ -36,6 +36,17 @@ public final class ExerciseImages {
         String latin = normalize(transliteratePersian(exerciseName));
         String result = index.get(wanted);
         if (result == null && !latin.isEmpty()) result = index.get(latin);
+        if (result == null) {
+            String wantedPersian = normalize(exerciseName);
+            for (String file : files(context.getApplicationContext())) {
+                String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4)
+                    .replaceAll("[_\\s]+[\\[(]?[0-9]{3,8}[\\])]?$", "");
+                if (wantedPersian.equals(normalize(AdvancedFeatures.persianExerciseName(base)))) {
+                    result = file;
+                    break;
+                }
+            }
+        }
         return result;
     }
 
@@ -50,7 +61,6 @@ public final class ExerciseImages {
                 String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
                 String clean = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
                 addAlias(built, clean, file);
-                addAlias(built, AdvancedFeatures.persianExerciseName(clean), file);
                 addAlias(built, transliteratePersian(clean), file);
             }
             indexedPaths = built;
