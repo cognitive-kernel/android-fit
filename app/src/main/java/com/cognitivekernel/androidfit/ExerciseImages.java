@@ -61,6 +61,10 @@ public final class ExerciseImages {
     private static void addAlias(Map<String, String> index, String alias, String path) {
         String key = normalize(alias);
         if (!key.isEmpty() && !index.containsKey(key)) index.put(key, path);
+        String withoutVersion = alias == null ? "" : alias.replaceAll("(?i)\\\\s*\\\\(\\\\s*version\\\\s*\\\\d+\\\\s*\\\\)", "")
+            .replaceAll("(?i)\\\\s+version\\\\s+\\\\d+\\\\s*$", "").trim();
+        String simplified = normalize(withoutVersion);
+        if (!simplified.isEmpty() && !index.containsKey(simplified)) index.put(simplified, path);
     }
 
     private static String transliteratePersian(String value) {
