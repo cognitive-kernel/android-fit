@@ -92,8 +92,7 @@ public final class AdvancedFeatures {
  }
 
  private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
-  ArrayList<String> files=new ArrayList<>();
-  collectExerciseGifFiles(context.getAssets(),"exercises",files);
+  ArrayList<String> files=new ArrayList<>(ExerciseAssetIndex.get(context));
   ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(files.size());
   java.util.regex.Pattern idPattern=java.util.regex.Pattern.compile("(?:_\\[?(\\d{3,8})\\]?|\\s+\\[?(\\d{3,8})\\]?)$");
   for(String assetPath:files){
@@ -207,19 +206,36 @@ public final class AdvancedFeatures {
   return false;
  }
 
+ private static final class ExerciseLibraryRowHolder {
+  final ExerciseThumbnailView image;
+  final TextView title;
+  ExerciseLibraryRowHolder(ExerciseThumbnailView image,TextView title){this.image=image;this.title=title;}
+ }
  private final class ExerciseLibraryAdapter extends ArrayAdapter<ExerciseLibraryRow>{
-  private final ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
-  ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> initial){super(a,android.R.layout.simple_list_item_1,new ArrayList<>());setRows(initial);}
-  void setRows(List<ExerciseLibraryRow> values){rows.clear();rows.addAll(values);clear();addAll(values);}
+  ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> initial){super(a,android.R.layout.simple_list_item_1,initial);}
   @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
-   TextView text=convertView instanceof TextView?(TextView)convertView:new TextView(a);
-   int padding=(int)(16*a.getResources().getDisplayMetrics().density);
-   text.setPadding(padding,padding,padding,padding);
-   text.setMinHeight((int)(48*a.getResources().getDisplayMetrics().density));
-   text.setTextSize(16);
-   ExerciseLibraryRow row=getItem(position);
-   if(row!=null)text.setText(row.displayName("en".equals(selectedLanguage())));
-   return text;
+   LinearLayout row;
+   ExerciseLibraryRowHolder holder;
+   if(convertView instanceof LinearLayout && convertView.getTag() instanceof ExerciseLibraryRowHolder){
+    row=(LinearLayout)convertView;holder=(ExerciseLibraryRowHolder)row.getTag();
+   }else{
+    float density=a.getResources().getDisplayMetrics().density;
+    row=new LinearLayout(a);row.setOrientation(LinearLayout.HORIZONTAL);row.setGravity(Gravity.CENTER_VERTICAL);
+    row.setPadding((int)(10*density),(int)(6*density),(int)(10*density),(int)(6*density));
+    ExerciseThumbnailView image=new ExerciseThumbnailView(a);
+    LinearLayout.LayoutParams imageParams=new LinearLayout.LayoutParams((int)(76*density),(int)(76*density));
+    imageParams.setMargins(0,0,(int)(12*density),0);row.addView(image,imageParams);
+    TextView title=new TextView(a);title.setTextSize(16);title.setGravity(Gravity.CENTER_VERTICAL);
+    row.addView(title,new LinearLayout.LayoutParams(0,-1,1));
+    holder=new ExerciseLibraryRowHolder(image,title);row.setTag(holder);
+   }
+   ExerciseLibraryRow item=getItem(position);
+   if(item!=null){
+    holder.title.setText(item.displayName("en".equals(selectedLanguage())));
+    holder.image.setContentDescription(item.displayName("en".equals(selectedLanguage())));
+    holder.image.load("exercises/"+item.file);
+   }
+   return row;
   }
  }
 
