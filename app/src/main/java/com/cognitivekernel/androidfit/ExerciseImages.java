@@ -46,7 +46,7 @@ public final class ExerciseImages {
         synchronized (ExerciseImages.class) {
             if (indexedPaths != null) return indexedPaths;
             Map<String, String> built = new HashMap<>();
-            for (String file : files(context.getApplicationContext().getAssets())) {
+            for (String file : files(context.getApplicationContext())) {
                 String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
                 String clean = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
                 addAlias(built, clean, file);
@@ -80,16 +80,8 @@ public final class ExerciseImages {
             .replaceAll("\\s+", " ").trim();
     }
 
-    private static ArrayList<String> files(AssetManager assets) {
-        ArrayList<String> result = cachedFiles;
-        if (result != null) return result;
-        synchronized (ExerciseImages.class) {
-            if (cachedFiles != null) return cachedFiles;
-            result = new ArrayList<>();
-            collect(assets, "exercises", result);
-            cachedFiles = result;
-            return result;
-        }
+    private static ArrayList<String> files(Context context) {
+        return new ArrayList<>(ExerciseAssetIndex.get(context));
     }
 
     private static void collect(AssetManager assets, String directory, ArrayList<String> out) {
