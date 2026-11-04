@@ -9,17 +9,31 @@ import android.graphics.ImageDecoder;
 import android.os.Build;
 import android.util.LruCache;
 import android.util.Log;
-import androidx.annotation.Nullable;
 import java.io.InputStream;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
-/** First-frame-only, bounded thumbnail loader. It never decodes or animates a full GIF in a list row. */
+/** Bounded first-frame-only GIF thumbnail loader for scrolling lists. */
 final class ExerciseThumbnailView extends android.widget.ImageView {
     private static final String TAG = "ExerciseThumbnail";
-    private static final int EDGE_PX = 192;
-    private static final ExecutorService WORKERS = Executors.newFixedThreadPool(2);
-    private static final LruCache<String, Bitmap> CACHE = new LruCache<String, Bitmap>(6 * 1024) {
+    private static final int EDGE_PX = 160;
+    private static final Object PENDING_LOCK = new Object();
+    private static final Set<String> PENDING = Collections.synchronizedSet(new HashSet<>());
+    // One decoder and a small queue prevent fast scrolling through 6,500+ assets from
+    // creating an unbounded backlog or competing with the UI thread for CPU and memory.
+    private static final ThreadPoolExecutor WORKERS = new ThreadPoolExecutor(
+            1, 1, 30L, TimeUnit.SECONDS, new ArrayBlockingQueue<>(12),
+            runnable -> {
+                Thread thread = new Thread(runnable, "exercise-thumbnail-decoder");
+                thread.setPriority(Thread.NORM_PRIORITY - 1);
+                return thread;
+            }, new ThreadPoolExecutor.AbortPolicy());
+    private static final LruCache<String, Bitmap> CACHE = new LruCache<String, Bitmap>(4 * 1024) {
         @Override protected int sizeOf(String key, Bitmap value) {
             return Math.max(1, value.getByteCount() / 1024);
         }
@@ -35,6 +49,12 @@ final class ExerciseThumbnailView extends android.widget.ImageView {
     }
 
     void load(String path) {
+        if (path == null || path.isEmpty()) {
+            boundPath = null;
+            setImageDrawable(null);
+            return;
+        }
+        if (path.equals(boundPath) && getDrawable() != null) return;
         boundPath = path;
         setImageDrawable(null);
         Bitmap cached = CACHE.get(path);
@@ -42,20 +62,30 @@ final class ExerciseThumbnailView extends android.widget.ImageView {
             setImageBitmap(cached);
             return;
         }
-        WORKERS.execute(() -> {
-            Bitmap decoded = null;
-            try {
-                decoded = decodeFirstFrame(getContext().getApplicationContext(), path);
-            } catch (Exception error) {
-                Log.e(TAG, "Thumbnail decode failed: " + path, error);
-            }
-            if (decoded == null) return;
-            CACHE.put(path, decoded);
-            Bitmap result = decoded;
-            post(() -> {
-                if (path.equals(boundPath) && !result.isRecycled()) setImageBitmap(result);
+        synchronized (PENDING_LOCK) {
+            if (!PENDING.add(path)) return;
+        }
+        try {
+            WORKERS.execute(() -> {
+                Bitmap decoded = null;
+                try {
+                    decoded = decodeFirstFrame(getContext().getApplicationContext(), path);
+                    if (decoded != null) CACHE.put(path, decoded);
+                } catch (Exception error) {
+                    Log.w(TAG, "Thumbnail decode failed: " + path, error);
+                } finally {
+                    synchronized (PENDING_LOCK) { PENDING.remove(path); }
+                }
+                if (decoded == null) return;
+                Bitmap result = decoded;
+                post(() -> {
+                    if (path.equals(boundPath) && !result.isRecycled()) setImageBitmap(result);
+                });
             });
-        });
+        } catch (RejectedExecutionException queueFull) {
+            synchronized (PENDING_LOCK) { PENDING.remove(path); }
+            // Keep the neutral placeholder. A later bind can retry after the queue drains.
+        }
     }
 
     static Bitmap decodeFirstFrame(Context context, String path) throws Exception {
