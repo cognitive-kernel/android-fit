@@ -112,6 +112,12 @@ public class ExerciseImagesRegressionTest {
                 ExerciseImages.findGif(activity, "Air Squat"));
             assertNotNull("World Greatest Stretch should match a bundled GIF",
                 ExerciseImages.findGif(activity, "World Greatest Stretch"));
+            String pushUp = ExerciseImages.findGif(activity, "شنا سوئدی");
+            assertNotNull("Persian push-up name should resolve to a bundled GIF", pushUp);
+            assertTrue("Persian push-up should resolve to the standard push-up asset: " + pushUp,
+                pushUp.contains("Push-up_[288113].gif"));
+            assertEquals("Common Persian push-up alias should resolve consistently",
+                pushUp, ExerciseImages.findGif(activity, "پوش آپ"));
         }
     }
 
