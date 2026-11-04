@@ -107,7 +107,7 @@ public final class ExerciseImages {
             char ch = lower.charAt(i);
             if (ch == '_' || ch == '-') ch = ' ';
             boolean accepted = (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')
-                    || (ch >= '\\u0600' && ch <= '\\u06FF') || ch == ' ';
+                    || (ch >= 0x0600 && ch <= 0x06FF) || ch == ' ';
             if (!accepted) ch = ' ';
             if (ch == ' ') {
                 if (out.length() > 0) pendingSpace = true;
