@@ -34,7 +34,7 @@ public class OfflineCoachEngineTest {
         in.equipment=OfflineCoachEngine.Equipment.NONE; in.sessionMinutes=15;
         OfflineCoachEngine.Plan plan=OfflineCoachEngine.build(in);
         assertEquals(3,plan.sessions.get(0).exercises.size());
-        assertTrue(plan.sessions.get(0).exercises.contains("Prone W raise"));
+        assertEquals(2,plan.sessions.get(0).sets);
     }
 
     @Test(expected=IllegalArgumentException.class)
