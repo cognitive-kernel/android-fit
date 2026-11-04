@@ -58,7 +58,7 @@ public final class ExerciseImages {
             Map<String, String> built = new HashMap<>();
             for (String file : files(context.getApplicationContext())) {
                 String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-                String clean = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
+                String clean = stripAssetId(base);
                 addAlias(built, clean, file);
             }
             indexedPaths = built;
@@ -69,8 +69,7 @@ public final class ExerciseImages {
     private static void addAlias(Map<String, String> index, String alias, String path) {
         String key = normalize(alias);
         if (!key.isEmpty() && !index.containsKey(key)) index.put(key, path);
-        String withoutVersion = alias == null ? "" : alias.replaceAll("(?i)\\s*\\(\\s*version\\s*\\d+\\s*\\)", "")
-            .replaceAll("(?i)\\s+version\\s+\\d+\\s*$", "").trim();
+        String withoutVersion = removeVersionSuffix(alias);
         String simplified = normalize(withoutVersion);
         if (!simplified.isEmpty() && !index.containsKey(simplified)) index.put(simplified, path);
     }
@@ -82,10 +81,65 @@ public final class ExerciseImages {
         return result;
     }
 
+    // Deliberately allocation-light: this method runs while ListView rows are bound.
+    // Do not use String.replaceAll here; it compiles regular expressions on the UI thread.
     private static String normalize(String value) {
-        return value.toLowerCase(Locale.ROOT).replaceAll("\\.gif$", "")
-            .replaceAll("[_\\-]+", " ").replaceAll("[^a-z0-9\\u0600-\\u06FF ]", " ")
-            .replaceAll("\\s+", " ").trim();
+        if (value == null || value.isEmpty()) return "";
+        String lower = value.toLowerCase(Locale.ROOT);
+        StringBuilder out = new StringBuilder(lower.length());
+        boolean pendingSpace = false;
+        int limit = lower.length();
+        if (limit >= 4 && lower.endsWith(".gif")) limit -= 4;
+        for (int i = 0; i < limit; i++) {
+            char ch = lower.charAt(i);
+            if (ch == '_' || ch == '-') ch = ' ';
+            boolean accepted = (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')
+                    || (ch >= '\\u0600' && ch <= '\\u06FF') || ch == ' ';
+            if (!accepted) ch = ' ';
+            if (ch == ' ') {
+                if (out.length() > 0) pendingSpace = true;
+            } else {
+                if (pendingSpace) out.append(' ');
+                out.append(ch);
+                pendingSpace = false;
+            }
+        }
+        return out.toString();
+    }
+
+    private static String stripAssetId(String value) {
+        int end = value.length();
+        while (end > 0 && Character.isWhitespace(value.charAt(end - 1))) end--;
+        if (end == 0 || value.charAt(end - 1) != ']') return value;
+        int close = end - 1;
+        int open = close - 1;
+        while (open >= 0 && Character.isDigit(value.charAt(open))) open--;
+        if (open == close - 1 || open < 0 || value.charAt(open) != '[') return value;
+        int prefix = open - 1;
+        if (prefix >= 0 && (value.charAt(prefix) == '_' || Character.isWhitespace(value.charAt(prefix)))) {
+            while (prefix >= 0 && Character.isWhitespace(value.charAt(prefix))) prefix--;
+            if (prefix >= 0 && value.charAt(prefix) == '_') prefix--;
+            while (prefix >= 0 && Character.isWhitespace(value.charAt(prefix))) prefix--;
+            return value.substring(0, prefix + 1);
+        }
+        return value;
+    }
+
+    private static String removeVersionSuffix(String value) {
+        if (value == null) return "";
+        String lower = value.toLowerCase(Locale.ROOT);
+        int marker = lower.lastIndexOf("(version ");
+        if (marker >= 0 && lower.endsWith(")")) return value.substring(0, marker).trim();
+        marker = lower.lastIndexOf(" version ");
+        if (marker >= 0) {
+            int digit = marker + 9;
+            if (digit < lower.length()) {
+                boolean numbers = true;
+                for (int i = digit; i < lower.length(); i++) numbers &= Character.isDigit(lower.charAt(i));
+                if (numbers) return value.substring(0, marker).trim();
+            }
+        }
+        return value.trim();
     }
 
     private static ArrayList<String> files(Context context) {
