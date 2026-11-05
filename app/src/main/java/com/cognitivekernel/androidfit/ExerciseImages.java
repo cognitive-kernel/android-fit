@@ -27,11 +27,24 @@ public final class ExerciseImages {
     private ExerciseImages() {}
 
     public static String findGif(Context context, String exerciseName) {
+        if (exerciseName == null) return null;
+        String value = exerciseName.trim();
+        String lower = value.toLowerCase(Locale.ROOT);
+        if (lower.endsWith(" (male)")) {
+            return ExerciseAssetIndex.findFile(context, value.substring(0, value.length() - 7), "male");
+        }
+        if (lower.endsWith(" (female)")) {
+            return ExerciseAssetIndex.findFile(context, value.substring(0, value.length() - 9), "female");
+        }
         return ExerciseAssetIndex.findFile(context, exerciseName);
     }
 
     public static String findGifById(Context context, String numericId) {
         return ExerciseAssetIndex.findFileById(context, numericId);
+    }
+
+    public static String findGifById(Context context, String numericId, String gender) {
+        return ExerciseAssetIndex.findFileById(context, numericId, gender);
     }
 
     private static String transliteratePersian(String value) {
