@@ -161,6 +161,18 @@
                 android:backgroundTint="#5367D9"
                 android:textAllCaps="false"
                 android:minHeight="60dp"/>
+            <Button
+                android:id="@+id/errorLogButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginBottom="10dp"
+                android:text="نمایش خطاهای برنامه"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="#B42318"
+                android:textAllCaps="false"
+                android:minHeight="60dp"/>
             <Button android:id="@+id/stepGoalButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="هدف قدم‌ها" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#E4F8EE" />
             <Button android:id="@+id/personalPlanButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="ساخت برنامه شخصی" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#EAF0FF" />
             <Button android:id="@+id/goalNutritionButton" android:layout_width="match_parent" android:layout_height="60dp" android:layout_marginBottom="10dp" android:text="برنامه هدف، عضله‌سازی و تغذیه" android:textAllCaps="false" android:textSize="16sp" android:backgroundTint="#F0E8FA" />
