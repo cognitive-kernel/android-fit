@@ -16,10 +16,9 @@ public final class ExerciseAssetIndex {
     private static volatile List<ExerciseAsset> cached;
 
     public static final class ExerciseAsset {
-        public final String id,gender,name,file,persianName;
+        public final String id,gender,name,file;
         private ExerciseAsset(String id,String gender,String name,String file) {
             this.id=id;this.gender=gender;this.name=name;this.file=file;
-            this.persianName=AdvancedFeatures.persianExerciseName(name);
         }
     }
 
@@ -27,15 +26,14 @@ public final class ExerciseAssetIndex {
 
     public static ExerciseAsset findBest(Context context,String exerciseName,String gender) {
         if(exerciseName==null||exerciseName.trim().isEmpty())return null;
-        String query=normalize(exerciseName);
+        String query=normalize(canonicalAlias(exerciseName));
         if(query.isEmpty())return null;
         ExerciseAsset best=null;
         int bestScore=0,bestGenderRank=-1;
         for(ExerciseAsset candidate:assets(context)) {
             int rank=genderRank(candidate.gender,gender);
             if(rank<0)continue;
-            int score=Math.max(score(query,normalize(candidate.name)),
-                score(query,normalize(candidate.persianName)));
+            int score=score(query,normalize(candidate.name));
             if(score>bestScore||(score==bestScore&&rank>bestGenderRank)
                     ||(score==bestScore&&rank==bestGenderRank&&best!=null&&candidate.name.length()<best.name.length())) {
                 best=candidate;bestScore=score;bestGenderRank=rank;
@@ -113,6 +111,18 @@ public final class ExerciseAssetIndex {
             .replace('_',' ').replaceAll("\\s+"," ").trim();
         if(name.isEmpty())return null;
         return new ExerciseAsset(id,gender,name,filename);
+    }
+
+    private static String canonicalAlias(String value) {
+        String normalized=normalize(value);
+        switch(normalized) {
+            case "اسکوات": case "squat": return "Air Squat";
+            case "شنا سوئدی": case "push up": return "Push-up";
+            case "پارویی دمبل": case "dumbbell row": return "Dumbbell Bent Over Row";
+            case "لانج": case "lunge": return "Lunge";
+            case "پلانک": case "plank": return "Front Plank";
+            default: return value;
+        }
     }
 
     private static int score(String query,String candidate) {
