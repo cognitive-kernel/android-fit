@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 /** Persistent numeric index for bundled exercise GIF assets. */
 public final class ExerciseAssetIndex extends SQLiteOpenHelper {
     private static final String DB_NAME = "exercise_assets.db";
-    private static final int DB_VERSION = 2;
+    private static final int DB_VERSION = 3;
     private static final ExecutorService BUILDER = Executors.newSingleThreadExecutor();
     private static volatile boolean ready;
     private static volatile boolean building;
@@ -52,7 +52,7 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
     }
 
     @Override public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE exercise_assets (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, normalized_name TEXT NOT NULL, normalized_fa TEXT NOT NULL, gender TEXT NOT NULL, file TEXT NOT NULL)");
+        db.execSQL("CREATE TABLE exercise_assets (id TEXT PRIMARY KEY NOT NULL, name_en TEXT NOT NULL, name_fa TEXT NOT NULL, normalized_name TEXT NOT NULL, normalized_fa TEXT NOT NULL, gender TEXT NOT NULL, file TEXT NOT NULL)");
         db.execSQL("CREATE INDEX idx_exercise_assets_name ON exercise_assets(normalized_name)");
         db.execSQL("CREATE INDEX idx_exercise_assets_fa ON exercise_assets(normalized_fa)");
         db.execSQL("CREATE INDEX idx_exercise_assets_gender ON exercise_assets(gender)");
@@ -75,12 +75,14 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
             // SQLiteOpenHelper already wraps onCreate/onUpgrade in a transaction.
             for (int i = 0; i < rows.length(); i++) {
                 JSONObject row = rows.getJSONObject(i);
-                String name = row.getString("name");
+                String name = row.getString("name_en");
+                String nameFa = row.getString("name_fa");
                 ContentValues values = new ContentValues();
                 values.put("id", row.getString("id"));
-                values.put("name", name);
+                values.put("name_en", name);
+                values.put("name_fa", nameFa);
                 values.put("normalized_name", normalize(name));
-                values.put("normalized_fa", normalize(AdvancedFeatures.persianExerciseName(name)));
+                values.put("normalized_fa", normalize(nameFa));
                 values.put("gender", row.optString("gender", "unspecified"));
                 values.put("file", row.getString("file"));
                 db.insertOrThrow("exercise_assets", null, values);
