@@ -104,7 +104,6 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
         String supplied = exerciseName.trim();
         if (supplied.matches("\\d{3,10}")) return findFileById(context, supplied);
-        if (!ready && building) return null;
         ensureReady(context);
         if (!ready) return null;
         String query = normalize(exerciseName);
