@@ -372,7 +372,8 @@ public final class AdvancedFeatures {
   typeSpinner.setOnItemSelectedListener(filterListener);bodySpinner.setOnItemSelectedListener(filterListener);equipmentSpinner.setOnItemSelectedListener(filterListener);genderSpinner.setOnItemSelectedListener(filterListener);
   list.setAdapter(adapter);filterRows.run();
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}public void afterTextChanged(android.text.Editable e){}});
-  ScrollView libraryScroll=new ScrollView(a);libraryScroll.setFillViewport(true);libraryScroll.addView(content);\n  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(libraryScroll).setNegativeButton(android.R.string.cancel,null).create();
+  ScrollView libraryScroll=new ScrollView(a);libraryScroll.setFillViewport(true);libraryScroll.addView(content);
+  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(libraryScroll).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
   libraryDialog.show();
  }
