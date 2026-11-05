@@ -211,14 +211,31 @@ public final class AdvancedFeatures {
   ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> initial){super(a,android.R.layout.simple_list_item_1,new ArrayList<>());setRows(initial);}
   void setRows(List<ExerciseLibraryRow> values){rows.clear();rows.addAll(values);clear();addAll(values);}
   @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
-   TextView text=convertView instanceof TextView?(TextView)convertView:new TextView(a);
-   int padding=(int)(16*a.getResources().getDisplayMetrics().density);
-   text.setPadding(padding,padding,padding,padding);
-   text.setMinHeight((int)(48*a.getResources().getDisplayMetrics().density));
-   text.setTextSize(16);
    ExerciseLibraryRow row=getItem(position);
-   if(row!=null)text.setText(row.displayName("en".equals(selectedLanguage())));
-   return text;
+   if(row==null)return new View(a);
+   boolean english="en".equals(selectedLanguage());
+   String label=row.displayName(english);
+   LinearLayout item=convertView instanceof LinearLayout?(LinearLayout)convertView:new LinearLayout(a);
+   item.setOrientation(LinearLayout.HORIZONTAL);
+   item.setGravity(Gravity.CENTER_VERTICAL);
+   int padding=(int)(8*a.getResources().getDisplayMetrics().density);
+   item.setPadding(padding,padding,padding,padding);
+   ExerciseThumbnailView image;
+   if(item.getChildCount()>0&&item.getChildAt(0) instanceof ExerciseThumbnailView){
+    image=(ExerciseThumbnailView)item.getChildAt(0);
+    image.setPreview("exercises/"+row.file,label);
+   }else{
+    item.removeAllViews();
+    image=ExerciseImages.thumbnail(a,"exercises/"+row.file,label,58);
+    item.addView(image,new LinearLayout.LayoutParams((int)(88*a.getResources().getDisplayMetrics().density),(int)(58*a.getResources().getDisplayMetrics().density)));
+   }
+   TextView text=item.getChildCount()>1&&item.getChildAt(1) instanceof TextView?(TextView)item.getChildAt(1):new TextView(a);
+   text.setText(label);
+   text.setTextSize(15);
+   text.setPadding(padding,0,padding,0);
+   if(text.getParent()==null)item.addView(text,new LinearLayout.LayoutParams(0,-2,1));
+   item.setMinimumHeight((int)(70*a.getResources().getDisplayMetrics().density));
+   return item;
   }
  }
 
