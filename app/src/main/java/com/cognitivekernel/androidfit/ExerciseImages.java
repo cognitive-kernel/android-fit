@@ -23,44 +23,42 @@ import java.util.WeakHashMap;
 /** Resolves bundled exercise GIFs and displays them without dismissing the screen underneath. */
 public final class ExerciseImages {
     private static volatile ArrayList<String> cachedFiles;
+    private static final java.util.Map<String, String> RESOLVED_GIFS = new java.util.HashMap<>();
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
     public static String findGif(Context context, String exerciseName) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
-        ArrayList<String> files = files(context.getAssets());
         String wanted = normalize(exerciseName);
         String wantedLatin = normalize(transliteratePersian(exerciseName));
         if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
+        String cacheKey = wanted + "|" + wantedLatin;
+        synchronized (RESOLVED_GIFS) {
+            if (RESOLVED_GIFS.containsKey(cacheKey)) return RESOLVED_GIFS.get(cacheKey);
+            String resolved = resolveGif(context, wanted, wantedLatin);
+            RESOLVED_GIFS.put(cacheKey, resolved);
+            return resolved;
+        }
+    }
 
-        String best = null;
-        int bestScore = 0;
+    private static String resolveGif(Context context, String wanted, String wantedLatin) {
+        ArrayList<String> files = files(context.getAssets());
+        String best = null;int bestScore = 0;
         for (String file : files) {
             String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String cleanBase = base.replaceAll("[_\\\\s]+[\\\\[(]?\\\\d{3,8}[\\\\])]?$", "");
+            String cleanBase = base.replaceAll("[_\\\\s]+[\\\\[(]?(\\\\d{3,8})[\\\\])]?$", "");
             String candidate = normalize(cleanBase);
             String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
             if (candidate.isEmpty() && localizedCandidate.isEmpty()) continue;
-
             if (candidate.equals(wanted) || localizedCandidate.equals(wanted)
                     || (!wantedLatin.isEmpty() && candidate.equals(wantedLatin))
-                    || (!wantedLatin.isEmpty() && localizedCandidate.equals(wantedLatin))) {
-                return file;
-            }
-
-            int score = Math.max(
-                matchScore(wanted, candidate),
-                Math.max(matchScore(wanted, localizedCandidate),
-                    Math.max(matchScore(wantedLatin, candidate), matchScore(wantedLatin, localizedCandidate)))
-            );
-            if (score > bestScore) {
-                bestScore = score;
-                best = file;
-            }
+                    || (!wantedLatin.isEmpty() && localizedCandidate.equals(wantedLatin))) return file;
+            int score=Math.max(matchScore(wanted,candidate),Math.max(matchScore(wanted,localizedCandidate),
+                Math.max(matchScore(wantedLatin,candidate),matchScore(wantedLatin,localizedCandidate))));
+            if(score>bestScore){bestScore=score;best=file;}
         }
-        int minimum = Math.max(5, Math.max(wanted.replace(" ", "").length(),
-            wantedLatin.replace(" ", "").length()) / 3);
-        return bestScore >= minimum ? best : null;
+        int minimum=Math.max(5,Math.max(wanted.replace(" ","").length(),wantedLatin.replace(" ","").length())/3);
+        return bestScore>=minimum?best:null;
     }
 
     private static int matchScore(String wanted, String candidate) {
