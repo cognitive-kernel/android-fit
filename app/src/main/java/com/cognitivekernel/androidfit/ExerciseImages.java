@@ -24,6 +24,14 @@ import java.util.WeakHashMap;
 public final class ExerciseImages {
     private static volatile ArrayList<String> cachedFiles;
     private static final java.util.Map<String, String> RESOLVED_GIFS = new java.util.HashMap<>();
+    private static volatile ArrayList<GifCandidate> indexedFiles;
+
+    private static final class GifCandidate {
+        final String path, normalized, localized;
+        GifCandidate(String path, String normalized, String localized) {
+            this.path = path; this.normalized = normalized; this.localized = localized;
+        }
+    }
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
@@ -42,23 +50,45 @@ public final class ExerciseImages {
     }
 
     private static String resolveGif(Context context, String wanted, String wantedLatin) {
-        ArrayList<String> files = files(context.getAssets());
-        String best = null;int bestScore = 0;
-        for (String file : files) {
-            String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?(\\d{3,8})[\\])]?$", "");
-            String candidate = normalize(cleanBase);
-            String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
-            if (candidate.isEmpty() && localizedCandidate.isEmpty()) continue;
-            if (candidate.equals(wanted) || localizedCandidate.equals(wanted)
-                    || (!wantedLatin.isEmpty() && candidate.equals(wantedLatin))
-                    || (!wantedLatin.isEmpty() && localizedCandidate.equals(wantedLatin))) return file;
-            int score=Math.max(matchScore(wanted,candidate),Math.max(matchScore(wanted,localizedCandidate),
-                Math.max(matchScore(wantedLatin,candidate),matchScore(wantedLatin,localizedCandidate))));
-            if(score>bestScore){bestScore=score;best=file;}
+        ArrayList<GifCandidate> candidates = indexedFiles(context);
+        String best = null;
+        int bestScore = 0;
+        for (GifCandidate candidate : candidates) {
+            if (candidate.normalized.isEmpty() && candidate.localized.isEmpty()) continue;
+            if (candidate.normalized.equals(wanted) || candidate.localized.equals(wanted)
+                    || (!wantedLatin.isEmpty() && candidate.normalized.equals(wantedLatin))
+                    || (!wantedLatin.isEmpty() && candidate.localized.equals(wantedLatin))) {
+                return candidate.path;
+            }
+            int score = Math.max(matchScore(wanted, candidate.normalized),
+                Math.max(matchScore(wanted, candidate.localized),
+                    Math.max(matchScore(wantedLatin, candidate.normalized),
+                        matchScore(wantedLatin, candidate.localized))));
+            if (score > bestScore) {
+                bestScore = score;
+                best = candidate.path;
+            }
         }
-        int minimum=Math.max(5,Math.max(wanted.replace(" ","").length(),wantedLatin.replace(" ","").length())/3);
-        return bestScore>=minimum?best:null;
+        int minimum = Math.max(5, Math.max(wanted.replace(" ", "").length(),
+            wantedLatin.replace(" ", "").length()) / 3);
+        return bestScore >= minimum ? best : null;
+    }
+
+    private static ArrayList<GifCandidate> indexedFiles(Context context) {
+        ArrayList<GifCandidate> result = indexedFiles;
+        if (result != null) return result;
+        synchronized (ExerciseImages.class) {
+            if (indexedFiles != null) return indexedFiles;
+            result = new ArrayList<>();
+            for (String file : files(context.getAssets())) {
+                String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
+                String cleanBase = base.replaceAll("[_\\s]+[\\[(]?(\\d{3,8})[\\])]?$", "");
+                result.add(new GifCandidate(file, normalize(cleanBase),
+                    normalize(AdvancedFeatures.persianExerciseName(cleanBase))));
+            }
+            indexedFiles = result;
+            return result;
+        }
     }
 
     private static int matchScore(String wanted, String candidate) {
