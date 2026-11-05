@@ -389,7 +389,7 @@ public final class AdvancedFeatures {
   equipmentSpinner.setOnItemSelectedListener(filterListener);
   genderSpinner.setOnItemSelectedListener(filterListener);
   list.setAdapter(adapter);
-  refreshPage.run();
+  filterRows.run();
   search.addTextChangedListener(new android.text.TextWatcher(){
    public void beforeTextChanged(CharSequence s,int st,int count,int after){}
    public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}
