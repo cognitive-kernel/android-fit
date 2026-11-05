@@ -10,7 +10,7 @@ import java.util.List;
 
 public class WorkoutDb extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "fit_yar.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
     public WorkoutDb(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); }
     @Override public void onCreate(SQLiteDatabase db) { ensureSchema(db); }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) { ensureSchema(db); }
@@ -26,6 +26,8 @@ public class WorkoutDb extends SQLiteOpenHelper {
         ensureColumn(db,"logs","rest_seconds","INTEGER NOT NULL DEFAULT 60");
         ensureColumn(db,"logs","effort","INTEGER NOT NULL DEFAULT 7");
         ensureColumn(db,"logs","notes","TEXT NOT NULL DEFAULT ''");
+        ensureColumn(db,"exercises","exercise_catalog_id","TEXT");
+        ensureColumn(db,"exercises","exercise_gender","TEXT");
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_exercises_plan_id ON exercises(plan_id)");
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs(created_at DESC)");
     }
@@ -48,16 +50,35 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
 
     public long addExercise(long planId,String name,int sets,int reps) {
+        return addExercise(planId,name,sets,reps,null,null);
+    }
+    public long addExercise(long planId,String name,int sets,int reps,String catalogId,String gender) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
+        if(catalogId!=null&&!catalogId.matches("\\d{3,10}")) throw new IllegalArgumentException("Invalid exercise catalog ID");
+        if(gender!=null&&!gender.equals("male")&&!gender.equals("female")&&!gender.equals("all")) throw new IllegalArgumentException("Invalid exercise gender");
         SQLiteDatabase database=getWritableDatabase();
         try(Cursor cursor=database.rawQuery("SELECT 1 FROM plans WHERE id=?",new String[]{String.valueOf(planId)})) {
             if(!cursor.moveToFirst()) throw new IllegalArgumentException("Workout plan does not exist");
         }
-        ContentValues v=new ContentValues(); v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps); return database.insertOrThrow("exercises",null,v);
+        ContentValues v=new ContentValues();
+        v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps);
+        if(catalogId!=null)v.put("exercise_catalog_id",catalogId);
+        if(gender!=null)v.put("exercise_gender",gender);
+        return database.insertOrThrow("exercises",null,v);
     }
     public boolean updateExercise(long id,String name,int sets,int reps) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
-        ContentValues v=new ContentValues(); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps); return getWritableDatabase().update("exercises",v,"id=?",new String[]{String.valueOf(id)})>0;
+        SQLiteDatabase database=getWritableDatabase();
+        String previousName=null;
+        try(Cursor cursor=database.rawQuery("SELECT name FROM exercises WHERE id=?",new String[]{String.valueOf(id)})) {
+            if(cursor.moveToFirst())previousName=cursor.getString(0);
+        }
+        ContentValues v=new ContentValues(); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps);
+        if(previousName!=null&&!previousName.equals(name.trim())) {
+            v.putNull("exercise_catalog_id");
+            v.putNull("exercise_gender");
+        }
+        return database.update("exercises",v,"id=?",new String[]{String.valueOf(id)})>0;
     }
     public void deleteExercise(long id) { getWritableDatabase().delete("exercises","id=?",new String[]{String.valueOf(id)}); }
     public void deletePlan(long id) {
@@ -72,7 +93,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
     public List<String[]> exercises(long planId) {
         List<String[]> rows=new ArrayList<>();
-        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps FROM exercises WHERE plan_id=? ORDER BY id",new String[]{String.valueOf(planId)})) { while(c.moveToNext()) rows.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3)}); }
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps,exercise_catalog_id,exercise_gender FROM exercises WHERE plan_id=? ORDER BY id",new String[]{String.valueOf(planId)})) { while(c.moveToNext()) rows.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3)}); }
         return rows;
     }
     public void log(String date,String plan,String exercise,int sets,int reps,double kg) { logDetailed(date,plan,exercise,sets,reps,kg,60,7,""); }
