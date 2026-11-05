@@ -44,8 +44,11 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
         return instance;
     }
 
+    private final Context context;
+
     private ExerciseAssetIndex(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
+        this.context = context.getApplicationContext();
     }
 
     @Override public void onCreate(SQLiteDatabase db) {
@@ -91,13 +94,6 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
             throw new IllegalStateException("Invalid exercise_catalog.json", error);
         }
     }
-
-    private Context dbContext() {
-        return context;
-    }
-    private final Context context = null;
-    // Context is retained explicitly because SQLiteOpenHelper does not expose it.
-    private Context appContext;
 
     private static void ensureReady(Context context) {
         if (ready) return;
