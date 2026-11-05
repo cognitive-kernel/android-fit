@@ -14,7 +14,7 @@ import android.view.View;
 import android.util.LruCache;
 import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executors;\nimport java.util.HashSet;\nimport java.util.Set;
 
 /** Static first-frame preview. The animated GIF is decoded only in the fullscreen viewer. */
 public final class ExerciseThumbnailView extends View {
@@ -24,7 +24,7 @@ public final class ExerciseThumbnailView extends View {
         @Override protected int sizeOf(String key, Bitmap value) { return value.getByteCount(); }
     };
     private static final ExecutorService DECODER = Executors.newFixedThreadPool(2);
-    private static final Handler MAIN = new Handler(Looper.getMainLooper());
+    private static final Handler MAIN = new Handler(Looper.getMainLooper());\n    private static final Set<String> PENDING = new HashSet<>();
 
     private String assetPath;
     private String title;
@@ -45,11 +45,13 @@ public final class ExerciseThumbnailView extends View {
         invalidate();
         if (preview == null && path != null && !path.trim().isEmpty()) {
             final String requested = path;
-            DECODER.execute(() -> {
+            boolean shouldDecode;
+            synchronized (PENDING) { shouldDecode = PENDING.add(requested); }
+            if (shouldDecode) DECODER.execute(() -> {
                 Bitmap decoded = decodeFirstFrame(getContext().getApplicationContext(), requested);
-                if (decoded == null) return;
-                CACHE.put(requested, decoded);
-                MAIN.post(() -> {
+                if (decoded != null) CACHE.put(requested, decoded);
+                synchronized (PENDING) { PENDING.remove(requested); }
+                if (decoded != null) MAIN.post(() -> {
                     if (requested.equals(assetPath)) {
                         preview = decoded;
                         invalidate();
