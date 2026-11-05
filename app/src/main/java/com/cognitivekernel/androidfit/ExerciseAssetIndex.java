@@ -65,7 +65,7 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
     }
 
     private void seed(SQLiteDatabase db) {
-        try (InputStream input = dbContext().getAssets().open("exercise_catalog.json");
+        try (InputStream input = context.getAssets().open("exercise_catalog.json");
              ByteArrayOutputStream bytes = new ByteArrayOutputStream()) {
             byte[] buffer = new byte[16384];
             int count;
