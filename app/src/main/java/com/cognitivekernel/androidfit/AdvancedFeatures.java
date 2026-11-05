@@ -101,11 +101,12 @@ public final class AdvancedFeatures {
    JSONArray entries=catalog.getJSONArray("exercises");
    for(int i=0;i<entries.length();i++){
     JSONObject entry=entries.getJSONObject(i);
-    String english=entry.getString("name");
+    String english=entry.getString("name_en");
+    String persian=entry.optString("name_fa",persianExerciseName(english));
     String file=entry.getString("file");
     String id=entry.getString("id");
     if(english.trim().isEmpty()||!file.toLowerCase(Locale.ROOT).endsWith(".gif"))continue;
-    rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,id));
+    rows.add(new ExerciseLibraryRow(english,persian,file,id));
    }
   }catch(org.json.JSONException error){throw new IOException("Invalid exercise catalog",error);}
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
