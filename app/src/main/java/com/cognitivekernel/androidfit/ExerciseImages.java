@@ -46,7 +46,7 @@ public final class ExerciseImages {
         String best = null;int bestScore = 0;
         for (String file : files) {
             String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String cleanBase = base.replaceAll("[_\\\\s]+[\\\\[(]?(\\\\d{3,8})[\\\\])]?$", "");
+            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?(\\d{3,8})[\\])]?$", "");
             String candidate = normalize(cleanBase);
             String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
             if (candidate.isEmpty() && localizedCandidate.isEmpty()) continue;
