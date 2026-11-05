@@ -107,6 +107,7 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
 
     public static String findFile(Context context, String exerciseName) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
+        if (!ready && building) return null;
         ensureReady(context);
         if (!ready) return null;
         String query = normalize(exerciseName);
