@@ -10,7 +10,7 @@ import java.util.List;
 
 public class WorkoutDb extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "fit_yar.db";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
     public WorkoutDb(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); }
     @Override public void onCreate(SQLiteDatabase db) { ensureSchema(db); }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) { ensureSchema(db); }
@@ -23,6 +23,8 @@ public class WorkoutDb extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE IF NOT EXISTS sleep_logs(id INTEGER PRIMARY KEY AUTOINCREMENT,start_at INTEGER NOT NULL,end_at INTEGER NOT NULL,duration_minutes INTEGER NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS vital_logs(id INTEGER PRIMARY KEY AUTOINCREMENT,measured_at INTEGER NOT NULL,systolic INTEGER NOT NULL,diastolic INTEGER NOT NULL,pulse INTEGER NOT NULL)");
         db.execSQL("CREATE TABLE IF NOT EXISTS body_metrics(id INTEGER PRIMARY KEY AUTOINCREMENT,measured_at INTEGER NOT NULL,weight_kg REAL,waist_cm REAL)");
+        ensureColumn(db,"exercises","catalog_exercise_id","TEXT");
+        ensureColumn(db,"exercises","catalog_gender","TEXT");
         ensureColumn(db,"logs","rest_seconds","INTEGER NOT NULL DEFAULT 60");
         ensureColumn(db,"logs","effort","INTEGER NOT NULL DEFAULT 7");
         ensureColumn(db,"logs","notes","TEXT NOT NULL DEFAULT ''");
@@ -48,12 +50,20 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
 
     public long addExercise(long planId,String name,int sets,int reps) {
+        return addExercise(planId,name,sets,reps,null,null);
+    }
+    public long addExercise(long planId,String name,int sets,int reps,String catalogExerciseId,String catalogGender) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
+        if(catalogExerciseId!=null&&!catalogExerciseId.matches("\\d{3,10}")) throw new IllegalArgumentException("Invalid catalog exercise ID");
+        if(catalogGender!=null&&!"male".equalsIgnoreCase(catalogGender)&&!"female".equalsIgnoreCase(catalogGender)) throw new IllegalArgumentException("Invalid catalog gender");
         SQLiteDatabase database=getWritableDatabase();
         try(Cursor cursor=database.rawQuery("SELECT 1 FROM plans WHERE id=?",new String[]{String.valueOf(planId)})) {
             if(!cursor.moveToFirst()) throw new IllegalArgumentException("Workout plan does not exist");
         }
-        ContentValues v=new ContentValues(); v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps); return database.insertOrThrow("exercises",null,v);
+        ContentValues v=new ContentValues(); v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps);
+        if(catalogExerciseId!=null)v.put("catalog_exercise_id",catalogExerciseId);
+        if(catalogGender!=null)v.put("catalog_gender",catalogGender.toLowerCase(java.util.Locale.ROOT));
+        return database.insertOrThrow("exercises",null,v);
     }
     public boolean updateExercise(long id,String name,int sets,int reps) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
