@@ -12,16 +12,16 @@ public class MainActivity extends Activity implements SensorEventListener {
    .setPositiveButton(tr("Collect","جمع‌آوری"),(d,w)->shareErrorReport()).setNegativeButton(tr("Cancel","لغو"),null).show();
  }
  private void shareErrorReport(){
-  StringBuilder report=new StringBuilder("FitYar diagnostic report\\n");
-  report.append("Android: ").append(android.os.Build.VERSION.RELEASE).append(" (SDK ").append(android.os.Build.VERSION.SDK_INT).append(")\\n");
-  report.append("Device: ").append(android.os.Build.MANUFACTURER).append(" ").append(android.os.Build.MODEL).append("\\n");
-  try{android.content.pm.PackageInfo info=getPackageManager().getPackageInfo(getPackageName(),0);report.append("App version: ").append(info.versionName).append(" (").append(info.versionCode).append(")\\n");}
-  catch(Exception ignored){report.append("App version: unavailable\\n");}
-  report.append("\\n--- Recent accessible logcat (up to 400 lines) ---\\n");
+  StringBuilder report=new StringBuilder("FitYar diagnostic report\n");
+  report.append("Android: ").append(android.os.Build.VERSION.RELEASE).append(" (SDK ").append(android.os.Build.VERSION.SDK_INT).append(")\n");
+  report.append("Device: ").append(android.os.Build.MANUFACTURER).append(" ").append(android.os.Build.MODEL).append("\n");
+  try{android.content.pm.PackageInfo info=getPackageManager().getPackageInfo(getPackageName(),0);report.append("App version: ").append(info.versionName).append(" (").append(info.versionCode).append(")\n");}
+  catch(Exception ignored){report.append("App version: unavailable\n");}
+  report.append("\n--- Recent accessible logcat (up to 400 lines) ---\n");
   try{Process process=Runtime.getRuntime().exec(new String[]{"logcat","-d","-t","400"});
-   try(BufferedReader reader=new BufferedReader(new InputStreamReader(process.getInputStream()))){String line;int count=0;while((line=reader.readLine())!=null&&count++<400)report.append(line).append('\\n');}
+   try(BufferedReader reader=new BufferedReader(new InputStreamReader(process.getInputStream()))){String line;int count=0;while((line=reader.readLine())!=null&&count++<400)report.append(line).append('\n');}
    process.destroy();
-  }catch(Exception ex){report.append("Log collection failed: ").append(ex.getClass().getSimpleName()).append(": ").append(ex.getMessage()).append('\\n');}
+  }catch(Exception ex){report.append("Log collection failed: ").append(ex.getClass().getSimpleName()).append(": ").append(ex.getMessage()).append('\n');}
   Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");send.putExtra(Intent.EXTRA_SUBJECT,tr("FitYar error report","گزارش خطای فیت‌یار"));send.putExtra(Intent.EXTRA_TEXT,report.toString());
   try{startActivity(Intent.createChooser(send,tr("Review and share diagnostic report","بررسی و ارسال گزارش تشخیصی")));}
   catch(Exception ex){msg(tr("Sharing unavailable","ارسال در دسترس نیست"),tr("No compatible sharing app was found.","برنامه‌ای برای اشتراک‌گذاری پیدا نشد."));}
