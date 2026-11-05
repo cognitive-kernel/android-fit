@@ -354,8 +354,10 @@ public final class AdvancedFeatures {
    public void onNothingSelected(android.widget.AdapterView<?> parent){}
   });
   applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
-  LinearLayout content=column();content.addView(search);content.addView(typeSpinner);content.addView(bodySpinner);content.addView(equipmentSpinner);content.addView(genderSpinner);
-  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(390*a.getResources().getDisplayMetrics().density)));content.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));content.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));content.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
+  LinearLayout content=column();content.addView(search);
+  content.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));content.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));content.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
+  content.addView(typeSpinner);content.addView(bodySpinner);content.addView(equipmentSpinner);content.addView(genderSpinner);
+  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(300*a.getResources().getDisplayMetrics().density)));
   Runnable filterRows=()->{
    String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
    String type=EXERCISE_TYPES[Math.max(0,typeSpinner.getSelectedItemPosition())],body=BODY_PARTS[Math.max(0,bodySpinner.getSelectedItemPosition())];
@@ -370,7 +372,7 @@ public final class AdvancedFeatures {
   typeSpinner.setOnItemSelectedListener(filterListener);bodySpinner.setOnItemSelectedListener(filterListener);equipmentSpinner.setOnItemSelectedListener(filterListener);genderSpinner.setOnItemSelectedListener(filterListener);
   list.setAdapter(adapter);filterRows.run();
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}public void afterTextChanged(android.text.Editable e){}});
-  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
+  ScrollView libraryScroll=new ScrollView(a);libraryScroll.setFillViewport(true);libraryScroll.addView(content);\n  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(libraryScroll).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
   libraryDialog.show();
  }
@@ -459,13 +461,18 @@ public final class AdvancedFeatures {
   Spinner goal=spinner(new String[]{s("goal_strength"),s("goal_muscle"),s("goal_general"),s("goal_weight")});
   Spinner level=spinner(new String[]{s("level_beginner"),s("level_intermediate"),s("level_advanced")});
   Spinner equipment=spinner(new String[]{s("equipment_none"),s("equipment_home"),s("equipment_gym")});
-  EditText days=field(s("days_per_week"),"3",android.text.InputType.TYPE_CLASS_NUMBER);
-  EditText minutes=field(s("session_minutes"),"35",android.text.InputType.TYPE_CLASS_NUMBER);
-  l.addView(label(s("training_goal")));l.addView(goal);l.addView(label(s("fitness_level")));l.addView(level);l.addView(label(s("available_equipment")));l.addView(equipment);l.addView(days);l.addView(minutes);
+  Spinner sex=spinner(new String[]{tr("Male","آقایان"),tr("Female","بانوان")});
+  EditText days=field(tr("Training days per week (days)","تعداد روز تمرین در هفته (روز)"),"3",android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText minutes=field(tr("Session duration (minutes)","مدت هر جلسه (دقیقه)"),"35",android.text.InputType.TYPE_CLASS_NUMBER);
+  l.addView(label(s("training_goal")));l.addView(goal);l.addView(label(s("fitness_level")));l.addView(level);l.addView(label(s("available_equipment")));l.addView(equipment);
+  l.addView(label(tr("Trainee gender","جنسیت ورزشکار")));l.addView(sex);
+  l.addView(label(tr("Training days per week — default: 3 days","روزهای تمرین در هفته — پیش‌فرض: ۳ روز")));l.addView(days);
+  l.addView(label(tr("Duration of each session — default: 35 minutes","مدت هر جلسه تمرین — پیش‌فرض: ۳۵ دقیقه")));l.addView(minutes);
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(l).setPositiveButton(s("create_plan"),(d,w)->{
    try{
     int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());if(n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
-    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem();
+    int sexIndex=sex.getSelectedItemPosition();String gender=(String)sex.getSelectedItem();
+    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+gender;
     long id=db.addPlan(planName);String eq=(String)equipment.getSelectedItem();
     String[][] exercises;
     if(eq.equals(s("equipment_none")))exercises=new String[][]{{s("lib_squat"),"3","10"},{s("lib_pushup"),"3","8"},{s("lib_lunge"),"2","10"},{s("lib_plank"),"3","30"}};
@@ -475,7 +482,7 @@ public final class AdvancedFeatures {
     if(mins<=20&&exercises.length>3)exercises=Arrays.copyOf(exercises,3);
     int scale=level.getSelectedItemPosition()==0?0:(level.getSelectedItemPosition()==1?1:2);
     for(String[] ex:exercises){int sets=Integer.parseInt(ex[1])+scale;int reps=Integer.parseInt(ex[2]);if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);db.addExercise(id,ex[0],sets,reps);}
-    a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putInt("fitness_level",level.getSelectedItemPosition()).putString("equipment",eq).apply();
+    a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putString("fitness_gender",gender).putInt("fitness_gender_index",sexIndex).putInt("fitness_level",level.getSelectedItemPosition()).putString("equipment",eq).apply();
     message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+n+"\n"+s("session_minutes")+": "+mins);
    }catch(Exception ex){message(s("error"),s("invalid_plan_values"));}
   }).setNegativeButton(android.R.string.cancel,null).show();
