@@ -212,14 +212,20 @@ public final class AdvancedFeatures {
   ExerciseLibraryAdapter(ArrayList<ExerciseLibraryRow> initial){super(a,android.R.layout.simple_list_item_1,new ArrayList<>());setRows(initial);}
   void setRows(List<ExerciseLibraryRow> values){rows.clear();rows.addAll(values);clear();addAll(values);}
   @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
-   TextView text=convertView instanceof TextView?(TextView)convertView:new TextView(a);
-   int padding=(int)(16*a.getResources().getDisplayMetrics().density);
-   text.setPadding(padding,padding,padding,padding);
-   text.setMinHeight((int)(48*a.getResources().getDisplayMetrics().density));
-   text.setTextSize(16);
-   ExerciseLibraryRow row=getItem(position);
-   if(row!=null)text.setText(row.displayName("en".equals(selectedLanguage())));
-   return text;
+   ExerciseLibraryRow row=getItem(position);if(row==null)return new View(a);
+   int padding=(int)(10*a.getResources().getDisplayMetrics().density);LinearLayout item;Object[] holder;
+   if(convertView instanceof LinearLayout&&((LinearLayout)convertView).getTag() instanceof Object[]){item=(LinearLayout)convertView;holder=(Object[])item.getTag();}
+   else{item=new LinearLayout(a);item.setOrientation(LinearLayout.HORIZONTAL);item.setGravity(Gravity.CENTER_VERTICAL);item.setPadding(padding,padding,padding,padding);holder=new Object[3];item.setTag(holder);}
+   ExerciseGifView thumbnail=(ExerciseGifView)holder[1];
+   if(thumbnail==null||!row.file.equals(holder[0])){
+    if(thumbnail!=null)item.removeView(thumbnail);
+    thumbnail=ExerciseImages.thumbnail(a,row.file,row.displayName("en".equals(selectedLanguage())),64);
+    item.addView(thumbnail,0,new LinearLayout.LayoutParams((int)(92*a.getResources().getDisplayMetrics().density),(int)(64*a.getResources().getDisplayMetrics().density)));
+    holder[0]=row.file;holder[1]=thumbnail;
+   }else thumbnail.setContentDescription(row.displayName("en".equals(selectedLanguage())));
+   TextView text=(TextView)holder[2];
+   if(text==null){text=new TextView(a);text.setTextSize(15);text.setGravity(Gravity.CENTER_VERTICAL);text.setPadding(padding,0,padding,0);item.addView(text,new LinearLayout.LayoutParams(0,-2,1));holder[2]=text;}
+   text.setText(row.displayName("en".equals(selectedLanguage())));return item;
   }
  }
 
@@ -305,63 +311,75 @@ public final class AdvancedFeatures {
  }
 
  private void showLoadedExerciseLibrary(ArrayList<ExerciseLibraryRow> exercises){
-  if(exercises==null||exercises.isEmpty()){
-   message(s("exercise_library"),tr("No GIF exercises were found in the exercise assets.","هیچ فایل GIF در پوشه حرکات پیدا نشد."));
-   return;
-  }
-  EditText search=new EditText(a);
-  search.setSingleLine(true);
-  search.setHint(tr("Search in Persian or English","جست‌وجو به فارسی یا انگلیسی"));
+  if(exercises==null||exercises.isEmpty()){message(s("exercise_library"),tr("No GIF exercises were found in the exercise assets.","هیچ فایل GIF در پوشه حرکات پیدا نشد."));return;}
+  EditText search=new EditText(a);search.setSingleLine(true);search.setHint(tr("Search in Persian or English","جست‌وجو به فارسی یا انگلیسی"));
   Spinner typeSpinner=makeCategorySpinner(EXERCISE_TYPES,tr("Exercise type","نوع حرکت"));
   Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body part","عضو بدن"));
   Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Equipment type","وسیله"));
   Spinner genderSpinner=makeCategorySpinner(GENDER_TYPES,tr("Gender","جنسیت"));
-  ListView list=new ListView(a);
-  ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(exercises);
-  LinearLayout content=column();
-  content.addView(search);
-  content.addView(typeSpinner);
-  content.addView(bodySpinner);
-  content.addView(equipmentSpinner);
-  content.addView(genderSpinner);
-  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(390*a.getResources().getDisplayMetrics().density)));
+  ListView list=new ListView(a);ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(new ArrayList<>());
+  final int[] pageSize={10},currentPage={0};final ArrayList<ExerciseLibraryRow> filteredRows=new ArrayList<>();
+  TextView pageLabel=new TextView(a);pageLabel.setGravity(Gravity.CENTER);
+  Spinner pageSizeSpinner=new Spinner(a);String[] pageSizeOptions={"10","20","50",tr("Custom","دلخواه")};
+  pageSizeSpinner.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,pageSizeOptions));
+  EditText customPageSize=new EditText(a);customPageSize.setSingleLine(true);customPageSize.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);customPageSize.setHint(tr("Custom items per page","تعداد دلخواه در هر صفحه"));customPageSize.setVisibility(View.GONE);
+  Button applyPageSize=new Button(a);applyPageSize.setText(tr("Apply","اعمال"));
+  Button firstPage=new Button(a),previousPage=new Button(a),nextPage=new Button(a),lastPage=new Button(a);
+  firstPage.setText("«");previousPage.setText("‹");nextPage.setText("›");lastPage.setText("»");
+  firstPage.setContentDescription(tr("First page","صفحه اول"));previousPage.setContentDescription(tr("Previous page","صفحه قبلی"));nextPage.setContentDescription(tr("Next page","صفحه بعدی"));lastPage.setContentDescription(tr("Last page","صفحه آخر"));
+  LinearLayout pageNumbers=new LinearLayout(a);pageNumbers.setGravity(Gravity.CENTER);pageNumbers.setOrientation(LinearLayout.HORIZONTAL);
+  HorizontalScrollView pageNumberScroll=new HorizontalScrollView(a);pageNumberScroll.setHorizontalScrollBarEnabled(false);pageNumberScroll.addView(pageNumbers);
+  LinearLayout sizeControls=new LinearLayout(a);sizeControls.setGravity(Gravity.CENTER_VERTICAL);
+  sizeControls.addView(pageSizeSpinner,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(customPageSize,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(applyPageSize,new LinearLayout.LayoutParams(-2,-2));
+  LinearLayout pageControls=new LinearLayout(a);pageControls.setGravity(Gravity.CENTER);
+  pageControls.addView(firstPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(previousPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(pageLabel,new LinearLayout.LayoutParams(0,-2,2));pageControls.addView(nextPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(lastPage,new LinearLayout.LayoutParams(0,-2,1));
+  final Runnable[] refreshPageReference={null};
+  Runnable refreshPage=()->{
+   int pageCount=Math.max(1,(filteredRows.size()+pageSize[0]-1)/pageSize[0]);currentPage[0]=Math.max(0,Math.min(currentPage[0],pageCount-1));
+   int startIndex=currentPage[0]*pageSize[0],endIndex=Math.min(startIndex+pageSize[0],filteredRows.size());
+   adapter.setRows(filteredRows.subList(startIndex,endIndex));pageLabel.setText((currentPage[0]+1)+" / "+pageCount+" · "+filteredRows.size());
+   firstPage.setEnabled(currentPage[0]>0);previousPage.setEnabled(currentPage[0]>0);nextPage.setEnabled(currentPage[0]+1<pageCount);lastPage.setEnabled(currentPage[0]+1<pageCount);
+   pageNumbers.removeAllViews();int windowStart=Math.max(0,currentPage[0]-2),windowEnd=Math.min(pageCount-1,windowStart+4);windowStart=Math.max(0,windowEnd-4);
+   if(windowStart>0)addPageNumber(pageNumbers,0,currentPage,refreshPageReference);
+   if(windowStart>1)addPageEllipsis(pageNumbers);
+   for(int page=windowStart;page<=windowEnd;page++)addPageNumber(pageNumbers,page,currentPage,refreshPageReference);
+   if(windowEnd<pageCount-2)addPageEllipsis(pageNumbers);
+   if(windowEnd<pageCount-1)addPageNumber(pageNumbers,pageCount-1,currentPage,refreshPageReference);
+  };
+  refreshPageReference[0]=refreshPage;
+  firstPage.setOnClickListener(v->{currentPage[0]=0;refreshPage.run();});previousPage.setOnClickListener(v->{currentPage[0]--;refreshPage.run();});
+  nextPage.setOnClickListener(v->{currentPage[0]++;refreshPage.run();});lastPage.setOnClickListener(v->{currentPage[0]=Math.max(0,(filteredRows.size()-1)/pageSize[0]);refreshPage.run();});
+  pageSizeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
+   public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){boolean custom=position==3;customPageSize.setVisibility(custom?View.VISIBLE:View.GONE);if(!custom){pageSize[0]=Integer.parseInt(pageSizeOptions[position]);currentPage[0]=0;refreshPage.run();}}
+   public void onNothingSelected(android.widget.AdapterView<?> parent){}
+  });
+  applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
+  LinearLayout content=column();content.addView(search);content.addView(typeSpinner);content.addView(bodySpinner);content.addView(equipmentSpinner);content.addView(genderSpinner);
+  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(390*a.getResources().getDisplayMetrics().density)));content.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));content.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));content.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
   Runnable filterRows=()->{
    String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
-   String type=EXERCISE_TYPES[typeSpinner.getSelectedItemPosition()];
-   String body=BODY_PARTS[bodySpinner.getSelectedItemPosition()];
-   String equipment=EQUIPMENT_TYPES[equipmentSpinner.getSelectedItemPosition()];
-   String gender=GENDER_TYPES[genderSpinner.getSelectedItemPosition()];
-   ArrayList<ExerciseLibraryRow> filtered=new ArrayList<>();
-   for(ExerciseLibraryRow row:exercises){
-    if(!"All".equals(type)&&!type.equals(row.exerciseType))continue;
-    if(!"All".equals(body)&&!body.equals(row.bodyPart))continue;
-    if(!"All".equals(equipment)&&!equipment.equals(row.equipment))continue;
-    if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
-    if(!query.isEmpty()&&!row.englishName.toLowerCase(Locale.ROOT).contains(query)&&!row.persianName.toLowerCase(Locale.ROOT).contains(query))continue;
-    filtered.add(row);
-   }
-   adapter.setRows(filtered);
+   String type=EXERCISE_TYPES[Math.max(0,typeSpinner.getSelectedItemPosition())],body=BODY_PARTS[Math.max(0,bodySpinner.getSelectedItemPosition())];
+   String equipment=EQUIPMENT_TYPES[Math.max(0,equipmentSpinner.getSelectedItemPosition())],gender=GENDER_TYPES[Math.max(0,genderSpinner.getSelectedItemPosition())];
+   filteredRows.clear();for(ExerciseLibraryRow row:exercises){
+    if(!"All".equals(type)&&!type.equals(row.exerciseType))continue;if(!"All".equals(body)&&!body.equals(row.bodyPart))continue;
+    if(!"All".equals(equipment)&&!equipment.equals(row.equipment))continue;if(!"All".equals(gender)&&!gender.equals(row.gender))continue;
+    if(!query.isEmpty()&&!row.englishName.toLowerCase(Locale.ROOT).contains(query)&&!row.persianName.toLowerCase(Locale.ROOT).contains(query))continue;filteredRows.add(row);
+   }currentPage[0]=0;refreshPage.run();
   };
-  android.widget.AdapterView.OnItemSelectedListener filterListener=new android.widget.AdapterView.OnItemSelectedListener(){
-   public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){filterRows.run();}
-   public void onNothingSelected(android.widget.AdapterView<?> parent){}
-  };
-  typeSpinner.setOnItemSelectedListener(filterListener);
-  bodySpinner.setOnItemSelectedListener(filterListener);
-  equipmentSpinner.setOnItemSelectedListener(filterListener);
-  genderSpinner.setOnItemSelectedListener(filterListener);
-  search.addTextChangedListener(new android.text.TextWatcher(){
-   public void beforeTextChanged(CharSequence s,int st,int count,int after){}
-   public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}
-   public void afterTextChanged(android.text.Editable e){}
-  });
+  android.widget.AdapterView.OnItemSelectedListener filterListener=new android.widget.AdapterView.OnItemSelectedListener(){public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){filterRows.run();}public void onNothingSelected(android.widget.AdapterView<?> parent){}};
+  typeSpinner.setOnItemSelectedListener(filterListener);bodySpinner.setOnItemSelectedListener(filterListener);equipmentSpinner.setOnItemSelectedListener(filterListener);genderSpinner.setOnItemSelectedListener(filterListener);
+  list.setAdapter(adapter);filterRows.run();
+  search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}public void afterTextChanged(android.text.Editable e){}});
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
-  list.setOnItemClickListener((parent,view,position,id)->{
-   ExerciseLibraryRow selected=adapter.getItem(position);
-   if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);
-  });
+  list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
   libraryDialog.show();
  }
+
+ private void addPageNumber(LinearLayout container,int page,int[] currentPage,Runnable[] refresh){
+  Button button=new Button(a);button.setText(String.valueOf(page+1));button.setMinWidth((int)(40*a.getResources().getDisplayMetrics().density));button.setPadding(4,0,4,0);button.setEnabled(page!=currentPage[0]);
+  button.setOnClickListener(v->{currentPage[0]=page;refresh[0].run();});container.addView(button,new LinearLayout.LayoutParams(-2,-2));
+ }
+ private void addPageEllipsis(LinearLayout container){TextView dots=new TextView(a);dots.setText("…");dots.setGravity(Gravity.CENTER);dots.setPadding(6,0,6,0);container.addView(dots,new LinearLayout.LayoutParams(-2,-2));}
 
  static String persianExerciseName(String english){
   if(english==null||english.trim().isEmpty())return "";

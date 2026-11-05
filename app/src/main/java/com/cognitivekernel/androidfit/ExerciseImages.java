@@ -23,42 +23,93 @@ import java.util.WeakHashMap;
 /** Resolves bundled exercise GIFs and displays them without dismissing the screen underneath. */
 public final class ExerciseImages {
     private static volatile ArrayList<String> cachedFiles;
+    private static final java.util.Map<String, String> RESOLVED_GIFS = new java.util.HashMap<>();
+    private static volatile ArrayList<GifCandidate> indexedFiles;
+
+    private static final class GifCandidate {
+        final String path, normalized, localized;
+        GifCandidate(String path, String normalized, String localized) {
+            this.path = path; this.normalized = normalized; this.localized = localized;
+        }
+    }
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
     public static String findGif(Context context, String exerciseName) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
-        ArrayList<String> files = files(context.getAssets());
         String wanted = normalize(exerciseName);
         String wantedLatin = normalize(transliteratePersian(exerciseName));
         if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
+        String cacheKey = wanted + "|" + wantedLatin;
+        synchronized (RESOLVED_GIFS) {
+            if (RESOLVED_GIFS.containsKey(cacheKey)) return RESOLVED_GIFS.get(cacheKey);
+            String resolved = resolveGif(context, wanted, wantedLatin);
+            RESOLVED_GIFS.put(cacheKey, resolved);
+            return resolved;
+        }
+    }
+
+    private static String resolveGif(Context context, String wanted, String wantedLatin) {
+        ArrayList<GifCandidate> candidates = indexedFiles(context);
         String best = null;
         int bestScore = 0;
-        for (String file : files) {
-            String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
-            String candidate = normalize(cleanBase);
-            String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
-            String matchWanted = wanted.isEmpty() ? wantedLatin : wanted;
-            String matchCandidate = wanted.isEmpty() ? candidate : (wanted.matches(".*[\\u0600-\\u06FF].*") ? localizedCandidate : candidate);
-            if (matchCandidate.isEmpty()) matchCandidate = candidate;
-            if (matchCandidate.isEmpty()) continue;
-            if (matchCandidate.equals(matchWanted) || localizedCandidate.equals(wanted)) return file;
-            int score = 0;
-            if (matchWanted.contains(matchCandidate) || matchCandidate.contains(matchWanted)) {
-                score = Math.min(matchWanted.length(), matchCandidate.length()) * 3;
-            } else {
-                String[] a = matchWanted.split(" ");
-                String[] b = matchCandidate.split(" ");
-                for (String token : a) if (token.length() > 2) {
-                    for (String other : b) if (token.equals(other)) { score += token.length() * 2; break; }
+        for (GifCandidate candidate : candidates) {
+            if (candidate.normalized.isEmpty() && candidate.localized.isEmpty()) continue;
+            if (candidate.normalized.equals(wanted) || candidate.localized.equals(wanted)
+                    || (!wantedLatin.isEmpty() && candidate.normalized.equals(wantedLatin))
+                    || (!wantedLatin.isEmpty() && candidate.localized.equals(wantedLatin))) {
+                return candidate.path;
+            }
+            int score = Math.max(matchScore(wanted, candidate.normalized),
+                Math.max(matchScore(wanted, candidate.localized),
+                    Math.max(matchScore(wantedLatin, candidate.normalized),
+                        matchScore(wantedLatin, candidate.localized))));
+            if (score > bestScore) {
+                bestScore = score;
+                best = candidate.path;
+            }
+        }
+        int minimum = Math.max(5, Math.max(wanted.replace(" ", "").length(),
+            wantedLatin.replace(" ", "").length()) / 3);
+        return bestScore >= minimum ? best : null;
+    }
+
+    private static ArrayList<GifCandidate> indexedFiles(Context context) {
+        ArrayList<GifCandidate> result = indexedFiles;
+        if (result != null) return result;
+        synchronized (ExerciseImages.class) {
+            if (indexedFiles != null) return indexedFiles;
+            result = new ArrayList<>();
+            for (String file : files(context.getAssets())) {
+                String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
+                String cleanBase = base.replaceAll("[_\\s]+[\\[(]?(\\d{3,8})[\\])]?$", "");
+                result.add(new GifCandidate(file, normalize(cleanBase),
+                    normalize(AdvancedFeatures.persianExerciseName(cleanBase))));
+            }
+            indexedFiles = result;
+            return result;
+        }
+    }
+
+    private static int matchScore(String wanted, String candidate) {
+        if (wanted == null || wanted.isEmpty() || candidate == null || candidate.isEmpty()) return 0;
+        if (wanted.equals(candidate)) return 10000;
+        if (wanted.contains(candidate) || candidate.contains(wanted)) {
+            return Math.min(wanted.length(), candidate.length()) * 3;
+        }
+        int score = 0;
+        String[] a = wanted.split(" ");
+        String[] b = candidate.split(" ");
+        for (String token : a) {
+            if (token.length() < 3) continue;
+            for (String other : b) {
+                if (token.equals(other)) {
+                    score += token.length() * 2;
+                    break;
                 }
             }
-            if (score > bestScore) { bestScore = score; best = file; }
         }
-        String scoringName = wanted.isEmpty() ? wantedLatin : wanted;
-        int minimum = Math.max(5, scoringName.replace(" ", "").length() / 3);
-        return bestScore >= minimum ? best : null;
+        return score;
     }
 
     private static String transliteratePersian(String value) {

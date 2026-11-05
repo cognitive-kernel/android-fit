@@ -51,35 +51,33 @@ public class MainActivity extends Activity implements SensorEventListener {
  EditText edit(String h,String val){EditText e=new EditText(this);e.setHint(h);if(val!=null)e.setText(val);e.setSingleLine(true);return e;} void msg(String t,String m){new AlertDialog.Builder(this).setTitle(t).setMessage(m).setPositiveButton(tr("OK","باشه"),null).show();}
  void manage(){List<String[]> p=db.plans();String[] a=new String[p.size()+1];a[0]=tr("+ New plan","+ برنامه جدید");for(int i=0;i<p.size();i++)a[i+1]=p.get(i)[1];new AlertDialog.Builder(this).setTitle(tr("Plans","برنامه‌ها")).setItems(a,(d,w)->{if(w==0){EditText n=edit(tr("Plan name","نام برنامه"),null);new AlertDialog.Builder(this).setView(n).setPositiveButton(tr("Save","ذخیره"),(x,y)->{String s=n.getText().toString().trim();if(!s.isEmpty())showPlan(new String[]{""+db.addPlan(s),s});}).setNegativeButton(tr("Cancel","لغو"),null).show();}else showPlan(p.get(w-1));}).setNegativeButton(tr("Close","بستن"),null).show();}
  void showPlan(String[] p){
-  long planId=Long.parseLong(p[0]);
-  final ArrayList<String[]> rows=new ArrayList<>(db.exercises(planId));
-  final BaseAdapter[] adapterRef=new BaseAdapter[1];
-  final AlertDialog[] dialogRef=new AlertDialog[1];
-  ListView list=new ListView(this);
+  long planId=Long.parseLong(p[0]);final ArrayList<String[]> rows=new ArrayList<>(db.exercises(planId));
+  final BaseAdapter[] adapterRef=new BaseAdapter[1];final AlertDialog[] dialogRef=new AlertDialog[1];ListView list=new ListView(this);
   adapterRef[0]=new BaseAdapter(){
-   public int getCount(){return rows.size()+3;}
-   public Object getItem(int position){return position<3?null:rows.get(position-3);}
-   public long getItemId(int position){return position;}
+   public int getCount(){return rows.size()+3;}public Object getItem(int position){return position<3?null:rows.get(position-3);}public long getItemId(int position){return position;}
    public View getView(int position,View convertView,android.view.ViewGroup parent){
     int pad=(int)(12*getResources().getDisplayMetrics().density);
     if(position<3){TextView item=convertView instanceof TextView?(TextView)convertView:new TextView(MainActivity.this);item.setPadding(pad,pad,pad,pad);item.setTextSize(16);item.setMinHeight((int)(48*getResources().getDisplayMetrics().density));item.setText(position==0?tr("+ Add exercise","+ افزودن حرکت"):position==1?tr("Rename plan","ویرایش نام برنامه"):tr("Delete plan","حذف برنامه"));return item;}
-    String[] exercise=rows.get(position-3);
-    LinearLayout item=new LinearLayout(MainActivity.this);item.setOrientation(LinearLayout.HORIZONTAL);item.setGravity(Gravity.CENTER_VERTICAL);item.setPadding(pad,pad,pad,pad);
-    String gif=ExerciseImages.findGif(MainActivity.this,exercise[1]);
-    if(gif!=null){ExerciseGifView image=ExerciseImages.thumbnail(MainActivity.this,gif,exercise[1],76);item.addView(image,new LinearLayout.LayoutParams((int)(104*getResources().getDisplayMetrics().density),(int)(76*getResources().getDisplayMetrics().density)));}
-    TextView label=new TextView(MainActivity.this);label.setText(exercise[1]+"\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));label.setTextSize(15);label.setPadding(pad,0,pad,0);item.addView(label,new LinearLayout.LayoutParams(0,-2,1));return item;
+    String[] exercise=rows.get(position-3);String gif=ExerciseImages.findGif(MainActivity.this,exercise[1]);LinearLayout item;Object[] holder;
+    if(convertView instanceof LinearLayout&&((LinearLayout)convertView).getTag() instanceof Object[]){item=(LinearLayout)convertView;holder=(Object[])item.getTag();}
+    else{item=new LinearLayout(MainActivity.this);item.setOrientation(LinearLayout.HORIZONTAL);item.setGravity(Gravity.CENTER_VERTICAL);item.setPadding(pad,pad,pad,pad);holder=new Object[3];item.setTag(holder);}
+    ExerciseGifView image=(ExerciseGifView)holder[1];
+    if(gif!=null&&(image==null||!gif.equals(holder[0]))){if(image!=null)item.removeView(image);image=ExerciseImages.thumbnail(MainActivity.this,gif,exercise[1],76);item.addView(image,0,new LinearLayout.LayoutParams((int)(104*getResources().getDisplayMetrics().density),(int)(76*getResources().getDisplayMetrics().density)));holder[0]=gif;holder[1]=image;}
+    else if(gif==null&&image!=null){item.removeView(image);holder[0]=null;holder[1]=null;}
+    else if(image!=null)image.setContentDescription(exercise[1]);
+    TextView label=(TextView)holder[2];if(label==null){label=new TextView(MainActivity.this);label.setTextSize(15);label.setPadding(pad,0,pad,0);item.addView(label,new LinearLayout.LayoutParams(0,-2,1));holder[2]=label;}
+    label.setText(exercise[1]+"\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));return item;
    }
   };
-  list.setAdapter(adapterRef[0]);
-  Runnable refresh=()->{rows.clear();rows.addAll(db.exercises(planId));adapterRef[0].notifyDataSetChanged();};
+  list.setAdapter(adapterRef[0]);Runnable refresh=()->{rows.clear();rows.addAll(db.exercises(planId));adapterRef[0].notifyDataSetChanged();};
   list.setOnItemClickListener((parent,view,position,id)->{
-   if(position==0)addEx(p,refresh);
-   else if(position==1)editPlan(p,refresh,()->{if(dialogRef[0]!=null)dialogRef[0].setTitle(p[1]);});
+   if(position==0)addEx(p,refresh);else if(position==1)editPlan(p,refresh,()->{if(dialogRef[0]!=null)dialogRef[0].setTitle(p[1]);});
    else if(position==2)new AlertDialog.Builder(MainActivity.this).setMessage(tr("Delete this plan and all its exercises?","برنامه و تمام حرکات آن حذف شود؟")).setPositiveButton(tr("Delete","حذف"),(x,y)->{db.deletePlan(planId);if(dialogRef[0]!=null)dialogRef[0].dismiss();manage();}).setNegativeButton(tr("Cancel","لغو"),null).show();
    else editEx(rows.get(position-3),refresh);
   });
-  LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);
-  TextView hint=new TextView(this);hint.setText(tr("Tap an exercise image to enlarge it; tap its row to edit.","برای بزرگ‌نمایی تصویر حرکت آن را لمس کنید؛ برای ویرایش، ردیف حرکت را لمس کنید."));hint.setPadding(16,8,16,8);content.addView(hint);content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*getResources().getDisplayMetrics().density)));
+  LinearLayout content=new LinearLayout(this);content.setOrientation(LinearLayout.VERTICAL);TextView hint=new TextView(this);
+  hint.setText(tr("Tap an exercise image to enlarge it; tap its row to edit.","برای بزرگ‌نمایی تصویر حرکت آن را لمس کنید؛ برای ویرایش، ردیف حرکت را لمس کنید."));hint.setPadding(16,8,16,8);content.addView(hint);
+  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(420*getResources().getDisplayMetrics().density)));
   dialogRef[0]=new AlertDialog.Builder(this).setTitle(p[1]).setView(content).setPositiveButton(tr("Finish","پایان"),null).create();dialogRef[0].show();
  }
  void editPlan(String[] p,Runnable refresh,Runnable titleRefresh){EditText name=edit(tr("Plan name","نام برنامه"),p[1]);new AlertDialog.Builder(this).setTitle(tr("Rename plan","ویرایش نام برنامه")).setView(name).setPositiveButton(tr("Save","ذخیره"),(d,w)->{try{String value=name.getText().toString().trim();if(value.isEmpty()||!db.updatePlan(Long.parseLong(p[0]),value))throw new IllegalStateException("Plan no longer exists");p[1]=value;refresh.run();titleRefresh.run();}catch(Exception e){msg(tr("Error","خطا"),tr("Enter a valid plan name.","نام برنامه معتبر وارد کنید."));}}).setNegativeButton(tr("Cancel","لغو"),null).show();}

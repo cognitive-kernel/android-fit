@@ -101,6 +101,8 @@ public class ExerciseImagesRegressionTest {
                 ExerciseImages.findGif(activity, "Air Squat"));
             assertNotNull("World Greatest Stretch should match a bundled GIF",
                 ExerciseImages.findGif(activity, "World Greatest Stretch"));
+            assertNotNull("Persian exercise names should resolve to their bundled GIF",
+                ExerciseImages.findGif(activity, "اسکوات"));
         }
     }
 
