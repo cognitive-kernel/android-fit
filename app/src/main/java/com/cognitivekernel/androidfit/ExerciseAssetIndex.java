@@ -103,26 +103,44 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
     }
 
     public static String findFile(Context context, String exerciseName) {
+        return findFile(context, exerciseName, null);
+    }
+
+    /** Resolves an exercise only within the requested catalog gender. Null keeps legacy/manual lookup. */
+    public static String findFile(Context context, String exerciseName, String gender) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
         String supplied = exerciseName.trim();
-        if (supplied.matches("\\d{3,10}")) return findFileById(context, supplied);
+        if (supplied.matches("\\d{3,10}")) return findFileById(context, supplied, gender);
         ensureReady(context);
         if (!ready) return null;
-        String query = normalize(exerciseName);
-        try (Cursor cursor = index(context).getReadableDatabase().rawQuery(
-            "SELECT file FROM exercise_assets WHERE normalized_name=? OR normalized_fa=? OR normalized_name LIKE ? OR normalized_fa LIKE ? OR normalized_name LIKE ? OR normalized_fa LIKE ? ORDER BY CASE WHEN normalized_name=? THEN 0 ELSE 1 END,length(normalized_name),id LIMIT 1",
-            new String[]{query, query, query + "%", query + "%", "%" + query + "%", "%" + query + "%", query})) {
+        String query = normalize(supplied);
+        boolean filtered = "male".equalsIgnoreCase(gender) || "female".equalsIgnoreCase(gender);
+        String sql = "SELECT file FROM exercise_assets WHERE "
+            + (filtered ? "gender=? AND " : "")
+            + "(normalized_name=? OR normalized_fa=? OR normalized_name LIKE ? OR normalized_fa LIKE ? OR normalized_name LIKE ? OR normalized_fa LIKE ?) "
+            + "ORDER BY CASE WHEN normalized_name=? THEN 0 ELSE 1 END,length(normalized_name),id LIMIT 1";
+        java.util.ArrayList<String> args = new java.util.ArrayList<>();
+        if (filtered) args.add(gender.toLowerCase(Locale.ROOT));
+        args.add(query); args.add(query); args.add(query + "%"); args.add(query + "%");
+        args.add("%" + query + "%"); args.add("%" + query + "%"); args.add(query);
+        try (Cursor cursor = index(context).getReadableDatabase().rawQuery(sql, args.toArray(new String[0]))) {
             return cursor.moveToFirst() ? "exercises/" + cursor.getString(0) : null;
         }
     }
 
     public static String findFileById(Context context, String id) {
+        return findFileById(context, id, null);
+    }
+
+    public static String findFileById(Context context, String id, String gender) {
         if (id == null || !id.matches("\\d{3,10}")) return null;
         if (!ready && building) return null;
         ensureReady(context);
         if (!ready) return null;
-        try (Cursor cursor = index(context).getReadableDatabase().rawQuery(
-            "SELECT file FROM exercise_assets WHERE id=?", new String[]{id})) {
+        boolean filtered = "male".equalsIgnoreCase(gender) || "female".equalsIgnoreCase(gender);
+        String sql = "SELECT file FROM exercise_assets WHERE id=?" + (filtered ? " AND gender=?" : "");
+        String[] args = filtered ? new String[]{id, gender.toLowerCase(Locale.ROOT)} : new String[]{id};
+        try (Cursor cursor = index(context).getReadableDatabase().rawQuery(sql, args)) {
             return cursor.moveToFirst() ? "exercises/" + cursor.getString(0) : null;
         }
     }
