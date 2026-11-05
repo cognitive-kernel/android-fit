@@ -52,6 +52,21 @@ public class ExerciseAssetIndexTest {
         }
     }
 
+
+    @Test public void genderConstrainedLookupNeverReturnsOppositeGenderAsset() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity context = controller.get();
+            assertEquals("exercises/1_2_Stick_Drill (male)_[596513].gif",
+                ExerciseImages.findGifById(context, "596513", "male"));
+            assertNull("Male catalog item must not resolve for female plans",
+                ExerciseImages.findGifById(context, "596513", "female"));
+            assertEquals("exercises/3_4_Sit_up (female)_[247613].gif",
+                ExerciseImages.findGifById(context, "247613", "female"));
+            assertNull("Female catalog item must not resolve for male plans",
+                ExerciseImages.findGifById(context, "247613", "male"));
+        }
+    }
+
     @Test public void thumbnailUsesStaticPreviewView() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             assertTrue(ExerciseImages.thumbnail(controller.get(),
