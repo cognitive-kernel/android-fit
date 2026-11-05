@@ -76,7 +76,13 @@ public final class GoalPlanner {
   Spinner sex=choices(a,new String[]{t(a,"Male","مرد"),t(a,"Female","زن")});
   Spinner activity=choices(a,new String[]{t(a,"Low activity","فعالیت کم"),t(a,"Moderate activity","فعالیت متوسط"),t(a,"High activity","فعالیت زیاد")});
   EditText age=input(a,t(a,"Age (years)","سن (سال)"),"30"),height=input(a,t(a,"Height (cm)","قد (سانتی‌متر)"),"170"),weight=input(a,t(a,"Weight (kg)","وزن (کیلوگرم)"),"70");
-  form.addView(goal);form.addView(new TextView(a){{setText(t(a,"Muscle target area","ناحیه هدف عضله‌سازی"));}});form.addView(area);form.addView(sex);form.addView(age);form.addView(height);form.addView(weight);form.addView(activity);
+  form.addView(new TextView(a){{setText(t(a,"Main goal","هدف اصلی"));}});form.addView(goal);
+  form.addView(new TextView(a){{setText(t(a,"Muscle-building target area","ناحیه هدف عضله‌سازی"));}});form.addView(area);
+  form.addView(new TextView(a){{setText(t(a,"Sex used for calorie estimate","جنسیت برای محاسبه کالری"));}});form.addView(sex);
+  form.addView(new TextView(a){{setText(t(a,"Age — default: 30 years","سن — پیش‌فرض: ۳۰ سال"));}});form.addView(age);
+  form.addView(new TextView(a){{setText(t(a,"Height — default: 170 cm","قد — پیش‌فرض: ۱۷۰ سانتی‌متر"));}});form.addView(height);
+  form.addView(new TextView(a){{setText(t(a,"Weight — default: 70 kg","وزن — پیش‌فرض: ۷۰ کیلوگرم"));}});form.addView(weight);
+  form.addView(new TextView(a){{setText(t(a,"Usual daily activity","میزان فعالیت روزانه"));}});form.addView(activity);
   new AlertDialog.Builder(a).setTitle(t(a,"Personal training & nutrition","تمرین و تغذیه شخصی")).setView(form).setPositiveButton(t(a,"Create guide","ساخت راهنما"),(dialog,which)->{
    try{
     int years=parseInteger(age.getText().toString());double cm=parseDecimal(height.getText().toString()),kg=parseDecimal(weight.getText().toString());
