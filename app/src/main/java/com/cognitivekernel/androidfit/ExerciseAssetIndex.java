@@ -17,7 +17,7 @@ import java.util.concurrent.Executors;
 /** Persistent numeric index for bundled exercise GIF assets. */
 public final class ExerciseAssetIndex extends SQLiteOpenHelper {
     private static final String DB_NAME = "exercise_assets.db";
-    private static final int DB_VERSION = 1;
+    private static final int DB_VERSION = 2;
     private static final ExecutorService BUILDER = Executors.newSingleThreadExecutor();
     private static volatile boolean ready;
     private static volatile boolean building;
