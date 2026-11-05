@@ -112,8 +112,8 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
         if (!ready) return null;
         String query = normalize(exerciseName);
         try (Cursor cursor = index(context).getReadableDatabase().rawQuery(
-            "SELECT file FROM exercise_assets WHERE normalized_name=? OR normalized_fa=? OR normalized_name LIKE ? OR normalized_fa LIKE ? ORDER BY length(normalized_name),id LIMIT 1",
-            new String[]{query, query, query + "%", query + "%"})) {
+            "SELECT file FROM exercise_assets WHERE normalized_name=? OR normalized_fa=? OR normalized_name LIKE ? OR normalized_fa LIKE ? OR normalized_name LIKE ? OR normalized_fa LIKE ? ORDER BY CASE WHEN normalized_name=? THEN 0 ELSE 1 END,length(normalized_name),id LIMIT 1",
+            new String[]{query, query, query + "%", query + "%", "%" + query + "%", "%" + query + "%", query})) {
             return cursor.moveToFirst() ? "exercises/" + cursor.getString(0) : null;
         }
     }
