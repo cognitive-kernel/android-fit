@@ -354,10 +354,12 @@ public final class AdvancedFeatures {
    public void onNothingSelected(android.widget.AdapterView<?> parent){}
   });
   applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
-  LinearLayout content=column();content.addView(search);content.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
-  content.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));content.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));content.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
-  content.addView(typeSpinner);content.addView(bodySpinner);content.addView(equipmentSpinner);content.addView(genderSpinner);
-  content.addView(list,new LinearLayout.LayoutParams(-1,(int)(300*a.getResources().getDisplayMetrics().density)));
+  LinearLayout header=column();header.addView(search);header.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
+  header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));header.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
+  header.addView(typeSpinner);header.addView(bodySpinner);header.addView(equipmentSpinner);header.addView(genderSpinner);
+  LinearLayout content=column();content.setLayoutParams(new LinearLayout.LayoutParams(-1,-1));
+  content.addView(header,new LinearLayout.LayoutParams(-1,-2));
+  content.addView(list,new LinearLayout.LayoutParams(-1,0,1f));
   Runnable filterRows=()->{
    String query=search.getText().toString().trim().toLowerCase(Locale.ROOT);
    String type=EXERCISE_TYPES[Math.max(0,typeSpinner.getSelectedItemPosition())],body=BODY_PARTS[Math.max(0,bodySpinner.getSelectedItemPosition())];
@@ -372,10 +374,11 @@ public final class AdvancedFeatures {
   typeSpinner.setOnItemSelectedListener(filterListener);bodySpinner.setOnItemSelectedListener(filterListener);equipmentSpinner.setOnItemSelectedListener(filterListener);genderSpinner.setOnItemSelectedListener(filterListener);
   list.setAdapter(adapter);filterRows.run();
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}public void afterTextChanged(android.text.Editable e){}});
-  ScrollView libraryScroll=new ScrollView(a);libraryScroll.setFillViewport(true);libraryScroll.addView(content);
-  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(libraryScroll).setNegativeButton(android.R.string.cancel,null).create();
+  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
   libraryDialog.show();
+  android.view.Window dialogWindow=libraryDialog.getWindow();
+  if(dialogWindow!=null){android.util.DisplayMetrics metrics=a.getResources().getDisplayMetrics();dialogWindow.setLayout((int)(metrics.widthPixels*0.94f),(int)(metrics.heightPixels*0.88f));}
  }
 
  private void addPageNumber(LinearLayout container,int page,int[] currentPage,Runnable[] refresh){
