@@ -36,7 +36,6 @@ public final class ExerciseThumbnailView extends View {
 
     public ExerciseThumbnailView(Context context, String path, String title) {
         super(context);
-        setLayerType(View.LAYER_TYPE_HARDWARE, null);
         setPreview(path, title);
     }
 
