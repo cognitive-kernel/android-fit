@@ -72,23 +72,18 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
             while ((count = input.read(buffer)) != -1) bytes.write(buffer, 0, count);
             JSONObject root = new JSONObject(new String(bytes.toByteArray(), StandardCharsets.UTF_8));
             JSONArray rows = root.getJSONArray("exercises");
-            db.beginTransaction();
-            try {
-                for (int i = 0; i < rows.length(); i++) {
-                    JSONObject row = rows.getJSONObject(i);
-                    String name = row.getString("name");
-                    ContentValues values = new ContentValues();
-                    values.put("id", row.getString("id"));
-                    values.put("name", name);
-                    values.put("normalized_name", normalize(name));
-                    values.put("normalized_fa", normalize(AdvancedFeatures.persianExerciseName(name)));
-                    values.put("gender", row.optString("gender", "unspecified"));
-                    values.put("file", row.getString("file"));
-                    db.insertOrThrow("exercise_assets", null, values);
-                }
-                db.setTransactionSuccessful();
-            } finally {
-                db.endTransaction();
+            // SQLiteOpenHelper already wraps onCreate/onUpgrade in a transaction.
+            for (int i = 0; i < rows.length(); i++) {
+                JSONObject row = rows.getJSONObject(i);
+                String name = row.getString("name");
+                ContentValues values = new ContentValues();
+                values.put("id", row.getString("id"));
+                values.put("name", name);
+                values.put("normalized_name", normalize(name));
+                values.put("normalized_fa", normalize(AdvancedFeatures.persianExerciseName(name)));
+                values.put("gender", row.optString("gender", "unspecified"));
+                values.put("file", row.getString("file"));
+                db.insertOrThrow("exercise_assets", null, values);
             }
         } catch (Exception error) {
             throw new IllegalStateException("Invalid exercise_catalog.json", error);
