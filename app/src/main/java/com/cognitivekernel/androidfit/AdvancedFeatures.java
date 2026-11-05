@@ -354,7 +354,7 @@ public final class AdvancedFeatures {
    public void onNothingSelected(android.widget.AdapterView<?> parent){}
   });
   applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
-  LinearLayout content=column();content.addView(search);
+  LinearLayout content=column();content.addView(search);content.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
   content.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));content.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));content.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
   content.addView(typeSpinner);content.addView(bodySpinner);content.addView(equipmentSpinner);content.addView(genderSpinner);
   content.addView(list,new LinearLayout.LayoutParams(-1,(int)(300*a.getResources().getDisplayMetrics().density)));
