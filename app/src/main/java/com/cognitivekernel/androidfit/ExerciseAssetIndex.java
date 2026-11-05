@@ -121,12 +121,8 @@ public final class ExerciseAssetIndex {
         if(candidate.startsWith(query))return 5000+query.length();
         if(candidate.contains(query))return 3000+query.length();
         if(query.contains(candidate))return 2000+candidate.length();
-        int points=0;
-        for(String token:query.split(" ")) {
-            if(token.length()<3)continue;
-            for(String other:candidate.split(" "))if(token.equals(other)){points+=token.length()*2;break;}
-        }
-        return points;
+        // Gender-constrained resolution must not choose a merely similar exercise.
+        return 0;
     }
 
     private static String normalize(String value) {
