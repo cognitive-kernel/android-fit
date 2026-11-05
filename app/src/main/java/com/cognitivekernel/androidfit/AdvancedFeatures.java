@@ -92,23 +92,22 @@ public final class AdvancedFeatures {
  }
 
  private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
-  ArrayList<String> files=new ArrayList<>();
-  collectExerciseGifFiles(context.getAssets(),"exercises",files);
-  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(files.size());
-  java.util.regex.Pattern idPattern=java.util.regex.Pattern.compile("(?:_\\[?(\\d{3,8})\\]?|\\s+\\[?(\\d{3,8})\\]?)$");
-  for(String assetPath:files){
-   String file=assetPath.substring("exercises/".length());
-   String title=file.substring(0,file.length()-4);
-   java.util.regex.Matcher matcher=idPattern.matcher(title);
-   String sourceId="";
-   if(matcher.find()){
-    sourceId=matcher.group(1)!=null?matcher.group(1):matcher.group(2);
-    title=title.substring(0,matcher.start());
+  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(6556);
+  try(InputStream input=context.getAssets().open("exercise_catalog.json");
+      ByteArrayOutputStream bytes=new ByteArrayOutputStream()){
+   byte[] buffer=new byte[16384];int count;
+   while((count=input.read(buffer))!=-1)bytes.write(buffer,0,count);
+   JSONObject catalog=new JSONObject(new String(bytes.toByteArray(),java.nio.charset.StandardCharsets.UTF_8));
+   JSONArray entries=catalog.getJSONArray("exercises");
+   for(int i=0;i<entries.length();i++){
+    JSONObject entry=entries.getJSONObject(i);
+    String english=entry.getString("name");
+    String file=entry.getString("file");
+    String id=entry.getString("id");
+    if(english.trim().isEmpty()||!file.toLowerCase(Locale.ROOT).endsWith(".gif"))continue;
+    rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,id));
    }
-   String english=title.replace('_',' ').replaceAll("\\s+"," ").trim();
-   if(english.isEmpty())continue;
-   rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
-  }
+  }catch(org.json.JSONException error){throw new IOException("Invalid exercise catalog",error);}
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
   return rows;
  }
