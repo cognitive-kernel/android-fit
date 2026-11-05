@@ -105,8 +105,9 @@ public final class AdvancedFeatures {
     String persian=entry.optString("name_fa",persianExerciseName(english));
     String file=entry.getString("file");
     String id=entry.getString("id");
+    String gender=entry.optString("gender","unspecified");
     if(english.trim().isEmpty()||!file.toLowerCase(Locale.ROOT).endsWith(".gif"))continue;
-    rows.add(new ExerciseLibraryRow(english,persian,file,id));
+    rows.add(new ExerciseLibraryRow(english,persian,file,id,gender));
    }
   }catch(org.json.JSONException error){throw new IOException("Invalid exercise catalog",error);}
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
@@ -125,13 +126,12 @@ public final class AdvancedFeatures {
 
  private static final class ExerciseLibraryRow{
   final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment,gender;
-  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId){
+  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId,String catalogGender){
    this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
    this.exerciseType=classifyExerciseType(englishName);
    this.bodyPart=classifyBodyPart(englishName);
    this.equipment=classifyEquipment(englishName);
-   String lower=englishName.toLowerCase(Locale.ROOT);
-   this.gender=containsAny(lower,"(male)"," male","male ","(female)"," female","female ")?(containsAny(lower,"(female)"," female","female ")?"Female":"Male"):"All";
+   this.gender="male".equalsIgnoreCase(catalogGender)?"Male":"female".equalsIgnoreCase(catalogGender)?"Female":"All";
   }
   String displayName(boolean english){return english?englishName:persianName;}
   @Override public String toString(){return englishName+" "+persianName;}
@@ -458,9 +458,10 @@ public final class AdvancedFeatures {
   Spinner goal=spinner(new String[]{s("goal_strength"),s("goal_muscle"),s("goal_general"),s("goal_weight")});
   Spinner level=spinner(new String[]{s("level_beginner"),s("level_intermediate"),s("level_advanced")});
   Spinner equipment=spinner(new String[]{s("equipment_none"),s("equipment_home"),s("equipment_gym")});
+  Spinner sex=spinner(new String[]{tr("Male","مرد"),tr("Female","زن")});
   EditText days=field(s("days_per_week"),"3",android.text.InputType.TYPE_CLASS_NUMBER);
   EditText minutes=field(s("session_minutes"),"35",android.text.InputType.TYPE_CLASS_NUMBER);
-  l.addView(label(s("training_goal")));l.addView(goal);l.addView(label(s("fitness_level")));l.addView(level);l.addView(label(s("available_equipment")));l.addView(equipment);l.addView(days);l.addView(minutes);
+  l.addView(label(s("training_goal")));l.addView(goal);l.addView(label(s("fitness_level")));l.addView(level);l.addView(label(s("available_equipment")));l.addView(equipment);l.addView(label(tr("Exercise image gender","جنسیت تصاویر حرکات")));l.addView(sex);l.addView(days);l.addView(minutes);
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(l).setPositiveButton(s("create_plan"),(d,w)->{
    try{
     int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());if(n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
@@ -473,7 +474,8 @@ public final class AdvancedFeatures {
     int goalIndex=goal.getSelectedItemPosition();
     if(mins<=20&&exercises.length>3)exercises=Arrays.copyOf(exercises,3);
     int scale=level.getSelectedItemPosition()==0?0:(level.getSelectedItemPosition()==1?1:2);
-    for(String[] ex:exercises){int sets=Integer.parseInt(ex[1])+scale;int reps=Integer.parseInt(ex[2]);if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);db.addExercise(id,ex[0],sets,reps);}
+    String selectedGender=sex.getSelectedItemPosition()==0?"male":"female";
+    for(String[] ex:exercises){int sets=Integer.parseInt(ex[1])+scale;int reps=Integer.parseInt(ex[2]);if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);db.addExercise(id,ex[0]+" ("+selectedGender+")",sets,reps);}
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putInt("fitness_level",level.getSelectedItemPosition()).putString("equipment",eq).apply();
     message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+n+"\n"+s("session_minutes")+": "+mins);
    }catch(Exception ex){message(s("error"),s("invalid_plan_values"));}
