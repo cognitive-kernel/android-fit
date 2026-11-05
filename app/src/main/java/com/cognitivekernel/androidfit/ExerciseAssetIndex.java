@@ -16,9 +16,10 @@ public final class ExerciseAssetIndex {
     private static volatile List<ExerciseAsset> cached;
 
     public static final class ExerciseAsset {
-        public final String id,gender,name,file;
+        public final String id,gender,name,file,persianName;
         private ExerciseAsset(String id,String gender,String name,String file) {
             this.id=id;this.gender=gender;this.name=name;this.file=file;
+            this.persianName=AdvancedFeatures.persianExerciseName(name);
         }
     }
 
@@ -33,7 +34,8 @@ public final class ExerciseAssetIndex {
         for(ExerciseAsset candidate:assets(context)) {
             int rank=genderRank(candidate.gender,gender);
             if(rank<0)continue;
-            int score=score(query,normalize(candidate.name));
+            int score=Math.max(score(query,normalize(candidate.name)),
+                score(query,normalize(candidate.persianName)));
             if(score>bestScore||(score==bestScore&&rank>bestGenderRank)
                     ||(score==bestScore&&rank==bestGenderRank&&best!=null&&candidate.name.length()<best.name.length())) {
                 best=candidate;bestScore=score;bestGenderRank=rank;
