@@ -32,33 +32,56 @@ public final class ExerciseImages {
         String wanted = normalize(exerciseName);
         String wantedLatin = normalize(transliteratePersian(exerciseName));
         if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
+
         String best = null;
         int bestScore = 0;
         for (String file : files) {
             String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
+            String cleanBase = base.replaceAll("[_\\\\s]+[\\\\[(]?\\\\d{3,8}[\\\\])]?$", "");
             String candidate = normalize(cleanBase);
             String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
-            String matchWanted = wanted.isEmpty() ? wantedLatin : wanted;
-            String matchCandidate = wanted.isEmpty() ? candidate : (wanted.matches(".*[\\u0600-\\u06FF].*") ? localizedCandidate : candidate);
-            if (matchCandidate.isEmpty()) matchCandidate = candidate;
-            if (matchCandidate.isEmpty()) continue;
-            if (matchCandidate.equals(matchWanted) || localizedCandidate.equals(wanted)) return file;
-            int score = 0;
-            if (matchWanted.contains(matchCandidate) || matchCandidate.contains(matchWanted)) {
-                score = Math.min(matchWanted.length(), matchCandidate.length()) * 3;
-            } else {
-                String[] a = matchWanted.split(" ");
-                String[] b = matchCandidate.split(" ");
-                for (String token : a) if (token.length() > 2) {
-                    for (String other : b) if (token.equals(other)) { score += token.length() * 2; break; }
+            if (candidate.isEmpty() && localizedCandidate.isEmpty()) continue;
+
+            if (candidate.equals(wanted) || localizedCandidate.equals(wanted)
+                    || (!wantedLatin.isEmpty() && candidate.equals(wantedLatin))
+                    || (!wantedLatin.isEmpty() && localizedCandidate.equals(wantedLatin))) {
+                return file;
+            }
+
+            int score = Math.max(
+                matchScore(wanted, candidate),
+                Math.max(matchScore(wanted, localizedCandidate),
+                    Math.max(matchScore(wantedLatin, candidate), matchScore(wantedLatin, localizedCandidate)))
+            );
+            if (score > bestScore) {
+                bestScore = score;
+                best = file;
+            }
+        }
+        int minimum = Math.max(5, Math.max(wanted.replace(" ", "").length(),
+            wantedLatin.replace(" ", "").length()) / 3);
+        return bestScore >= minimum ? best : null;
+    }
+
+    private static int matchScore(String wanted, String candidate) {
+        if (wanted == null || wanted.isEmpty() || candidate == null || candidate.isEmpty()) return 0;
+        if (wanted.equals(candidate)) return 10000;
+        if (wanted.contains(candidate) || candidate.contains(wanted)) {
+            return Math.min(wanted.length(), candidate.length()) * 3;
+        }
+        int score = 0;
+        String[] a = wanted.split(" ");
+        String[] b = candidate.split(" ");
+        for (String token : a) {
+            if (token.length() < 3) continue;
+            for (String other : b) {
+                if (token.equals(other)) {
+                    score += token.length() * 2;
+                    break;
                 }
             }
-            if (score > bestScore) { bestScore = score; best = file; }
         }
-        String scoringName = wanted.isEmpty() ? wantedLatin : wanted;
-        int minimum = Math.max(5, scoringName.replace(" ", "").length() / 3);
-        return bestScore >= minimum ? best : null;
+        return score;
     }
 
     private static String transliteratePersian(String value) {
