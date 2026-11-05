@@ -19,6 +19,9 @@ import static org.junit.Assert.*;
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 34)
 public class ExerciseAssetIndexTest {
+    private static final String STICK_DRILL_GIF =
+        "exercises/1_2_Stick_Drill (male)_[596513].gif";
+
     @Test public void catalogHasAllAssetsAndUniqueNumericIds() throws Exception {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             AssetManager assets = controller.get().getAssets();
@@ -44,7 +47,7 @@ public class ExerciseAssetIndexTest {
 
     @Test public void numericIdResolvesToExactBundledGif() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
-            assertEquals("exercises/1 2 Stick Drill (male)_[596513].gif",
+            assertEquals(STICK_DRILL_GIF,
                 ExerciseImages.findGifById(controller.get(), "596513"));
         }
     }
@@ -52,8 +55,7 @@ public class ExerciseAssetIndexTest {
     @Test public void thumbnailUsesStaticPreviewView() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             assertTrue(ExerciseImages.thumbnail(controller.get(),
-                "exercises/1 2 Stick Drill (male)_[596513].gif", "1 2 Stick Drill", 64)
-                instanceof ExerciseThumbnailView);
+                STICK_DRILL_GIF, "1 2 Stick Drill", 64) instanceof ExerciseThumbnailView);
         }
     }
 }
