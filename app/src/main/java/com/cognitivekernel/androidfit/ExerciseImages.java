@@ -27,38 +27,11 @@ public final class ExerciseImages {
     private ExerciseImages() {}
 
     public static String findGif(Context context, String exerciseName) {
-        if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
-        ArrayList<String> files = files(context.getAssets());
-        String wanted = normalize(exerciseName);
-        String wantedLatin = normalize(transliteratePersian(exerciseName));
-        if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
-        String best = null;
-        int bestScore = 0;
-        for (String file : files) {
-            String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-            String cleanBase = base.replaceAll("[_\\s]+[\\[(]?\\d{3,8}[\\])]?$", "");
-            String candidate = normalize(cleanBase);
-            String localizedCandidate = normalize(AdvancedFeatures.persianExerciseName(cleanBase));
-            String matchWanted = wanted.isEmpty() ? wantedLatin : wanted;
-            String matchCandidate = wanted.isEmpty() ? candidate : (wanted.matches(".*[\\u0600-\\u06FF].*") ? localizedCandidate : candidate);
-            if (matchCandidate.isEmpty()) matchCandidate = candidate;
-            if (matchCandidate.isEmpty()) continue;
-            if (matchCandidate.equals(matchWanted) || localizedCandidate.equals(wanted)) return file;
-            int score = 0;
-            if (matchWanted.contains(matchCandidate) || matchCandidate.contains(matchWanted)) {
-                score = Math.min(matchWanted.length(), matchCandidate.length()) * 3;
-            } else {
-                String[] a = matchWanted.split(" ");
-                String[] b = matchCandidate.split(" ");
-                for (String token : a) if (token.length() > 2) {
-                    for (String other : b) if (token.equals(other)) { score += token.length() * 2; break; }
-                }
-            }
-            if (score > bestScore) { bestScore = score; best = file; }
-        }
-        String scoringName = wanted.isEmpty() ? wantedLatin : wanted;
-        int minimum = Math.max(5, scoringName.replace(" ", "").length() / 3);
-        return bestScore >= minimum ? best : null;
+        return ExerciseAssetIndex.findFile(context, exerciseName);
+    }
+
+    public static String findGifById(Context context, String numericId) {
+        return ExerciseAssetIndex.findFileById(context, numericId);
     }
 
     private static String transliteratePersian(String value) {
@@ -168,12 +141,8 @@ public final class ExerciseImages {
         }
     }
 
-    public static ExerciseGifView thumbnail(Context context, String assetPath, String title, int heightDp) {
-        ExerciseGifView image = new ExerciseGifView(context, assetPath);
-        image.setContentDescription(title);
-        image.setOnClickListener(v -> {
-            if (context instanceof Activity) showFullscreen((Activity) context, assetPath, title);
-        });
+    public static ExerciseThumbnailView thumbnail(Context context, String assetPath, String title, int heightDp) {
+        ExerciseThumbnailView image = new ExerciseThumbnailView(context, assetPath, title);
         image.setLayoutParams(new LinearLayout.LayoutParams(-1,
             (int)(heightDp * context.getResources().getDisplayMetrics().density)));
         return image;
