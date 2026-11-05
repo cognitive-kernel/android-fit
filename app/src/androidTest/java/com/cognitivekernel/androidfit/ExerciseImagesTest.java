@@ -17,6 +17,10 @@ public class ExerciseImagesTest {
         assertNotNull("A saved squat movement should show its bundled GIF", squat);
         assertTrue(squat.toLowerCase(java.util.Locale.ROOT).endsWith(".gif"));
 
+        String persianSquat = ExerciseImages.findGif(context, "اسکوات");
+        assertNotNull("Persian exercise names should resolve to bundled GIFs", persianSquat);
+        assertTrue(persianSquat.toLowerCase(java.util.Locale.ROOT).endsWith(".gif"));
+
         String stretch = ExerciseImages.findGif(context, "World Greatest Stretch");
         assertNotNull("Exercise names with catalog IDs should resolve", stretch);
         assertTrue(stretch.toLowerCase(java.util.Locale.ROOT).endsWith(".gif"));
