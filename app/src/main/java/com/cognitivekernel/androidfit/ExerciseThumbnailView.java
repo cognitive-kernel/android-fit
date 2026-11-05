@@ -14,7 +14,9 @@ import android.view.View;
 import android.util.LruCache;
 import java.io.InputStream;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;\nimport java.util.HashSet;\nimport java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.HashSet;
+import java.util.Set;
 
 /** Static first-frame preview. The animated GIF is decoded only in the fullscreen viewer. */
 public final class ExerciseThumbnailView extends View {
@@ -24,7 +26,8 @@ public final class ExerciseThumbnailView extends View {
         @Override protected int sizeOf(String key, Bitmap value) { return value.getByteCount(); }
     };
     private static final ExecutorService DECODER = Executors.newFixedThreadPool(2);
-    private static final Handler MAIN = new Handler(Looper.getMainLooper());\n    private static final Set<String> PENDING = new HashSet<>();
+    private static final Handler MAIN = new Handler(Looper.getMainLooper());
+    private static final Set<String> PENDING = new HashSet<>();
 
     private String assetPath;
     private String title;
