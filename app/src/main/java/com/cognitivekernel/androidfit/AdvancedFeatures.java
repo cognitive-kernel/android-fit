@@ -99,7 +99,6 @@ public final class AdvancedFeatures {
    List<ExerciseCatalog.Exercise> catalog=ExerciseCatalog.await(context);
    ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(catalog.size());
    for(ExerciseCatalog.Exercise item:catalog){
-    if(!item.isEligibleFor(item.gender))continue;
     String english=item.nameEn;
     String persian=item.nameFa.isEmpty()?persianExerciseName(english):item.nameFa;
     rows.add(new ExerciseLibraryRow(english,persian,item.file,item.id,item.gender));
