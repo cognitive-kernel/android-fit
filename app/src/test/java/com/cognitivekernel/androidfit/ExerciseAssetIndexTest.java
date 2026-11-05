@@ -38,6 +38,9 @@ public class ExerciseAssetIndexTest {
             assertEquals("exercises/Air Squat (VERSION 2)_[471413].gif",
                 ExerciseImages.findGif(context,"Air Squat","male"));
             assertNull(ExerciseImages.findGif(context,"Wall sit (narrow stance)","female"));
+            assertEquals("exercises/Single Leg Squat (pistol)male_[175913].gif",
+                ExerciseImages.findGifById(context,"175913","male"));
+            assertNull(ExerciseImages.findGifById(context,"175913","female"));
         }
     }
 
