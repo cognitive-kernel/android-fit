@@ -130,7 +130,7 @@ public final class ExerciseAssetIndex {
     }
 
     private static String normalize(String value) {
-        return value.toLowerCase(Locale.ROOT).replaceAll("[_\\-]+"," ")
+        return value.toLowerCase(Locale.ROOT).replaceAll("(?i)\\s*\\((male|female)\\)"," ").replaceAll("(?i)\\s+(male|female)$"," ").replaceAll("[_\\-]+"," ")
             .replaceAll("[^a-z0-9\\u0600-\\u06ff ]"," ")
             .replaceAll("\\s+"," ").trim();
     }

@@ -63,6 +63,8 @@ public class WorkoutDbCatalogMetadataTest {
         legacy.execSQL("CREATE TABLE body_metrics(id INTEGER PRIMARY KEY AUTOINCREMENT,measured_at INTEGER NOT NULL,weight_kg REAL,waist_cm REAL)");
         legacy.execSQL("INSERT INTO plans(name) VALUES('Old plan')");
         legacy.execSQL("INSERT INTO exercises(plan_id,name,sets,reps) VALUES(1,'Old squat',3,10)");
+        legacy.execSQL("INSERT INTO exercises(plan_id,name,sets,reps) VALUES(1,'Air Squat (female)',3,12)");
+        legacy.execSQL("INSERT INTO exercises(plan_id,name,sets,reps) VALUES(1,'Air Squat (male)',3,8)");
         legacy.setVersion(4);legacy.close();
         db=new WorkoutDb(context);
         String[] migrated=db.exercises(1).get(0);
@@ -70,6 +72,11 @@ public class WorkoutDbCatalogMetadataTest {
         assertEquals("3",migrated[2]);
         assertNull(migrated[4]);
         assertNull(migrated[5]);
+        java.util.List<String[]> migratedRows=db.exercises(1);
+        assertEquals("Air Squat",migratedRows.get(1)[1]);
+        assertEquals("female",migratedRows.get(1)[5]);
+        assertEquals("Air Squat",migratedRows.get(2)[1]);
+        assertEquals("male",migratedRows.get(2)[5]);
         assertEquals(5,db.getReadableDatabase().getVersion());
     }
 }
