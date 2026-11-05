@@ -99,8 +99,19 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
     // Context is retained explicitly because SQLiteOpenHelper does not expose it.
     private Context appContext;
 
+    private static void ensureReady(Context context) {
+        if (ready) return;
+        try {
+            index(context).getReadableDatabase();
+            ready = true;
+        } catch (Exception error) {
+            android.util.Log.e("ExerciseAssetIndex", "Exercise index is unavailable", error);
+        }
+    }
+
     public static String findFile(Context context, String exerciseName) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
+        ensureReady(context);
         if (!ready) return null;
         String query = normalize(exerciseName);
         try (Cursor cursor = index(context).getReadableDatabase().rawQuery(
@@ -111,7 +122,9 @@ public final class ExerciseAssetIndex extends SQLiteOpenHelper {
     }
 
     public static String findFileById(Context context, String id) {
-        if (id == null || !id.matches("\\d{3,10}") || !ready) return null;
+        if (id == null || !id.matches("\\d{3,10}")) return null;
+        ensureReady(context);
+        if (!ready) return null;
         try (Cursor cursor = index(context).getReadableDatabase().rawQuery(
             "SELECT file FROM exercise_assets WHERE id=?", new String[]{id})) {
             return cursor.moveToFirst() ? "exercises/" + cursor.getString(0) : null;
