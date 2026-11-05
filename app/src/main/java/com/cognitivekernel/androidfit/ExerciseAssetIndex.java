@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 /** Immutable in-memory index of bundled exercise GIFs. The first lookup is cold-start safe. */
 public final class ExerciseAssetIndex {
     private static final Pattern ID_SUFFIX = Pattern.compile("(?:_\\[?(\\d{3,10})\\]?|\\s+\\[?(\\d{3,10})\\]?)$");
-    private static final Pattern GENDER = Pattern.compile("(?i)\\s*\\((male|female)\\)");
+    private static final Pattern GENDER = Pattern.compile("(?i)(?:\\s*\\((male|female)\\)|\\s+(male|female))$");
     private static volatile List<ExerciseAsset> cached;
 
     public static final class ExerciseAsset {
@@ -63,7 +63,8 @@ public final class ExerciseAssetIndex {
     private static int genderRank(String candidate,String requested) {
         if(requested==null||requested.trim().isEmpty())return 1;
         String wanted=requested.toLowerCase(Locale.ROOT);
-        if(!wanted.equals("male")&&!wanted.equals("female"))return 1;
+        if(wanted.equals("all"))return candidate.equals("all")?2:-1;
+        if(!wanted.equals("male")&&!wanted.equals("female"))return -1;
         if(candidate.equals(wanted))return 2;
         if(candidate.equals("all"))return 1;
         return -1;
@@ -105,7 +106,7 @@ public final class ExerciseAssetIndex {
         String gender="all";
         StringBuffer clean=new StringBuffer();
         while(genderMatcher.find()) {
-            gender=genderMatcher.group(1).toLowerCase(Locale.ROOT);
+            gender=(genderMatcher.group(1)!=null?genderMatcher.group(1):genderMatcher.group(2)).toLowerCase(Locale.ROOT);
             genderMatcher.appendReplacement(clean," ");
         }
         genderMatcher.appendTail(clean);

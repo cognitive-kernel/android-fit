@@ -93,7 +93,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
     public List<String[]> exercises(long planId) {
         List<String[]> rows=new ArrayList<>();
-        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps,exercise_catalog_id,exercise_gender FROM exercises WHERE plan_id=? ORDER BY id",new String[]{String.valueOf(planId)})) { while(c.moveToNext()) rows.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3)}); }
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps,exercise_catalog_id,exercise_gender FROM exercises WHERE plan_id=? ORDER BY id",new String[]{String.valueOf(planId)})) { while(c.moveToNext()) rows.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5)}); }
         return rows;
     }
     public void log(String date,String plan,String exercise,int sets,int reps,double kg) { logDetailed(date,plan,exercise,sets,reps,kg,60,7,""); }
