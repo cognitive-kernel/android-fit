@@ -77,10 +77,10 @@ public class WorkoutDbCatalogMetadataTest {
         assertNull(migrated[4]);
         assertNull(migrated[5]);
         String[] female=db.exercises(2).get(0);
-        assertEquals("Air Squat",female[1]);
+        assertEquals("Air Squat (female)",female[1]);
         assertEquals("female",female[5]);
         String[] male=db.exercises(3).get(0);
-        assertEquals("Air Squat",male[1]);
+        assertEquals("Air Squat (male)",male[1]);
         assertEquals("male",male[5]);
         String[] manual=db.exercises(4).get(0);
         assertEquals("Manual squat (male)",manual[1]);
