@@ -72,6 +72,9 @@ public class ExerciseAssetIndexTest {
     @Test public void catalogIndexIsPersistedAndReadableAfterMemoryCacheReset() throws Exception {
         try(ActivityController<Activity> controller=Robolectric.buildActivity(Activity.class).setup()) {
             Activity context=controller.get();
+            java.lang.reflect.Field memoryCache=ExerciseAssetIndex.class.getDeclaredField("cached");
+            memoryCache.setAccessible(true);
+            memoryCache.set(null,null);
             assertEquals(6556,ExerciseAssetIndex.all(context).size());
             java.io.File[] cacheFiles=context.getFilesDir().listFiles(
                 (directory,name)->name.startsWith("exercise_catalog_index_v1_")&&name.endsWith(".json"));
@@ -79,8 +82,6 @@ public class ExerciseAssetIndexTest {
             assertEquals("Exactly one version-scoped catalog cache should be written",1,cacheFiles.length);
             assertTrue(cacheFiles[0].isFile()&&cacheFiles[0].length()>0);
 
-            java.lang.reflect.Field memoryCache=ExerciseAssetIndex.class.getDeclaredField("cached");
-            memoryCache.setAccessible(true);
             memoryCache.set(null,null);
 
             java.lang.reflect.Method readCache=ExerciseAssetIndex.class.getDeclaredMethod(
