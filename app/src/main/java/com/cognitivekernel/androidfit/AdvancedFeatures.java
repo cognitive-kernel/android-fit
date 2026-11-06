@@ -102,15 +102,6 @@ public final class AdvancedFeatures {
   return rows;
  }
 
- private static void collectExerciseGifFiles(android.content.res.AssetManager assets,String directory,ArrayList<String> output)throws IOException{
-  String[] entries=assets.list(directory);
-  if(entries==null)return;
-  for(String entry:entries){
-   String path=directory+"/"+entry;
-   if(entry.toLowerCase(Locale.ROOT).endsWith(".gif"))output.add(path);
-   else if(!entry.contains("."))collectExerciseGifFiles(assets,path,output);
-  }
- }
 
  private static final class ExerciseLibraryRow{
   final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment,gender;
