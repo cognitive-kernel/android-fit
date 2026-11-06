@@ -363,6 +363,7 @@ public final class AdvancedFeatures {
   firstPage.setText("«");previousPage.setText("‹");nextPage.setText("›");lastPage.setText("»");
   firstPage.setContentDescription(tr("First page","صفحه اول"));previousPage.setContentDescription(tr("Previous page","صفحه قبلی"));nextPage.setContentDescription(tr("Next page","صفحه بعدی"));lastPage.setContentDescription(tr("Last page","صفحه آخر"));
   LinearLayout sizeControls=new LinearLayout(a);sizeControls.setGravity(Gravity.CENTER_VERTICAL);
+  sizeControls.addView(label(tr("Per page:","در صفحه:")),new LinearLayout.LayoutParams(-2,-2));
   sizeControls.addView(pageSizeSpinner,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(customPageSize,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(applyPageSize,new LinearLayout.LayoutParams(-2,-2));
   LinearLayout pageControls=new LinearLayout(a);pageControls.setGravity(Gravity.CENTER);
   pageControls.addView(firstPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(previousPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(nextPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(lastPage,new LinearLayout.LayoutParams(0,-2,1));
@@ -381,7 +382,6 @@ public final class AdvancedFeatures {
   applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
   LinearLayout header=new LinearLayout(a);header.setOrientation(LinearLayout.VERTICAL);
   header.addView(search,new LinearLayout.LayoutParams(-1,-2));
-  header.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
   header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));
   header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
   LinearLayout filterGrid=createCompactFilterRows(a,typeSpinner,bodySpinner,equipmentSpinner,genderSpinner);
