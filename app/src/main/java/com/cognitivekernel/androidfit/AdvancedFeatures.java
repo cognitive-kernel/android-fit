@@ -92,6 +92,8 @@ public final class AdvancedFeatures {
  }
 
  private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
+  ArrayList<ExerciseLibraryRow> cachedRows=readLibraryRowsCache(context);
+  if(cachedRows!=null&&!cachedRows.isEmpty())return cachedRows;
   ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
   for(ExerciseAssetIndex.ExerciseAsset asset:ExerciseAssetIndex.all(context)){
    String english=asset.name;
@@ -99,7 +101,56 @@ public final class AdvancedFeatures {
    rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),asset.file,asset.id,asset.gender));
   }
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
+  writeLibraryRowsCache(context,rows);
   return rows;
+ }
+
+ private static int libraryCacheVersion(Context context){
+  try{return context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionCode;}
+  catch(Exception ignored){return 0;}
+ }
+
+ private static File libraryRowsCacheFile(Context context){
+  return new File(context.getFilesDir(),"exercise_library_rows_v1_"+libraryCacheVersion(context)+".json");
+ }
+
+ private static ArrayList<ExerciseLibraryRow> readLibraryRowsCache(Context context){
+  File file=libraryRowsCacheFile(context);if(!file.isFile())return null;
+  try(InputStream input=new FileInputStream(file);ByteArrayOutputStream output=new ByteArrayOutputStream()){
+   byte[] buffer=new byte[8192];int count;while((count=input.read(buffer))!=-1)output.write(buffer,0,count);
+   JSONObject root=new JSONObject(output.toString("UTF-8"));
+   if(root.getInt("versionCode")!=libraryCacheVersion(context))return null;
+   JSONArray entries=root.getJSONArray("rows");if(root.getInt("count")!=entries.length())return null;
+   ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(entries.length());
+   for(int i=0;i<entries.length();i++){
+    JSONObject row=entries.getJSONObject(i);
+    String english=row.getString("englishName"),persian=row.getString("persianName"),fileName=row.getString("file");
+    String id=row.getString("sourceId"),type=row.getString("exerciseType"),body=row.getString("bodyPart");
+    String equipment=row.getString("equipment"),gender=row.getString("gender");
+    if(english.trim().isEmpty()||persian.trim().isEmpty()||!id.matches("\\\\d{3,10}")
+      ||!fileName.toLowerCase(Locale.ROOT).endsWith(".gif")
+      ||!("Male".equals(gender)||"Female".equals(gender)||"All".equals(gender)))return null;
+    rows.add(new ExerciseLibraryRow(english,persian,fileName,id,type,body,equipment,gender));
+   }
+   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
+   return rows;
+  }catch(Exception invalidCache){return null;}
+ }
+
+ private static void writeLibraryRowsCache(Context context,List<ExerciseLibraryRow> rows){
+  File target=libraryRowsCacheFile(context),temporary=new File(target.getParentFile(),target.getName()+".tmp");
+  try{
+   JSONArray entries=new JSONArray();
+   for(ExerciseLibraryRow item:rows){
+    JSONObject row=new JSONObject();row.put("englishName",item.englishName);row.put("persianName",item.persianName);
+    row.put("file",item.file);row.put("sourceId",item.sourceId);row.put("exerciseType",item.exerciseType);
+    row.put("bodyPart",item.bodyPart);row.put("equipment",item.equipment);row.put("gender",item.gender);entries.put(row);
+   }
+   JSONObject root=new JSONObject();root.put("versionCode",libraryCacheVersion(context));root.put("count",rows.size());root.put("rows",entries);
+   try(FileOutputStream output=new FileOutputStream(temporary)){output.write(root.toString().getBytes("UTF-8"));output.flush();output.getFD().sync();}
+   if(target.exists()&&!target.delete())return;
+   if(!temporary.renameTo(target))temporary.delete();
+  }catch(Exception ignored){if(temporary.exists())temporary.delete();}
  }
 
 
@@ -111,6 +162,10 @@ public final class AdvancedFeatures {
    this.bodyPart=classifyBodyPart(englishName);
    this.equipment=classifyEquipment(englishName);
    this.gender="male".equals(catalogGender)?"Male":("female".equals(catalogGender)?"Female":"All");
+  }
+  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId,String exerciseType,String bodyPart,String equipment,String gender){
+   this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
+   this.exerciseType=exerciseType;this.bodyPart=bodyPart;this.equipment=equipment;this.gender=gender;
   }
   String displayName(boolean english){return english?englishName:persianName;}
   @Override public String toString(){return englishName+" "+persianName;}
