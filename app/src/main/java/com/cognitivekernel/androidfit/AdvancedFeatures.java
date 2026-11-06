@@ -856,6 +856,7 @@ public final class AdvancedFeatures {
   for(String suffix:new String[]{"-wal","-shm","-journal"}){File sidecar=new File(dbFile.getAbsolutePath()+suffix);if(sidecar.exists())sidecar.delete();}
  }
  private void restoreSection(JSONObject section,String id)throws Exception{
+  if("workouts".equals(id))PlanListCache.invalidate(a);
   SQLiteDatabase database=db.getWritableDatabase();
   if("workouts".equals(id)){
    restoreTable(database,"plans",section.getJSONArray("plans"));restoreTable(database,"exercises",section.getJSONArray("exercises"));restoreTable(database,"logs",section.getJSONArray("logs"));
@@ -869,7 +870,6 @@ public final class AdvancedFeatures {
    a.getSharedPreferences("step_counter",Context.MODE_PRIVATE).edit()
     .putBoolean("running",false).putBoolean("paused",false).apply();
   }else throw new IOException("Unknown section");
-  if("workouts".equals(id))PlanListCache.invalidate(a);
  }
  private void restoreTable(SQLiteDatabase database,String table,JSONArray rows)throws Exception{
   database.delete(table,null,null);
