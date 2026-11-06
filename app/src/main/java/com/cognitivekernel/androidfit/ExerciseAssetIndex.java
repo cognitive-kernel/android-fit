@@ -65,12 +65,17 @@ public final class ExerciseAssetIndex {
 
         ExerciseAsset best = null;
         int bestRank = -1;
+        boolean bestExactName = false;
         for (ExerciseAsset candidate : matches) {
             int rank = genderRank(candidate.gender, gender);
+            boolean exactName = normalize(candidate.name).equals(key);
             if (rank > bestRank || (rank == bestRank && rank >= 0
+                    && exactName && !bestExactName)
+                    || (rank == bestRank && rank >= 0 && exactName == bestExactName
                     && best != null && candidate.id.compareTo(best.id) < 0)) {
                 best = candidate;
                 bestRank = rank;
+                bestExactName = exactName;
             }
         }
         return bestRank < 0 ? null : best;
@@ -162,13 +167,11 @@ public final class ExerciseAssetIndex {
                 if (!versionlessKey.isEmpty() && !versionlessKey.equals(nameKey)) {
                     addName(byName, versionlessKey, asset);
                 }
-                String localizedName = AdvancedFeatures.persianExerciseName(name);
-                String localizedKey = normalize(localizedName);
-                if (!localizedKey.isEmpty() && !localizedKey.equals(nameKey)) {
-                    addName(byName, localizedKey, asset);
-                    String localizedVersionlessKey = localizedKey.replaceAll("\\s+version\\s+\\d+$", "").trim();
-                    if (!localizedVersionlessKey.isEmpty() && !localizedVersionlessKey.equals(localizedKey)) {
-                        addName(byName, localizedVersionlessKey, asset);
+                // Some legacy GIF labels append the gender token without parentheses.
+                if (!"unspecified".equals(gender)) {
+                    String genderlessKey = nameKey.replaceAll("(?i)(male|female)$", "").trim();
+                    if (!genderlessKey.isEmpty() && !genderlessKey.equals(nameKey)) {
+                        addName(byName, genderlessKey, asset);
                     }
                 }
             }
