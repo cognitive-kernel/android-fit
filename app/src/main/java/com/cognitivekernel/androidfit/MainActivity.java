@@ -79,7 +79,7 @@ public class MainActivity extends Activity implements SensorEventListener {
   try{if(warmup!=null)warmup.get();showPlans(db.plans());}catch(Exception error){msg(tr("Error","خطا"),tr("Could not load workout data.","بارگذاری اطلاعات تمرین انجام نشد."));}
  }
  private void showPlans(List<String[]> p){String[] a=new String[p.size()+1];a[0]=tr("+ New plan","+ برنامه جدید");for(int i=0;i<p.size();i++)a[i+1]=p.get(i)[1];new AlertDialog.Builder(this).setTitle(tr("Plans","برنامه‌ها")).setItems(a,(d,w)->{if(w==0){EditText n=edit(tr("Plan name","نام برنامه"),null);new AlertDialog.Builder(this).setView(n).setPositiveButton(tr("Save","ذخیره"),(x,y)->{String s=n.getText().toString().trim();if(!s.isEmpty())showPlan(new String[]{""+db.addPlan(s),s});}).setNegativeButton(tr("Cancel","لغو"),null).show();}else showPlan(p.get(w-1));}).setNegativeButton(tr("Close","بستن"),null).show();}
- static String exerciseDisplayName(String name,boolean english){return english?name:AdvancedFeatures.persianExerciseName(name);}
+ static String exerciseDisplayName(String name,boolean english){return english?name:ExerciseNameLocalizer.toPersian(name);}
  void showPlan(String[] p){
   long planId=Long.parseLong(p[0]);final ArrayList<String[]> rows=new ArrayList<>(db.exercises(planId));
   final BaseAdapter[] adapterRef=new BaseAdapter[1];final AlertDialog[] dialogRef=new AlertDialog[1];ListView list=new ListView(this);
