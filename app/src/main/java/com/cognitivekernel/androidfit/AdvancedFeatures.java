@@ -92,46 +92,25 @@ public final class AdvancedFeatures {
  }
 
  private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
-  ArrayList<String> files=new ArrayList<>();
-  collectExerciseGifFiles(context.getAssets(),"exercises",files);
-  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(files.size());
-  java.util.regex.Pattern idPattern=java.util.regex.Pattern.compile("(?:_\\[?(\\d{3,8})\\]?|\\s+\\[?(\\d{3,8})\\]?)$");
-  for(String assetPath:files){
-   String file=assetPath.substring("exercises/".length());
-   String title=file.substring(0,file.length()-4);
-   java.util.regex.Matcher matcher=idPattern.matcher(title);
-   String sourceId="";
-   if(matcher.find()){
-    sourceId=matcher.group(1)!=null?matcher.group(1):matcher.group(2);
-    title=title.substring(0,matcher.start());
-   }
-   String english=title.replace('_',' ').replaceAll("\\s+"," ").trim();
-   if(english.isEmpty())continue;
-   rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),file,sourceId));
+  ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
+  for(ExerciseAssetIndex.ExerciseAsset asset:ExerciseAssetIndex.all(context)){
+   String english=asset.name;
+   if(english==null||english.trim().isEmpty())continue;
+   rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),asset.file,asset.id,asset.gender));
   }
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
   return rows;
  }
 
- private static void collectExerciseGifFiles(android.content.res.AssetManager assets,String directory,ArrayList<String> output)throws IOException{
-  String[] entries=assets.list(directory);
-  if(entries==null)return;
-  for(String entry:entries){
-   String path=directory+"/"+entry;
-   if(entry.toLowerCase(Locale.ROOT).endsWith(".gif"))output.add(path);
-   else if(!entry.contains("."))collectExerciseGifFiles(assets,path,output);
-  }
- }
 
  private static final class ExerciseLibraryRow{
   final String englishName,persianName,file,sourceId,exerciseType,bodyPart,equipment,gender;
-  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId){
+  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId,String catalogGender){
    this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
    this.exerciseType=classifyExerciseType(englishName);
    this.bodyPart=classifyBodyPart(englishName);
    this.equipment=classifyEquipment(englishName);
-   String lower=englishName.toLowerCase(Locale.ROOT);
-   this.gender=containsAny(lower,"(male)"," male","male ","(female)"," female","female ")?(containsAny(lower,"(female)"," female","female ")?"Female":"Male"):"All";
+   this.gender="male".equals(catalogGender)?"Male":("female".equals(catalogGender)?"Female":"All");
   }
   String displayName(boolean english){return english?englishName:persianName;}
   @Override public String toString(){return englishName+" "+persianName;}

@@ -22,16 +22,6 @@ import java.util.WeakHashMap;
 
 /** Resolves bundled exercise GIFs and displays them without dismissing the screen underneath. */
 public final class ExerciseImages {
-    private static volatile ArrayList<String> cachedFiles;
-    private static final java.util.Map<String, String> RESOLVED_GIFS = new java.util.HashMap<>();
-    private static volatile ArrayList<GifCandidate> indexedFiles;
-
-    private static final class GifCandidate {
-        final String path, normalized, localized;
-        GifCandidate(String path, String normalized, String localized) {
-            this.path = path; this.normalized = normalized; this.localized = localized;
-        }
-    }
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
@@ -48,118 +38,9 @@ public final class ExerciseImages {
         return ExerciseAssetIndex.findFileById(context, catalogId, gender);
     }
 
+    /** Unrestricted manual/library lookup, resolved through the same authoritative catalog. */
     public static String findGif(Context context, String exerciseName) {
-        if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
-        String wanted = normalize(exerciseName);
-        String wantedLatin = normalize(transliteratePersian(exerciseName));
-        if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
-        String cacheKey = wanted + "|" + wantedLatin;
-        synchronized (RESOLVED_GIFS) {
-            if (RESOLVED_GIFS.containsKey(cacheKey)) return RESOLVED_GIFS.get(cacheKey);
-            String resolved = resolveGif(context, wanted, wantedLatin);
-            RESOLVED_GIFS.put(cacheKey, resolved);
-            return resolved;
-        }
-    }
-
-    private static String resolveGif(Context context, String wanted, String wantedLatin) {
-        ArrayList<GifCandidate> candidates = indexedFiles(context);
-        String best = null;
-        int bestScore = 0;
-        for (GifCandidate candidate : candidates) {
-            if (candidate.normalized.isEmpty() && candidate.localized.isEmpty()) continue;
-            if (candidate.normalized.equals(wanted) || candidate.localized.equals(wanted)
-                    || (!wantedLatin.isEmpty() && candidate.normalized.equals(wantedLatin))
-                    || (!wantedLatin.isEmpty() && candidate.localized.equals(wantedLatin))) {
-                return candidate.path;
-            }
-            int score = Math.max(matchScore(wanted, candidate.normalized),
-                Math.max(matchScore(wanted, candidate.localized),
-                    Math.max(matchScore(wantedLatin, candidate.normalized),
-                        matchScore(wantedLatin, candidate.localized))));
-            if (score > bestScore) {
-                bestScore = score;
-                best = candidate.path;
-            }
-        }
-        int minimum = Math.max(5, Math.max(wanted.replace(" ", "").length(),
-            wantedLatin.replace(" ", "").length()) / 3);
-        return bestScore >= minimum ? best : null;
-    }
-
-    private static ArrayList<GifCandidate> indexedFiles(Context context) {
-        ArrayList<GifCandidate> result = indexedFiles;
-        if (result != null) return result;
-        synchronized (ExerciseImages.class) {
-            if (indexedFiles != null) return indexedFiles;
-            result = new ArrayList<>();
-            for (String file : files(context.getAssets())) {
-                String base = file.substring(file.lastIndexOf('/') + 1, file.length() - 4);
-                String cleanBase = base.replaceAll("[_\\s]+[\\[(]?(\\d{3,8})[\\])]?$", "");
-                result.add(new GifCandidate(file, normalize(cleanBase),
-                    normalize(AdvancedFeatures.persianExerciseName(cleanBase))));
-            }
-            indexedFiles = result;
-            return result;
-        }
-    }
-
-    private static int matchScore(String wanted, String candidate) {
-        if (wanted == null || wanted.isEmpty() || candidate == null || candidate.isEmpty()) return 0;
-        if (wanted.equals(candidate)) return 10000;
-        if (wanted.contains(candidate) || candidate.contains(wanted)) {
-            return Math.min(wanted.length(), candidate.length()) * 3;
-        }
-        int score = 0;
-        String[] a = wanted.split(" ");
-        String[] b = candidate.split(" ");
-        for (String token : a) {
-            if (token.length() < 3) continue;
-            for (String other : b) {
-                if (token.equals(other)) {
-                    score += token.length() * 2;
-                    break;
-                }
-            }
-        }
-        return score;
-    }
-
-    private static String transliteratePersian(String value) {
-        String[][] pairs = {{"آ","a"},{"ا","a"},{"ب","b"},{"پ","p"},{"ت","t"},{"ث","s"},{"ج","j"},{"چ","ch"},{"ح","h"},{"خ","kh"},{"د","d"},{"ذ","z"},{"ر","r"},{"ز","z"},{"ژ","zh"},{"س","s"},{"ش","sh"},{"ص","s"},{"ض","z"},{"ط","t"},{"ظ","z"},{"ع",""},{"غ","gh"},{"ف","f"},{"ق","gh"},{"ک","k"},{"گ","g"},{"ل","l"},{"م","m"},{"ن","n"},{"و","w"},{"ه","h"},{"ی","y"},{"ئ","y"},{"ء",""}};
-        String result = value == null ? "" : value;
-        for (String[] pair : pairs) result = result.replace(pair[0], pair[1]);
-        return result;
-    }
-
-    private static String normalize(String value) {
-        return value.toLowerCase(Locale.ROOT).replaceAll("\\.gif$", "")
-            .replaceAll("[_\\-]+", " ").replaceAll("[^a-z0-9\\u0600-\\u06FF ]", " ")
-            .replaceAll("\\s+", " ").trim();
-    }
-
-    private static ArrayList<String> files(AssetManager assets) {
-        ArrayList<String> result = cachedFiles;
-        if (result != null) return result;
-        synchronized (ExerciseImages.class) {
-            if (cachedFiles != null) return cachedFiles;
-            result = new ArrayList<>();
-            collect(assets, "exercises", result);
-            cachedFiles = result;
-            return result;
-        }
-    }
-
-    private static void collect(AssetManager assets, String directory, ArrayList<String> out) {
-        try {
-            String[] children = assets.list(directory);
-            if (children == null) return;
-            for (String child : children) {
-                String path = directory + "/" + child;
-                if (child.toLowerCase(Locale.ROOT).endsWith(".gif")) out.add(path);
-                else collect(assets, path, out);
-            }
-        } catch (IOException ignored) { }
+        return ExerciseAssetIndex.findFile(context, exerciseName, null);
     }
 
     public static void showFullscreen(Activity activity, String assetPath, String title) {
