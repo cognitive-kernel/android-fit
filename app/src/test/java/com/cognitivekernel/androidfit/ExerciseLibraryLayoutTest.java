@@ -55,4 +55,19 @@ public class ExerciseLibraryLayoutTest {
             dialog.dismiss();
         }
     }
+
+    @Test public void exerciseFiltersUseTwoCompactRowsWithoutHidingAnyFilter() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            View[] filters = {new View(activity), new View(activity), new View(activity), new View(activity)};
+            LinearLayout rows = AdvancedFeatures.createCompactFilterRows(
+                    activity, filters[0], filters[1], filters[2], filters[3]);
+            assertEquals("Four filters must occupy two rows", 2, rows.getChildCount());
+            assertEquals(2, ((LinearLayout) rows.getChildAt(0)).getChildCount());
+            assertEquals(2, ((LinearLayout) rows.getChildAt(1)).getChildCount());
+            for (View filter : filters) {
+                assertNotNull("Every filter must remain in the compact layout", filter.getParent());
+            }
+        }
+    }
 }
