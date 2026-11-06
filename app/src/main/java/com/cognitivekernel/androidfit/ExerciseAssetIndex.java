@@ -88,6 +88,13 @@ public final class ExerciseAssetIndex {
         return "exercises/" + candidate.file;
     }
 
+    /** All catalog entries in stable ID order; used by the exercise library UI. */
+    public static List<ExerciseAsset> all(Context context) {
+        ArrayList<ExerciseAsset> result = new ArrayList<>(index(context).byId.values());
+        Collections.sort(result, (left, right) -> left.id.compareTo(right.id));
+        return Collections.unmodifiableList(result);
+    }
+
     private static int genderRank(String candidate, String requested) {
         if (requested == null || requested.trim().isEmpty()
                 || "all".equalsIgnoreCase(requested.trim())) return 1;
@@ -150,12 +157,12 @@ public final class ExerciseAssetIndex {
                 if (nameKey.isEmpty()) {
                     throw new IllegalStateException("Empty normalized exercise name: " + id);
                 }
-                List<ExerciseAsset> named = byName.get(nameKey);
-                if (named == null) {
-                    named = new ArrayList<>();
-                    byName.put(nameKey, named);
+                addName(byName, nameKey, asset);
+                String localizedName = AdvancedFeatures.persianExerciseName(name);
+                String localizedKey = normalize(localizedName);
+                if (!localizedKey.isEmpty() && !localizedKey.equals(nameKey)) {
+                    addName(byName, localizedKey, asset);
                 }
-                named.add(asset);
             }
             if (byId.size() != declaredCount) {
                 throw new IllegalStateException("Exercise catalog contains duplicate identities");
@@ -164,6 +171,16 @@ public final class ExerciseAssetIndex {
         } catch (Exception error) {
             throw new IllegalStateException("Could not load authoritative exercise catalog", error);
         }
+    }
+
+    private static void addName(Map<String, List<ExerciseAsset>> byName,
+                                String key, ExerciseAsset asset) {
+        List<ExerciseAsset> named = byName.get(key);
+        if (named == null) {
+            named = new ArrayList<>();
+            byName.put(key, named);
+        }
+        named.add(asset);
     }
 
     private static String readAsset(AssetManager assets, String path) throws IOException {
