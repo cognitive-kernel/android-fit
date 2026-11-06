@@ -158,10 +158,18 @@ public final class ExerciseAssetIndex {
                     throw new IllegalStateException("Empty normalized exercise name: " + id);
                 }
                 addName(byName, nameKey, asset);
+                String versionlessKey = nameKey.replaceAll("\\s+version\\s+\\d+$", "").trim();
+                if (!versionlessKey.isEmpty() && !versionlessKey.equals(nameKey)) {
+                    addName(byName, versionlessKey, asset);
+                }
                 String localizedName = AdvancedFeatures.persianExerciseName(name);
                 String localizedKey = normalize(localizedName);
                 if (!localizedKey.isEmpty() && !localizedKey.equals(nameKey)) {
                     addName(byName, localizedKey, asset);
+                    String localizedVersionlessKey = localizedKey.replaceAll("\\s+version\\s+\\d+$", "").trim();
+                    if (!localizedVersionlessKey.isEmpty() && !localizedVersionlessKey.equals(localizedKey)) {
+                        addName(byName, localizedVersionlessKey, asset);
+                    }
                 }
             }
             if (byId.size() != declaredCount) {
