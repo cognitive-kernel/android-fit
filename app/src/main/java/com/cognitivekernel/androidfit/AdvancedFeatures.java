@@ -357,7 +357,13 @@ public final class AdvancedFeatures {
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
   libraryDialog.show();
   android.view.Window dialogWindow=libraryDialog.getWindow();
-  if(dialogWindow!=null){dialogWindow.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,android.view.ViewGroup.LayoutParams.MATCH_PARENT);}
+  makeLibraryDialogFullscreen(libraryDialog);
+ }
+
+ static void makeLibraryDialogFullscreen(Dialog dialog){
+  if(dialog==null||dialog.getWindow()==null)return;
+  dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+    android.view.ViewGroup.LayoutParams.MATCH_PARENT);
  }
 
  private void addPageNumber(LinearLayout container,int page,int[] currentPage,Runnable[] refresh){
