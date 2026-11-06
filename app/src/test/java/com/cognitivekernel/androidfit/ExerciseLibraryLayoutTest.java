@@ -55,4 +55,50 @@ public class ExerciseLibraryLayoutTest {
             dialog.dismiss();
         }
     }
+
+    @Test public void exerciseFiltersUseTwoCompactRowsWithoutHidingAnyFilter() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            View[] filters = {new View(activity), new View(activity), new View(activity), new View(activity)};
+            LinearLayout rows = AdvancedFeatures.createCompactFilterRows(
+                    activity, filters[0], filters[1], filters[2], filters[3]);
+            assertEquals("Four filters must occupy two rows", 2, rows.getChildCount());
+            assertEquals(2, ((LinearLayout) rows.getChildAt(0)).getChildCount());
+            assertEquals(2, ((LinearLayout) rows.getChildAt(1)).getChildCount());
+            for (View filter : filters) {
+                assertNotNull("Every filter must remain in the compact layout", filter.getParent());
+            }
+        }
+    }
+
+    @Test public void processedLibraryRowsAreRestoredWithoutRebuildingTranslations() throws Exception {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity = controller.get();
+            Class<?> rowType = Class.forName("com.cognitivekernel.androidfit.AdvancedFeatures$ExerciseLibraryRow");
+            java.lang.reflect.Constructor<?> constructor = rowType.getDeclaredConstructor(
+                    String.class, String.class, String.class, String.class,
+                    String.class, String.class, String.class, String.class);
+            constructor.setAccessible(true);
+            Object row = constructor.newInstance(
+                    "Air Squat", "اسکوات", "Air Squat.gif", "394813",
+                    "Strength", "Thighs", "Body weight", "Female");
+            ArrayList<Object> rows = new ArrayList<>();
+            rows.add(row);
+
+            java.lang.reflect.Method write = AdvancedFeatures.class.getDeclaredMethod(
+                    "writeLibraryRowsCache", android.content.Context.class, List.class);
+            write.setAccessible(true);
+            write.invoke(null, activity, rows);
+
+            java.lang.reflect.Method read = AdvancedFeatures.class.getDeclaredMethod(
+                    "readLibraryRowsCache", android.content.Context.class);
+            read.setAccessible(true);
+            ArrayList<?> restored = (ArrayList<?>) read.invoke(null, activity);
+            assertNotNull(restored);
+            assertEquals(1, restored.size());
+            java.lang.reflect.Field persianName = rowType.getDeclaredField("persianName");
+            persianName.setAccessible(true);
+            assertEquals("اسکوات", persianName.get(restored.get(0)));
+        }
+    }
 }

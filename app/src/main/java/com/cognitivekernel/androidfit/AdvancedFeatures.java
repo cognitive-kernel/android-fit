@@ -92,6 +92,8 @@ public final class AdvancedFeatures {
  }
 
  private static ArrayList<ExerciseLibraryRow> loadExerciseLibrary(Context context)throws IOException{
+  ArrayList<ExerciseLibraryRow> cachedRows=readLibraryRowsCache(context);
+  if(cachedRows!=null&&!cachedRows.isEmpty())return cachedRows;
   ArrayList<ExerciseLibraryRow> rows=new ArrayList<>();
   for(ExerciseAssetIndex.ExerciseAsset asset:ExerciseAssetIndex.all(context)){
    String english=asset.name;
@@ -99,7 +101,56 @@ public final class AdvancedFeatures {
    rows.add(new ExerciseLibraryRow(english,persianExerciseName(english),asset.file,asset.id,asset.gender));
   }
   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
+  writeLibraryRowsCache(context,rows);
   return rows;
+ }
+
+ private static int libraryCacheVersion(Context context){
+  try{return context.getPackageManager().getPackageInfo(context.getPackageName(),0).versionCode;}
+  catch(Exception ignored){return 0;}
+ }
+
+ private static File libraryRowsCacheFile(Context context){
+  return new File(context.getFilesDir(),"exercise_library_rows_v1_"+libraryCacheVersion(context)+".json");
+ }
+
+ private static ArrayList<ExerciseLibraryRow> readLibraryRowsCache(Context context){
+  File file=libraryRowsCacheFile(context);if(!file.isFile())return null;
+  try(InputStream input=new FileInputStream(file);ByteArrayOutputStream output=new ByteArrayOutputStream()){
+   byte[] buffer=new byte[8192];int count;while((count=input.read(buffer))!=-1)output.write(buffer,0,count);
+   JSONObject root=new JSONObject(output.toString("UTF-8"));
+   if(root.getInt("versionCode")!=libraryCacheVersion(context))return null;
+   JSONArray entries=root.getJSONArray("rows");if(root.getInt("count")!=entries.length())return null;
+   ArrayList<ExerciseLibraryRow> rows=new ArrayList<>(entries.length());
+   for(int i=0;i<entries.length();i++){
+    JSONObject row=entries.getJSONObject(i);
+    String english=row.getString("englishName"),persian=row.getString("persianName"),fileName=row.getString("file");
+    String id=row.getString("sourceId"),type=row.getString("exerciseType"),body=row.getString("bodyPart");
+    String equipment=row.getString("equipment"),gender=row.getString("gender");
+    if(english.trim().isEmpty()||persian.trim().isEmpty()||!id.matches("\\d{3,10}")
+      ||!fileName.toLowerCase(Locale.ROOT).endsWith(".gif")
+      ||!("Male".equals(gender)||"Female".equals(gender)||"All".equals(gender)))return null;
+    rows.add(new ExerciseLibraryRow(english,persian,fileName,id,type,body,equipment,gender));
+   }
+   Collections.sort(rows,(left,right)->left.englishName.compareToIgnoreCase(right.englishName));
+   return rows;
+  }catch(Exception invalidCache){return null;}
+ }
+
+ private static void writeLibraryRowsCache(Context context,List<ExerciseLibraryRow> rows){
+  File target=libraryRowsCacheFile(context),temporary=new File(target.getParentFile(),target.getName()+".tmp");
+  try{
+   JSONArray entries=new JSONArray();
+   for(ExerciseLibraryRow item:rows){
+    JSONObject row=new JSONObject();row.put("englishName",item.englishName);row.put("persianName",item.persianName);
+    row.put("file",item.file);row.put("sourceId",item.sourceId);row.put("exerciseType",item.exerciseType);
+    row.put("bodyPart",item.bodyPart);row.put("equipment",item.equipment);row.put("gender",item.gender);entries.put(row);
+   }
+   JSONObject root=new JSONObject();root.put("versionCode",libraryCacheVersion(context));root.put("count",rows.size());root.put("rows",entries);
+   try(FileOutputStream output=new FileOutputStream(temporary)){output.write(root.toString().getBytes("UTF-8"));output.flush();output.getFD().sync();}
+   if(target.exists()&&!target.delete())return;
+   if(!temporary.renameTo(target))temporary.delete();
+  }catch(Exception ignored){if(temporary.exists())temporary.delete();}
  }
 
 
@@ -111,6 +162,10 @@ public final class AdvancedFeatures {
    this.bodyPart=classifyBodyPart(englishName);
    this.equipment=classifyEquipment(englishName);
    this.gender="male".equals(catalogGender)?"Male":("female".equals(catalogGender)?"Female":"All");
+  }
+  ExerciseLibraryRow(String englishName,String persianName,String file,String sourceId,String exerciseType,String bodyPart,String equipment,String gender){
+   this.englishName=englishName;this.persianName=persianName;this.file=file;this.sourceId=sourceId;
+   this.exerciseType=exerciseType;this.bodyPart=bodyPart;this.equipment=equipment;this.gender=gender;
   }
   String displayName(boolean english){return english?englishName:persianName;}
   @Override public String toString(){return englishName+" "+persianName;}
@@ -281,7 +336,9 @@ public final class AdvancedFeatures {
   spinner.setAdapter(new ArrayAdapter<String>(a,android.R.layout.simple_spinner_dropdown_item,labels){
    @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
     TextView view=(TextView)super.getView(position,convertView,parent);
-    view.setText(labels[position]);view.setSingleLine(true);view.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    view.setText(hint+": "+labels[position]);view.setTextSize(14);view.setSingleLine(true);view.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    int inset=(int)(8*a.getResources().getDisplayMetrics().density);view.setPadding(inset,0,inset,0);
+    view.setMinHeight((int)(44*a.getResources().getDisplayMetrics().density));
     return view;
    }
   });
@@ -292,13 +349,12 @@ public final class AdvancedFeatures {
  private void showLoadedExerciseLibrary(ArrayList<ExerciseLibraryRow> exercises){
   if(exercises==null||exercises.isEmpty()){message(s("exercise_library"),tr("No GIF exercises were found in the exercise assets.","هیچ فایل GIF در پوشه حرکات پیدا نشد."));return;}
   EditText search=new EditText(a);search.setSingleLine(true);search.setHint(tr("Search in Persian or English","جست‌وجو به فارسی یا انگلیسی"));
-  Spinner typeSpinner=makeCategorySpinner(EXERCISE_TYPES,tr("Exercise type","نوع حرکت"));
-  Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body part","عضو بدن"));
-  Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Equipment type","وسیله"));
+  Spinner typeSpinner=makeCategorySpinner(EXERCISE_TYPES,tr("Type","نوع"));
+  Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body","عضو"));
+  Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Gear","وسیله"));
   Spinner genderSpinner=makeCategorySpinner(GENDER_TYPES,tr("Gender","جنسیت"));
   ListView list=new ListView(a);ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(new ArrayList<>());
   final int[] pageSize={50},currentPage={0};final ArrayList<ExerciseLibraryRow> filteredRows=new ArrayList<>();
-  TextView pageLabel=new TextView(a);pageLabel.setGravity(Gravity.CENTER);
   Spinner pageSizeSpinner=new Spinner(a);String[] pageSizeOptions={"10","20","50",tr("Custom","دلخواه")};
   pageSizeSpinner.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,pageSizeOptions));
   EditText customPageSize=new EditText(a);customPageSize.setSingleLine(true);customPageSize.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);customPageSize.setHint(tr("Custom items per page","تعداد دلخواه در هر صفحه"));customPageSize.setVisibility(View.GONE);
@@ -306,26 +362,17 @@ public final class AdvancedFeatures {
   Button firstPage=new Button(a),previousPage=new Button(a),nextPage=new Button(a),lastPage=new Button(a);
   firstPage.setText("«");previousPage.setText("‹");nextPage.setText("›");lastPage.setText("»");
   firstPage.setContentDescription(tr("First page","صفحه اول"));previousPage.setContentDescription(tr("Previous page","صفحه قبلی"));nextPage.setContentDescription(tr("Next page","صفحه بعدی"));lastPage.setContentDescription(tr("Last page","صفحه آخر"));
-  LinearLayout pageNumbers=new LinearLayout(a);pageNumbers.setGravity(Gravity.CENTER);pageNumbers.setOrientation(LinearLayout.HORIZONTAL);
-  HorizontalScrollView pageNumberScroll=new HorizontalScrollView(a);pageNumberScroll.setHorizontalScrollBarEnabled(false);pageNumberScroll.addView(pageNumbers);
   LinearLayout sizeControls=new LinearLayout(a);sizeControls.setGravity(Gravity.CENTER_VERTICAL);
+  sizeControls.addView(label(tr("Per page:","در صفحه:")),new LinearLayout.LayoutParams(-2,-2));
   sizeControls.addView(pageSizeSpinner,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(customPageSize,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(applyPageSize,new LinearLayout.LayoutParams(-2,-2));
   LinearLayout pageControls=new LinearLayout(a);pageControls.setGravity(Gravity.CENTER);
-  pageControls.addView(firstPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(previousPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(pageLabel,new LinearLayout.LayoutParams(0,-2,2));pageControls.addView(nextPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(lastPage,new LinearLayout.LayoutParams(0,-2,1));
-  final Runnable[] refreshPageReference={null};
+  pageControls.addView(firstPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(previousPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(nextPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(lastPage,new LinearLayout.LayoutParams(0,-2,1));
   Runnable refreshPage=()->{
    int pageCount=Math.max(1,(filteredRows.size()+pageSize[0]-1)/pageSize[0]);currentPage[0]=Math.max(0,Math.min(currentPage[0],pageCount-1));
    int startIndex=currentPage[0]*pageSize[0],endIndex=Math.min(startIndex+pageSize[0],filteredRows.size());
-   adapter.setRows(filteredRows.subList(startIndex,endIndex));pageLabel.setText((currentPage[0]+1)+" / "+pageCount+" · "+filteredRows.size());
+   adapter.setRows(filteredRows.subList(startIndex,endIndex));
    firstPage.setEnabled(currentPage[0]>0);previousPage.setEnabled(currentPage[0]>0);nextPage.setEnabled(currentPage[0]+1<pageCount);lastPage.setEnabled(currentPage[0]+1<pageCount);
-   pageNumbers.removeAllViews();int windowStart=Math.max(0,currentPage[0]-2),windowEnd=Math.min(pageCount-1,windowStart+4);windowStart=Math.max(0,windowEnd-4);
-   if(windowStart>0)addPageNumber(pageNumbers,0,currentPage,refreshPageReference);
-   if(windowStart>1)addPageEllipsis(pageNumbers);
-   for(int page=windowStart;page<=windowEnd;page++)addPageNumber(pageNumbers,page,currentPage,refreshPageReference);
-   if(windowEnd<pageCount-2)addPageEllipsis(pageNumbers);
-   if(windowEnd<pageCount-1)addPageNumber(pageNumbers,pageCount-1,currentPage,refreshPageReference);
   };
-  refreshPageReference[0]=refreshPage;
   firstPage.setOnClickListener(v->{currentPage[0]=0;refreshPage.run();});previousPage.setOnClickListener(v->{currentPage[0]--;refreshPage.run();});
   nextPage.setOnClickListener(v->{currentPage[0]++;refreshPage.run();});lastPage.setOnClickListener(v->{currentPage[0]=Math.max(0,(filteredRows.size()-1)/pageSize[0]);refreshPage.run();});
   pageSizeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
@@ -333,9 +380,12 @@ public final class AdvancedFeatures {
    public void onNothingSelected(android.widget.AdapterView<?> parent){}
   });
   applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
-  LinearLayout header=column();header.addView(search);header.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
-  header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));header.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
-  header.addView(typeSpinner);header.addView(bodySpinner);header.addView(equipmentSpinner);header.addView(genderSpinner);
+  LinearLayout header=new LinearLayout(a);header.setOrientation(LinearLayout.VERTICAL);
+  header.addView(search,new LinearLayout.LayoutParams(-1,-2));
+  header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));
+  header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
+  LinearLayout filterGrid=createCompactFilterRows(a,typeSpinner,bodySpinner,equipmentSpinner,genderSpinner);
+  header.addView(filterGrid,new LinearLayout.LayoutParams(-1,-2));
   LinearLayout content=column();content.setLayoutParams(new LinearLayout.LayoutParams(-1,-1));
   content.addView(header,new LinearLayout.LayoutParams(-1,-2));
   content.addView(list,new LinearLayout.LayoutParams(-1,0,1f));
@@ -361,6 +411,19 @@ public final class AdvancedFeatures {
   libraryDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
  }
 
+ static LinearLayout createCompactFilterRows(Context context,View first,View second,View third,View fourth){
+  LinearLayout root=new LinearLayout(context);root.setOrientation(LinearLayout.VERTICAL);
+  int gap=(int)(4*context.getResources().getDisplayMetrics().density);
+  LinearLayout rowOne=new LinearLayout(context);rowOne.setOrientation(LinearLayout.HORIZONTAL);rowOne.setGravity(Gravity.CENTER_VERTICAL);
+  LinearLayout rowTwo=new LinearLayout(context);rowTwo.setOrientation(LinearLayout.HORIZONTAL);rowTwo.setGravity(Gravity.CENTER_VERTICAL);
+  LinearLayout.LayoutParams cell=new LinearLayout.LayoutParams(0,-2,1f);cell.setMargins(0,gap,gap,0);
+  LinearLayout.LayoutParams cellLast=new LinearLayout.LayoutParams(0,-2,1f);cellLast.setMargins(0,gap,0,0);
+  rowOne.addView(first,new LinearLayout.LayoutParams(cell));rowOne.addView(second,new LinearLayout.LayoutParams(cellLast));
+  rowTwo.addView(third,new LinearLayout.LayoutParams(cell));rowTwo.addView(fourth,new LinearLayout.LayoutParams(cellLast));
+  root.addView(rowOne,new LinearLayout.LayoutParams(-1,-2));root.addView(rowTwo,new LinearLayout.LayoutParams(-1,-2));
+  return root;
+ }
+
  static Dialog showFullscreenLibraryDialog(Activity activity,View content,String title){
   Dialog dialog=new Dialog(activity);
   dialog.setTitle(title);
@@ -378,12 +441,6 @@ public final class AdvancedFeatures {
   window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
     android.view.ViewGroup.LayoutParams.MATCH_PARENT);
  }
-
- private void addPageNumber(LinearLayout container,int page,int[] currentPage,Runnable[] refresh){
-  Button button=new Button(a);button.setText(String.valueOf(page+1));button.setMinWidth((int)(40*a.getResources().getDisplayMetrics().density));button.setPadding(4,0,4,0);button.setEnabled(page!=currentPage[0]);
-  button.setOnClickListener(v->{currentPage[0]=page;refresh[0].run();});container.addView(button,new LinearLayout.LayoutParams(-2,-2));
- }
- private void addPageEllipsis(LinearLayout container){TextView dots=new TextView(a);dots.setText("…");dots.setGravity(Gravity.CENTER);dots.setPadding(6,0,6,0);container.addView(dots,new LinearLayout.LayoutParams(-2,-2));}
 
  static String persianExerciseName(String english){
   if(english==null||english.trim().isEmpty())return "";

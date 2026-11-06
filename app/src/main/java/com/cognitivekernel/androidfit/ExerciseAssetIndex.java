@@ -2,11 +2,15 @@ package com.cognitivekernel.androidfit;
 
 import android.content.Context;
 import android.content.res.AssetManager;
+import android.content.pm.PackageInfo;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -115,8 +119,78 @@ public final class ExerciseAssetIndex {
         if (result != null) return result;
         synchronized (ExerciseAssetIndex.class) {
             if (cached != null) return cached;
-            cached = load(context.getApplicationContext().getAssets());
+            Context app = context.getApplicationContext();
+            IndexState disk = readDiskCache(app);
+            if (disk != null) {
+                cached = disk;
+                return cached;
+            }
+            cached = load(app.getAssets());
+            writeDiskCache(app, cached);
             return cached;
+        }
+    }
+
+    private static int appVersionCode(Context context) {
+        try {
+            PackageInfo info = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
+            return info.versionCode;
+        } catch (Exception ignored) {
+            return 0;
+        }
+    }
+
+    private static File cacheFile(Context context) {
+        return new File(context.getFilesDir(), "exercise_catalog_index_v1_"
+                + appVersionCode(context) + ".json");
+    }
+
+    /** Reads the validated catalog index persisted by the previous app process. */
+    private static IndexState readDiskCache(Context context) {
+        File file = cacheFile(context);
+        if (!file.isFile()) return null;
+        try (InputStream input = new FileInputStream(file);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            JSONObject root = new JSONObject(output.toString("UTF-8"));
+            if (root.getInt("versionCode") != appVersionCode(context)) return null;
+            JSONArray rows = root.getJSONArray("exercises");
+            return indexFromRows(rows, root.getInt("count"), null);
+        } catch (Exception invalidCache) {
+            // A missing, outdated or interrupted cache is rebuilt from the bundled catalog.
+            return null;
+        }
+    }
+
+    private static void writeDiskCache(Context context, IndexState state) {
+        File target = cacheFile(context);
+        File temporary = new File(target.getParentFile(), target.getName() + ".tmp");
+        try {
+            JSONArray rows = new JSONArray();
+            for (ExerciseAsset asset : state.byId.values()) {
+                JSONObject row = new JSONObject();
+                row.put("id", asset.id);
+                row.put("gender", asset.gender);
+                row.put("name", asset.name);
+                row.put("file", asset.file);
+                rows.put(row);
+            }
+            JSONObject root = new JSONObject();
+            root.put("versionCode", appVersionCode(context));
+            root.put("count", state.byId.size());
+            root.put("exercises", rows);
+            try (FileOutputStream output = new FileOutputStream(temporary)) {
+                output.write(root.toString().getBytes("UTF-8"));
+                output.flush();
+                output.getFD().sync();
+            }
+            if (target.exists() && !target.delete()) return;
+            if (!temporary.renameTo(target)) temporary.delete();
+        } catch (Exception ignored) {
+            if (temporary.exists()) temporary.delete();
+            // Cache persistence is an optimization; the validated in-memory index remains usable.
         }
     }
 
@@ -124,64 +198,64 @@ public final class ExerciseAssetIndex {
         try {
             JSONObject root = new JSONObject(readAsset(assets, CATALOG_PATH));
             JSONArray rows = root.getJSONArray("exercises");
-            int declaredCount = root.getInt("count");
-            if (declaredCount != rows.length()) {
-                throw new IllegalStateException("Exercise catalog count does not match its entries");
-            }
-
             Set<String> bundledFiles = new HashSet<>();
             String[] listed = assets.list("exercises");
             if (listed != null) Collections.addAll(bundledFiles, listed);
-
-            Map<String, ExerciseAsset> byId = new HashMap<>(rows.length() * 2);
-            Map<String, List<ExerciseAsset>> byName = new HashMap<>(rows.length() * 2);
-            for (int i = 0; i < rows.length(); i++) {
-                JSONObject row = rows.getJSONObject(i);
-                String id = requiredString(row, "id");
-                String name = requiredString(row, "name");
-                String gender = requiredString(row, "gender").toLowerCase(Locale.ROOT);
-                String file = requiredString(row, "file");
-
-                if (!"male".equals(gender) && !"female".equals(gender)
-                        && !"unspecified".equals(gender)) {
-                    throw new IllegalStateException("Invalid gender in exercise catalog: " + id);
-                }
-                if (!id.matches("\\d{3,10}") || !file.toLowerCase(Locale.ROOT).endsWith(".gif")
-                        || file.contains("/") || file.contains("\\\\")) {
-                    throw new IllegalStateException("Invalid exercise catalog identity: " + id);
-                }
-                if (!bundledFiles.contains(file)) {
-                    throw new IllegalStateException("Missing exercise GIF referenced by catalog: " + file);
-                }
-
-                ExerciseAsset asset = new ExerciseAsset(id, gender, name, file);
-                if (byId.put(id, asset) != null) {
-                    throw new IllegalStateException("Duplicate exercise catalog ID: " + id);
-                }
-                String nameKey = normalize(name);
-                if (nameKey.isEmpty()) {
-                    throw new IllegalStateException("Empty normalized exercise name: " + id);
-                }
-                addName(byName, nameKey, asset);
-                String versionlessKey = nameKey.replaceAll("\\s+version\\s+\\d+$", "").trim();
-                if (!versionlessKey.isEmpty() && !versionlessKey.equals(nameKey)) {
-                    addName(byName, versionlessKey, asset);
-                }
-                // Some legacy GIF labels append the gender token without parentheses.
-                if (!"unspecified".equals(gender)) {
-                    String genderlessKey = nameKey.replaceAll("(?i)(male|female)$", "").trim();
-                    if (!genderlessKey.isEmpty() && !genderlessKey.equals(nameKey)) {
-                        addName(byName, genderlessKey, asset);
-                    }
-                }
-            }
-            if (byId.size() != declaredCount) {
-                throw new IllegalStateException("Exercise catalog contains duplicate identities");
-            }
-            return new IndexState(byId, byName);
+            return indexFromRows(rows, root.getInt("count"), bundledFiles);
         } catch (Exception error) {
             throw new IllegalStateException("Could not load authoritative exercise catalog", error);
         }
+    }
+
+    private static IndexState indexFromRows(JSONArray rows, int declaredCount,
+                                             Set<String> bundledFiles) throws Exception {
+        if (declaredCount != rows.length()) {
+            throw new IllegalStateException("Exercise catalog count does not match its entries");
+        }
+        Map<String, ExerciseAsset> byId = new HashMap<>(rows.length() * 2);
+        Map<String, List<ExerciseAsset>> byName = new HashMap<>(rows.length() * 2);
+        for (int i = 0; i < rows.length(); i++) {
+            JSONObject row = rows.getJSONObject(i);
+            String id = requiredString(row, "id");
+            String name = requiredString(row, "name");
+            String gender = requiredString(row, "gender").toLowerCase(Locale.ROOT);
+            String file = requiredString(row, "file");
+            if (!"male".equals(gender) && !"female".equals(gender)
+                    && !"unspecified".equals(gender)) {
+                throw new IllegalStateException("Invalid gender in exercise catalog: " + id);
+            }
+            if (!id.matches("\\d{3,10}") || !file.toLowerCase(Locale.ROOT).endsWith(".gif")
+                    || file.contains("/") || file.contains("\\\\")) {
+                throw new IllegalStateException("Invalid exercise catalog identity: " + id);
+            }
+            if (bundledFiles != null && !bundledFiles.contains(file)) {
+                throw new IllegalStateException("Missing exercise GIF referenced by catalog: " + file);
+            }
+            ExerciseAsset asset = new ExerciseAsset(id, gender, name, file);
+            if (byId.put(id, asset) != null) {
+                throw new IllegalStateException("Duplicate exercise catalog ID: " + id);
+            }
+            String nameKey = normalize(name);
+            if (nameKey.isEmpty()) {
+                throw new IllegalStateException("Empty normalized exercise name: " + id);
+            }
+            addName(byName, nameKey, asset);
+            String versionlessKey = nameKey.replaceAll("\\s+version\\s+\\d+$", "").trim();
+            if (!versionlessKey.isEmpty() && !versionlessKey.equals(nameKey)) {
+                addName(byName, versionlessKey, asset);
+            }
+            // Some legacy GIF labels append the gender token without parentheses.
+            if (!"unspecified".equals(gender)) {
+                String genderlessKey = nameKey.replaceAll("(?i)(male|female)$", "").trim();
+                if (!genderlessKey.isEmpty() && !genderlessKey.equals(nameKey)) {
+                    addName(byName, genderlessKey, asset);
+                }
+            }
+        }
+        if (byId.size() != declaredCount) {
+            throw new IllegalStateException("Exercise catalog contains duplicate identities");
+        }
+        return new IndexState(byId, byName);
     }
 
     private static void addName(Map<String, List<ExerciseAsset>> byName,
