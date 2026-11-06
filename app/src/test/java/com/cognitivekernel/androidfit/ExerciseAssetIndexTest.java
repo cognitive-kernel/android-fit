@@ -55,4 +55,17 @@ public class ExerciseAssetIndexTest {
             assertTrue(squat.file.endsWith(".gif"));
         }
     }
+    @Test public void authoritativeCatalogContainsEveryBundledGifAndExplicitGender() {
+        try(ActivityController<Activity> controller=Robolectric.buildActivity(Activity.class).setup()) {
+            Activity context=controller.get();
+            java.util.List<ExerciseAssetIndex.ExerciseAsset> catalog=ExerciseAssetIndex.all(context);
+            assertEquals(6556,catalog.size());
+            assertEquals("female",catalog.stream().filter(x->"394813".equals(x.id)).findFirst().get().gender);
+            assertEquals("male",catalog.stream().filter(x->"175913".equals(x.id)).findFirst().get().gender);
+            assertEquals("unspecified",catalog.stream().filter(x->"288113".equals(x.id)).findFirst().get().gender);
+            assertNotNull(ExerciseImages.findGif(context,"Air Squat"));
+            assertNull(ExerciseImages.findGifById(context,"175913","female"));
+        }
+    }
+
 }
