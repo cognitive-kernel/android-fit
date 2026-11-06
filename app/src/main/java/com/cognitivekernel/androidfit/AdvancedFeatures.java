@@ -353,11 +353,22 @@ public final class AdvancedFeatures {
   typeSpinner.setOnItemSelectedListener(filterListener);bodySpinner.setOnItemSelectedListener(filterListener);equipmentSpinner.setOnItemSelectedListener(filterListener);genderSpinner.setOnItemSelectedListener(filterListener);
   list.setAdapter(adapter);list.setDividerHeight(Math.max(1,(int)(1*a.getResources().getDisplayMetrics().density)));list.setVerticalScrollBarEnabled(true);list.setNestedScrollingEnabled(false);filterRows.run();
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}public void afterTextChanged(android.text.Editable e){}});
-  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
+  Button closeLibrary=new Button(a);closeLibrary.setText(android.R.string.cancel);
+  content.addView(closeLibrary,new LinearLayout.LayoutParams(-1,-2));
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
-  libraryDialog.show();
-  makeLibraryDialogFullscreen(libraryDialog);
+  final Dialog libraryDialog=showFullscreenLibraryDialog(a,content,s("exercise_library"));
+  closeLibrary.setOnClickListener(v->libraryDialog.dismiss());
   libraryDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+ }
+
+ static Dialog showFullscreenLibraryDialog(Activity activity,View content,String title){
+  Dialog dialog=new Dialog(activity);
+  dialog.setTitle(title);
+  dialog.setContentView(content);
+  dialog.setCancelable(true);
+  dialog.show();
+  makeLibraryDialogFullscreen(dialog);
+  return dialog;
  }
 
  static void makeLibraryDialogFullscreen(Dialog dialog){
@@ -366,8 +377,6 @@ public final class AdvancedFeatures {
   window.setGravity(Gravity.FILL);
   window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
     android.view.ViewGroup.LayoutParams.MATCH_PARENT);
-  window.getDecorView().setLayoutParams(new android.view.ViewGroup.LayoutParams(
-    android.view.ViewGroup.LayoutParams.MATCH_PARENT,android.view.ViewGroup.LayoutParams.MATCH_PARENT));
  }
 
  private void addPageNumber(LinearLayout container,int page,int[] currentPage,Runnable[] refresh){
