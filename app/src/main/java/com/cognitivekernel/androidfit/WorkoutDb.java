@@ -29,8 +29,8 @@ public class WorkoutDb extends SQLiteOpenHelper {
         ensureColumn(db,"exercises","exercise_catalog_id","TEXT");
         ensureColumn(db,"exercises","exercise_gender","TEXT");
         // Older generated plans encoded gender in the display name; migrate it into metadata.
-        db.execSQL("UPDATE exercises SET exercise_gender='male', name=substr(rtrim(name),1,length(rtrim(name))-7) WHERE exercise_gender IS NULL AND lower(rtrim(name)) LIKE '% (male)' AND plan_id IN (SELECT id FROM plans WHERE lower(name) LIKE 'personal plan%' OR name LIKE 'برنامه شخصی%')");
-        db.execSQL("UPDATE exercises SET exercise_gender='female', name=substr(rtrim(name),1,length(rtrim(name))-9) WHERE exercise_gender IS NULL AND lower(rtrim(name)) LIKE '% (female)' AND plan_id IN (SELECT id FROM plans WHERE lower(name) LIKE 'personal plan%' OR name LIKE 'برنامه شخصی%')");
+        db.execSQL("UPDATE exercises SET exercise_gender='male' WHERE exercise_gender IS NULL AND lower(rtrim(name)) LIKE '% (male)' AND plan_id IN (SELECT id FROM plans WHERE lower(name) LIKE 'personal plan%' OR name LIKE 'برنامه شخصی%')");
+        db.execSQL("UPDATE exercises SET exercise_gender='female' WHERE exercise_gender IS NULL AND lower(rtrim(name)) LIKE '% (female)' AND plan_id IN (SELECT id FROM plans WHERE lower(name) LIKE 'personal plan%' OR name LIKE 'برنامه شخصی%')");
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_exercises_plan_id ON exercises(plan_id)");
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs(created_at DESC)");
     }
