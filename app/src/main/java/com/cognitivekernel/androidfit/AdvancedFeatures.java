@@ -127,7 +127,7 @@ public final class AdvancedFeatures {
     String english=row.getString("englishName"),persian=row.getString("persianName"),fileName=row.getString("file");
     String id=row.getString("sourceId"),type=row.getString("exerciseType"),body=row.getString("bodyPart");
     String equipment=row.getString("equipment"),gender=row.getString("gender");
-    if(english.trim().isEmpty()||persian.trim().isEmpty()||!id.matches("\\\\d{3,10}")
+    if(english.trim().isEmpty()||persian.trim().isEmpty()||!id.matches("\\d{3,10}")
       ||!fileName.toLowerCase(Locale.ROOT).endsWith(".gif")
       ||!("Male".equals(gender)||"Female".equals(gender)||"All".equals(gender)))return null;
     rows.add(new ExerciseLibraryRow(english,persian,fileName,id,type,body,equipment,gender));
