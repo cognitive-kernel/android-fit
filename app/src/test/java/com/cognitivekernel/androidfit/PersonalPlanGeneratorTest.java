@@ -8,33 +8,47 @@ import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.RobolectricTestRunner;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 34)
 public class PersonalPlanGeneratorTest {
-    @Test public void generatesExercisesForEveryGoalAndGenderFromCatalog() {
+    @Test public void generatesRequestedExerciseCountForEveryPreferenceCombination() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             List<ExerciseAssetIndex.ExerciseAsset> catalog = ExerciseAssetIndex.all(controller.get());
+            int[] durations = {10, 20, 21, 35, 36, 50, 51, 180};
             for (int goal = 0; goal < 4; goal++) {
-                for (String gender : new String[]{"male", "female"}) {
-                    List<PersonalPlanGenerator.PlannedExercise> plan =
-                            PersonalPlanGenerator.generate(catalog, goal, 1, 0, gender, 35);
-                    assertEquals(4, plan.size());
-                    for (PersonalPlanGenerator.PlannedExercise item : plan) {
-                        assertNotNull(item.asset.id);
-                        assertTrue(gender.equals(item.asset.gender) || "unspecified".equals(item.asset.gender));
-                        assertTrue(item.sets >= 2);
-                        assertTrue(item.reps >= 1);
+                for (int level = 0; level < 3; level++) {
+                    for (int equipment = 0; equipment < 3; equipment++) {
+                        for (String gender : new String[]{"male", "female"}) {
+                            for (int minutes : durations) {
+                                List<PersonalPlanGenerator.PlannedExercise> plan =
+                                        PersonalPlanGenerator.generate(catalog, goal, level, equipment, gender, minutes);
+                                int expectedCount = minutes <= 20 ? 3 : minutes <= 35 ? 4 : minutes <= 50 ? 6 : 8;
+                                assertEquals("goal=" + goal + ", level=" + level + ", equipment=" + equipment
+                                        + ", gender=" + gender + ", minutes=" + minutes, expectedCount, plan.size());
+                                Set<String> ids = new HashSet<>();
+                                for (PersonalPlanGenerator.PlannedExercise item : plan) {
+                                    assertNotNull(item.asset.id);
+                                    assertTrue(gender.equals(item.asset.gender) || "unspecified".equals(item.asset.gender));
+                                    assertTrue(ids.add(item.asset.id));
+                                    assertTrue(item.sets >= 1);
+                                    assertTrue(item.reps >= 1);
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    @Test public void equipmentFreePlanDoesNotSelectMachineOrFreeWeightMovements() {
+    @Test public void equipmentFreePlanDoesNotSelectEquipmentDependentMovements() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             List<PersonalPlanGenerator.PlannedExercise> plan = PersonalPlanGenerator.generate(
                     ExerciseAssetIndex.all(controller.get()), 2, 0, 0, "male", 50);
@@ -47,23 +61,58 @@ public class PersonalPlanGeneratorTest {
                 assertFalse(name.contains("dumbbell"));
                 assertFalse(name.contains("kettlebell"));
                 assertFalse(name.contains("resistance band"));
+                assertFalse(name.contains("medicine ball"));
+                assertFalse(name.contains("battle rope"));
+                assertFalse(name.contains("weighted"));
             }
         }
     }
 
-    @Test public void generatedPlanPersistsExercisesIncludingNeutralGenderAssetsAtomically() {
+    @Test public void generatedPlanPersistsExercisesAndLeavesExistingManualDataUntouched() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity = controller.get();
             WorkoutDb db = new WorkoutDb(activity);
             try {
+                long existingPlan = db.addPlan("Existing manual plan");
+                long manualExercise = db.addExercise(existingPlan, "My custom movement", 2, 12);
                 List<PersonalPlanGenerator.PlannedExercise> generated = PersonalPlanGenerator.generate(
                         ExerciseAssetIndex.all(activity), 2, 0, 0, "female", 35);
-                long planId = db.addPlanWithExercises("Generated test plan", generated);
-                List<String[]> saved = db.exercises(planId);
+                long generatedPlan = db.addPlanWithExercises("Generated test plan", generated);
+
+                List<String[]> saved = db.exercises(generatedPlan);
                 assertEquals(generated.size(), saved.size());
-                for (String[] row : saved) {
-                    assertNotNull(row[4]);
-                    assertTrue("female".equals(row[5]) || "unspecified".equals(row[5]));
+                for (int i = 0; i < saved.size(); i++) {
+                    assertEquals(generated.get(i).asset.id, saved.get(i)[4]);
+                    assertEquals(generated.get(i).asset.gender, saved.get(i)[5]);
+                }
+
+                List<String[]> oldRows = db.exercises(existingPlan);
+                assertEquals(1, oldRows.size());
+                assertEquals(String.valueOf(manualExercise), oldRows.get(0)[0]);
+                assertEquals("My custom movement", oldRows.get(0)[1]);
+                assertNull(oldRows.get(0)[4]);
+                assertNull(oldRows.get(0)[5]);
+            } finally {
+                db.close();
+            }
+        }
+    }
+
+    @Test public void failedGeneratedPlanTransactionRollsBackOnlyItsOwnWrites() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            WorkoutDb db = new WorkoutDb(controller.get());
+            try {
+                long existingPlan = db.addPlan("Keep this plan");
+                db.addExercise(existingPlan, "Manual movement", 3, 10);
+                List<PersonalPlanGenerator.PlannedExercise> generated = PersonalPlanGenerator.generate(
+                        ExerciseAssetIndex.all(controller.get()), 1, 0, 0, "female", 35);
+                try {
+                    db.addPlanWithExercises("Must roll back", Arrays.asList(generated.get(0), null));
+                    fail("Expected invalid generated movement to abort the transaction");
+                } catch (IllegalArgumentException expected) {
+                    assertEquals(1, db.plans().size());
+                    assertEquals("Keep this plan", db.plans().get(0)[1]);
+                    assertEquals("Manual movement", db.exercises(existingPlan).get(0)[1]);
                 }
             } finally {
                 db.close();

@@ -297,7 +297,7 @@ public final class AdvancedFeatures {
   Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Equipment type","وسیله"));
   Spinner genderSpinner=makeCategorySpinner(GENDER_TYPES,tr("Gender","جنسیت"));
   ListView list=new ListView(a);ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(new ArrayList<>());
-  final int[] pageSize={10},currentPage={0};final ArrayList<ExerciseLibraryRow> filteredRows=new ArrayList<>();
+  final int[] pageSize={50},currentPage={0};final ArrayList<ExerciseLibraryRow> filteredRows=new ArrayList<>();
   TextView pageLabel=new TextView(a);pageLabel.setGravity(Gravity.CENTER);
   Spinner pageSizeSpinner=new Spinner(a);String[] pageSizeOptions={"10","20","50",tr("Custom","دلخواه")};
   pageSizeSpinner.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,pageSizeOptions));
@@ -351,17 +351,31 @@ public final class AdvancedFeatures {
   };
   android.widget.AdapterView.OnItemSelectedListener filterListener=new android.widget.AdapterView.OnItemSelectedListener(){public void onItemSelected(android.widget.AdapterView<?> parent,View view,int position,long id){filterRows.run();}public void onNothingSelected(android.widget.AdapterView<?> parent){}};
   typeSpinner.setOnItemSelectedListener(filterListener);bodySpinner.setOnItemSelectedListener(filterListener);equipmentSpinner.setOnItemSelectedListener(filterListener);genderSpinner.setOnItemSelectedListener(filterListener);
-  list.setAdapter(adapter);filterRows.run();
+  list.setAdapter(adapter);list.setDividerHeight(Math.max(1,(int)(1*a.getResources().getDisplayMetrics().density)));list.setVerticalScrollBarEnabled(true);list.setNestedScrollingEnabled(false);filterRows.run();
   search.addTextChangedListener(new android.text.TextWatcher(){public void beforeTextChanged(CharSequence s,int st,int count,int after){}public void onTextChanged(CharSequence text,int st,int before,int count){filterRows.run();}public void afterTextChanged(android.text.Editable e){}});
-  final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
+  Button closeLibrary=new Button(a);closeLibrary.setText(android.R.string.cancel);
+  content.addView(closeLibrary,new LinearLayout.LayoutParams(-1,-2));
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
-  libraryDialog.show();
-  makeLibraryDialogFullscreen(libraryDialog);
+  final Dialog libraryDialog=showFullscreenLibraryDialog(a,content,s("exercise_library"));
+  closeLibrary.setOnClickListener(v->libraryDialog.dismiss());
+  libraryDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+ }
+
+ static Dialog showFullscreenLibraryDialog(Activity activity,View content,String title){
+  Dialog dialog=new Dialog(activity);
+  dialog.setTitle(title);
+  dialog.setContentView(content);
+  dialog.setCancelable(true);
+  dialog.show();
+  makeLibraryDialogFullscreen(dialog);
+  return dialog;
  }
 
  static void makeLibraryDialogFullscreen(Dialog dialog){
   if(dialog==null||dialog.getWindow()==null)return;
-  dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+  android.view.Window window=dialog.getWindow();
+  window.setGravity(Gravity.FILL);
+  window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
     android.view.ViewGroup.LayoutParams.MATCH_PARENT);
  }
 
@@ -473,6 +487,18 @@ public final class AdvancedFeatures {
     String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+genderLabel;
     // The database writes the plan and all generated exercises in one transaction.
     long planId=db.addPlanWithExercises(planName,generated);
+    List<String[]> persisted=db.exercises(planId);
+    if(persisted.size()!=generated.size()){
+     db.deletePlan(planId);
+     throw new IllegalStateException("Generated exercise count does not match persisted exercise count");
+    }
+    for(int i=0;i<generated.size();i++){
+     String[] saved=persisted.get(i);PersonalPlanGenerator.PlannedExercise expected=generated.get(i);
+     if(!expected.asset.id.equals(saved[4])||!expected.asset.gender.equals(saved[5])){
+      db.deletePlan(planId);
+      throw new IllegalStateException("Persisted exercise catalog metadata does not match generated plan");
+     }
+    }
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit()
       .putInt("weekly_goal",weeklyDays).putInt("session_minutes",sessionMinutes)
       .putString("fitness_goal",String.valueOf(goal.getSelectedItem()))
@@ -483,8 +509,8 @@ public final class AdvancedFeatures {
       +"\n"+s("session_minutes")+": "+sessionMinutes
       +"\n"+tr("Exercises added: ","تعداد حرکات اضافه‌شده: ")+generated.size());
    }catch(Exception ex){
-    message(s("error"),tr("The plan could not be created. No empty plan was saved. Check the selected preferences and try again.",
-      "ساخت برنامه انجام نشد و برنامهٔ خالی ذخیره نشد. مشخصات انتخاب‌شده را بررسی و دوباره تلاش کنید."));
+    String reason=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();
+    message(s("error"),tr("The plan could not be created: ","ساخت برنامه انجام نشد: ")+reason);
    }
   }).setNegativeButton(android.R.string.cancel,null).show();
  }

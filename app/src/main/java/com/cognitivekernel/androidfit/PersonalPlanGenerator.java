@@ -64,10 +64,11 @@ public final class PersonalPlanGenerator {
             ExerciseAssetIndex.ExerciseAsset candidate = choose(eligible, category, usedIds, usedNames);
             if (candidate != null) add(candidate, selected, usedIds, usedNames);
         }
-        // Catalogs and equipment subsets vary; fill remaining slots with other eligible movements.
+        // Category classification is only a prioritization hint, never an eligibility rule.
+        // Fill every remaining slot from the already gender- and equipment-filtered catalog.
         for (ExerciseAssetIndex.ExerciseAsset candidate : eligible) {
             if (selected.size() >= count) break;
-            if (isUsefulMovement(candidate.name)) add(candidate, selected, usedIds, usedNames);
+            add(candidate, selected, usedIds, usedNames);
         }
         if (selected.isEmpty()) throw new IllegalStateException("No suitable exercises could be generated");
 
@@ -129,9 +130,6 @@ public final class PersonalPlanGenerator {
         return contains(normalize(name), "stretch", "mobility", "yoga", "pose", "flexibility");
     }
 
-    private static boolean isUsefulMovement(String name) {
-        return !"other".equals(category(name));
-    }
 
     private static boolean contains(String value, String... terms) {
         for (String term : terms) if (value.contains(term)) return true;
