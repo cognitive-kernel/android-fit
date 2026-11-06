@@ -11,7 +11,8 @@ import java.util.List;
 public class WorkoutDb extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "fit_yar.db";
     private static final int DATABASE_VERSION = 5;
-    public WorkoutDb(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); }
+    private final Context appContext;
+    public WorkoutDb(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); appContext=context.getApplicationContext(); }
     @Override public void onCreate(SQLiteDatabase db) { ensureSchema(db); }
     @Override public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) { ensureSchema(db); }
 
@@ -41,7 +42,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
     public long addPlan(String name) {
         if(name==null||name.trim().isEmpty()) throw new IllegalArgumentException("Plan name is required");
-        ContentValues v=new ContentValues(); v.put("name",name.trim()); return getWritableDatabase().insertOrThrow("plans",null,v);
+        ContentValues v=new ContentValues(); v.put("name",name.trim()); long id=getWritableDatabase().insertOrThrow("plans",null,v); PlanListCache.invalidate(appContext); return id;
     }
     /** Creates a generated plan and all of its exercises atomically. */
     public long addPlanWithExercises(String name, List<PersonalPlanGenerator.PlannedExercise> exercises) {
@@ -72,7 +73,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
         }
         ContentValues values = new ContentValues();
         values.put("name", name.trim());
-        return getWritableDatabase().update("plans", values, "id=?", new String[]{String.valueOf(id)}) > 0;
+        boolean updated=getWritableDatabase().update("plans", values, "id=?", new String[]{String.valueOf(id)}) > 0; if(updated)PlanListCache.invalidate(appContext); return updated;
     }
 
     public long addExercise(long planId,String name,int sets,int reps) {
@@ -110,11 +111,12 @@ public class WorkoutDb extends SQLiteOpenHelper {
     public void deletePlan(long id) {
         SQLiteDatabase db=getWritableDatabase(); db.beginTransaction();
         try { db.delete("exercises","plan_id=?",new String[]{String.valueOf(id)}); db.delete("plans","id=?",new String[]{String.valueOf(id)}); db.setTransactionSuccessful(); }
-        finally { db.endTransaction(); }
+        finally { db.endTransaction(); PlanListCache.invalidate(appContext); }
     }
     public List<String[]> plans() {
         List<String[]> rows=new ArrayList<>();
         try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name FROM plans ORDER BY name",null)) { while(c.moveToNext()) rows.add(new String[]{c.getString(0),c.getString(1)}); }
+        PlanListCache.write(appContext,rows);
         return rows;
     }
     public List<String[]> exercises(long planId) {
