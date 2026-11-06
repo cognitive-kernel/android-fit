@@ -281,7 +281,9 @@ public final class AdvancedFeatures {
   spinner.setAdapter(new ArrayAdapter<String>(a,android.R.layout.simple_spinner_dropdown_item,labels){
    @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
     TextView view=(TextView)super.getView(position,convertView,parent);
-    view.setText(labels[position]);view.setSingleLine(true);view.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    view.setText(labels[position]);view.setTextSize(14);view.setSingleLine(true);view.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    int inset=(int)(8*a.getResources().getDisplayMetrics().density);view.setPadding(inset,0,inset,0);
+    view.setMinHeight((int)(44*a.getResources().getDisplayMetrics().density));
     return view;
    }
   });
@@ -306,8 +308,6 @@ public final class AdvancedFeatures {
   Button firstPage=new Button(a),previousPage=new Button(a),nextPage=new Button(a),lastPage=new Button(a);
   firstPage.setText("«");previousPage.setText("‹");nextPage.setText("›");lastPage.setText("»");
   firstPage.setContentDescription(tr("First page","صفحه اول"));previousPage.setContentDescription(tr("Previous page","صفحه قبلی"));nextPage.setContentDescription(tr("Next page","صفحه بعدی"));lastPage.setContentDescription(tr("Last page","صفحه آخر"));
-  LinearLayout pageNumbers=new LinearLayout(a);pageNumbers.setGravity(Gravity.CENTER);pageNumbers.setOrientation(LinearLayout.HORIZONTAL);
-  HorizontalScrollView pageNumberScroll=new HorizontalScrollView(a);pageNumberScroll.setHorizontalScrollBarEnabled(false);pageNumberScroll.addView(pageNumbers);
   LinearLayout sizeControls=new LinearLayout(a);sizeControls.setGravity(Gravity.CENTER_VERTICAL);
   sizeControls.addView(pageSizeSpinner,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(customPageSize,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(applyPageSize,new LinearLayout.LayoutParams(-2,-2));
   LinearLayout pageControls=new LinearLayout(a);pageControls.setGravity(Gravity.CENTER);
@@ -318,12 +318,6 @@ public final class AdvancedFeatures {
    int startIndex=currentPage[0]*pageSize[0],endIndex=Math.min(startIndex+pageSize[0],filteredRows.size());
    adapter.setRows(filteredRows.subList(startIndex,endIndex));pageLabel.setText((currentPage[0]+1)+" / "+pageCount+" · "+filteredRows.size());
    firstPage.setEnabled(currentPage[0]>0);previousPage.setEnabled(currentPage[0]>0);nextPage.setEnabled(currentPage[0]+1<pageCount);lastPage.setEnabled(currentPage[0]+1<pageCount);
-   pageNumbers.removeAllViews();int windowStart=Math.max(0,currentPage[0]-2),windowEnd=Math.min(pageCount-1,windowStart+4);windowStart=Math.max(0,windowEnd-4);
-   if(windowStart>0)addPageNumber(pageNumbers,0,currentPage,refreshPageReference);
-   if(windowStart>1)addPageEllipsis(pageNumbers);
-   for(int page=windowStart;page<=windowEnd;page++)addPageNumber(pageNumbers,page,currentPage,refreshPageReference);
-   if(windowEnd<pageCount-2)addPageEllipsis(pageNumbers);
-   if(windowEnd<pageCount-1)addPageNumber(pageNumbers,pageCount-1,currentPage,refreshPageReference);
   };
   refreshPageReference[0]=refreshPage;
   firstPage.setOnClickListener(v->{currentPage[0]=0;refreshPage.run();});previousPage.setOnClickListener(v->{currentPage[0]--;refreshPage.run();});
@@ -333,9 +327,19 @@ public final class AdvancedFeatures {
    public void onNothingSelected(android.widget.AdapterView<?> parent){}
   });
   applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
-  LinearLayout header=column();header.addView(search);header.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
-  header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));header.addView(pageNumberScroll,new LinearLayout.LayoutParams(-1,-2));header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
-  header.addView(typeSpinner);header.addView(bodySpinner);header.addView(equipmentSpinner);header.addView(genderSpinner);
+  LinearLayout header=new LinearLayout(a);header.setOrientation(LinearLayout.VERTICAL);
+  int filterGap=(int)(4*a.getResources().getDisplayMetrics().density);
+  header.addView(search,new LinearLayout.LayoutParams(-1,-2));
+  header.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
+  header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));
+  header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
+  LinearLayout filterRowOne=new LinearLayout(a);filterRowOne.setOrientation(LinearLayout.HORIZONTAL);filterRowOne.setGravity(Gravity.CENTER_VERTICAL);
+  LinearLayout filterRowTwo=new LinearLayout(a);filterRowTwo.setOrientation(LinearLayout.HORIZONTAL);filterRowTwo.setGravity(Gravity.CENTER_VERTICAL);
+  LinearLayout.LayoutParams filterCell=new LinearLayout.LayoutParams(0,-2,1f);filterCell.setMargins(0,filterGap,filterGap,0);
+  LinearLayout.LayoutParams filterCellLast=new LinearLayout.LayoutParams(0,-2,1f);filterCellLast.setMargins(0,filterGap,0,0);
+  filterRowOne.addView(typeSpinner,new LinearLayout.LayoutParams(filterCell));filterRowOne.addView(bodySpinner,new LinearLayout.LayoutParams(filterCellLast));
+  filterRowTwo.addView(equipmentSpinner,new LinearLayout.LayoutParams(filterCell));filterRowTwo.addView(genderSpinner,new LinearLayout.LayoutParams(filterCellLast));
+  header.addView(filterRowOne,new LinearLayout.LayoutParams(-1,-2));header.addView(filterRowTwo,new LinearLayout.LayoutParams(-1,-2));
   LinearLayout content=column();content.setLayoutParams(new LinearLayout.LayoutParams(-1,-1));
   content.addView(header,new LinearLayout.LayoutParams(-1,-2));
   content.addView(list,new LinearLayout.LayoutParams(-1,0,1f));
@@ -378,12 +382,6 @@ public final class AdvancedFeatures {
   window.setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
     android.view.ViewGroup.LayoutParams.MATCH_PARENT);
  }
-
- private void addPageNumber(LinearLayout container,int page,int[] currentPage,Runnable[] refresh){
-  Button button=new Button(a);button.setText(String.valueOf(page+1));button.setMinWidth((int)(40*a.getResources().getDisplayMetrics().density));button.setPadding(4,0,4,0);button.setEnabled(page!=currentPage[0]);
-  button.setOnClickListener(v->{currentPage[0]=page;refresh[0].run();});container.addView(button,new LinearLayout.LayoutParams(-2,-2));
- }
- private void addPageEllipsis(LinearLayout container){TextView dots=new TextView(a);dots.setText("…");dots.setGravity(Gravity.CENTER);dots.setPadding(6,0,6,0);container.addView(dots,new LinearLayout.LayoutParams(-2,-2));}
 
  static String persianExerciseName(String english){
   if(english==null||english.trim().isEmpty())return "";
