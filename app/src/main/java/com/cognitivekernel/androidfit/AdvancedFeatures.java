@@ -312,14 +312,12 @@ public final class AdvancedFeatures {
   sizeControls.addView(pageSizeSpinner,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(customPageSize,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(applyPageSize,new LinearLayout.LayoutParams(-2,-2));
   LinearLayout pageControls=new LinearLayout(a);pageControls.setGravity(Gravity.CENTER);
   pageControls.addView(firstPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(previousPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(pageLabel,new LinearLayout.LayoutParams(0,-2,2));pageControls.addView(nextPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(lastPage,new LinearLayout.LayoutParams(0,-2,1));
-  final Runnable[] refreshPageReference={null};
   Runnable refreshPage=()->{
    int pageCount=Math.max(1,(filteredRows.size()+pageSize[0]-1)/pageSize[0]);currentPage[0]=Math.max(0,Math.min(currentPage[0],pageCount-1));
    int startIndex=currentPage[0]*pageSize[0],endIndex=Math.min(startIndex+pageSize[0],filteredRows.size());
    adapter.setRows(filteredRows.subList(startIndex,endIndex));pageLabel.setText((currentPage[0]+1)+" / "+pageCount+" · "+filteredRows.size());
    firstPage.setEnabled(currentPage[0]>0);previousPage.setEnabled(currentPage[0]>0);nextPage.setEnabled(currentPage[0]+1<pageCount);lastPage.setEnabled(currentPage[0]+1<pageCount);
   };
-  refreshPageReference[0]=refreshPage;
   firstPage.setOnClickListener(v->{currentPage[0]=0;refreshPage.run();});previousPage.setOnClickListener(v->{currentPage[0]--;refreshPage.run();});
   nextPage.setOnClickListener(v->{currentPage[0]++;refreshPage.run();});lastPage.setOnClickListener(v->{currentPage[0]=Math.max(0,(filteredRows.size()-1)/pageSize[0]);refreshPage.run();});
   pageSizeSpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener(){
@@ -328,13 +326,12 @@ public final class AdvancedFeatures {
   });
   applyPageSize.setOnClickListener(v->{if(pageSizeSpinner.getSelectedItemPosition()!=3)return;try{int parsed=Integer.parseInt(customPageSize.getText().toString().trim());if(parsed<1||parsed>500)throw new NumberFormatException();pageSize[0]=parsed;currentPage[0]=0;refreshPage.run();}catch(Exception invalid){message(tr("Invalid page size","تعداد نامعتبر"),tr("Enter a number between 1 and 500.","عددی بین ۱ تا ۵۰۰ وارد کنید."));}});
   LinearLayout header=new LinearLayout(a);header.setOrientation(LinearLayout.VERTICAL);
-  int filterGap=(int)(4*a.getResources().getDisplayMetrics().density);
   header.addView(search,new LinearLayout.LayoutParams(-1,-2));
   header.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
   header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));
   header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
-  LinearLayout filterRows=createCompactFilterRows(a,typeSpinner,bodySpinner,equipmentSpinner,genderSpinner);
-  header.addView(filterRows,new LinearLayout.LayoutParams(-1,-2));
+  LinearLayout filterGrid=createCompactFilterRows(a,typeSpinner,bodySpinner,equipmentSpinner,genderSpinner);
+  header.addView(filterGrid,new LinearLayout.LayoutParams(-1,-2));
   LinearLayout content=column();content.setLayoutParams(new LinearLayout.LayoutParams(-1,-1));
   content.addView(header,new LinearLayout.LayoutParams(-1,-2));
   content.addView(list,new LinearLayout.LayoutParams(-1,0,1f));
