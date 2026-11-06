@@ -116,9 +116,7 @@ public final class PersonalPlanGenerator {
         boolean hasFreeWeight = contains(n, "barbell", "dumbbell", "kettlebell", "ez bar",
                 "weight plate", "weighted", "medicine ball", "battle rope", "resistance band", "theraband");
         if (equipment == 0) return !hasMachine && !hasFreeWeight;
-        if (equipment == 1) return !hasMachine && !contains(n, "barbell", "smith machine")
-                && (!contains(n, "dumbbell", "kettlebell", "resistance band", "theraband")
-                || contains(n, "dumbbell", "kettlebell", "resistance band", "theraband"));
+        if (equipment == 1) return !hasMachine && !contains(n, "barbell", "smith machine");
         return true;
     }
 
