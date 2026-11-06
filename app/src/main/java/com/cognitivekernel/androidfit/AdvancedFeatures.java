@@ -799,6 +799,7 @@ public final class AdvancedFeatures {
   try{
    try(OutputStream out=new FileOutputStream(tmp)){out.write(imported);out.flush();}
    validateDatabase(tmp);
+   PlanListCache.invalidate(a);
    db.close();
    if(rollback.exists()&&!rollback.delete())throw new IOException("Cannot clear rollback file");
    if(dbFile.exists())try(InputStream in=new FileInputStream(dbFile);OutputStream out=new FileOutputStream(rollback)){copy(in,out);}
@@ -855,6 +856,7 @@ public final class AdvancedFeatures {
   for(String suffix:new String[]{"-wal","-shm","-journal"}){File sidecar=new File(dbFile.getAbsolutePath()+suffix);if(sidecar.exists())sidecar.delete();}
  }
  private void restoreSection(JSONObject section,String id)throws Exception{
+  if("workouts".equals(id))PlanListCache.invalidate(a);
   SQLiteDatabase database=db.getWritableDatabase();
   if("workouts".equals(id)){
    restoreTable(database,"plans",section.getJSONArray("plans"));restoreTable(database,"exercises",section.getJSONArray("exercises"));restoreTable(database,"logs",section.getJSONArray("logs"));

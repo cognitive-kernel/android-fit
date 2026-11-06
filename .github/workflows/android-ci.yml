@@ -188,21 +188,21 @@ jobs:
           test -n "${FIT_YAR_RELEASE_KEY_ALIAS:-}"
           test -n "${FIT_YAR_RELEASE_KEY_PASSWORD:-}"
           test -n "${FIT_YAR_RELEASE_STORE_PASSWORD:-}"
-          gradle --no-daemon -PFIT_YAR_VERSION_CODE=116 -PFIT_YAR_VERSION_NAME=1.1.20 assembleDebug
+          gradle --no-daemon -PFIT_YAR_VERSION_CODE=117 -PFIT_YAR_VERSION_NAME=1.1.21 assembleDebug
           APK="app/build/outputs/apk/debug/app-debug.apk"
           "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "package: name='com.cognitivekernel.androidfit'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='116'"
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionName='1.1.20'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionCode='117'"
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/aapt" dump badging "$APK" | grep -F "versionName='1.1.21'"
           mkdir -p artifacts
-          cp "$APK" artifacts/fityar-large-library-v116.apk
-          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v116.apk | tee artifacts/signature.txt
+          cp "$APK" artifacts/fityar-large-library-v117.apk
+          "$ANDROID_SDK_ROOT/build-tools/36.0.0/apksigner" verify --print-certs artifacts/fityar-large-library-v117.apk | tee artifacts/signature.txt
           ACTUAL_CERT="$(sed -n 's/.*certificate SHA-256 digest: //p' artifacts/signature.txt | head -n1 | tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]')"
           EXPECTED_CERT="61dbac4c3b3936ad0da75c021781d194d997de0e6718e0f153c85f14629f0c4a"
           if [ "$ACTUAL_CERT" != "$EXPECTED_CERT" ]; then
             echo "::error::APK certificate does not match the previously distributed FitYar signing certificate."
             exit 1
           fi
-          sha256sum artifacts/fityar-large-library-v116.apk > artifacts/SHA256SUMS.txt
+          sha256sum artifacts/fityar-large-library-v117.apk > artifacts/SHA256SUMS.txt
       - name: Publish verified APK as a GitHub Release
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         env:
@@ -210,20 +210,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if gh release view v1.1.20 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release v1.1.20 already exists; refusing to overwrite published assets."
+          if gh release view v1.1.21 --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release v1.1.21 already exists; refusing to overwrite published assets."
             exit 1
           fi
-          gh release create v1.1.20 \
-            artifacts/fityar-large-library-v116.apk \
+          gh release create v1.1.21 \
+            artifacts/fityar-large-library-v117.apk \
             artifacts/signature.txt \
             artifacts/SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
-            --title "FitYar 1.1.19" \
-            --notes "FitYar 1.1.20. Version code 116. Signed with the verified FitYar release certificate."
+            --title "FitYar 1.1.21" \
+            --notes "FitYar 1.1.21. Version code 117. Signed with the verified FitYar release certificate."
       - uses: actions/upload-artifact@v4
         with:
-          name: fityar-large-library-v116
+          name: fityar-large-library-v117
           path: artifacts/*
           if-no-files-found: error
           retention-days: 14
