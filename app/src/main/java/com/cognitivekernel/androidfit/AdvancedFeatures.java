@@ -356,7 +356,6 @@ public final class AdvancedFeatures {
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
   libraryDialog.show();
-  android.view.Window dialogWindow=libraryDialog.getWindow();
   makeLibraryDialogFullscreen(libraryDialog);
  }
 
