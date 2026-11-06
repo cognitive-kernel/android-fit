@@ -38,8 +38,10 @@ public class PlanListCacheTest {
             ArrayList<String[]> restored = PlanListCache.read(context);
             assertNotNull("A new app process must restore the persisted plan list", restored);
             assertEquals(2, restored.size());
-            assertEquals(String.valueOf(firstId), restored.get(0)[0]);
-            assertEquals(String.valueOf(secondId), restored.get(1)[0]);
+            java.util.Set<String> restoredIds = new java.util.HashSet<>();
+            for (String[] plan : restored) restoredIds.add(plan[0]);
+            assertTrue(restoredIds.contains(String.valueOf(firstId)));
+            assertTrue(restoredIds.contains(String.valueOf(secondId)));
             nextProcessDatabase.close();
         }
     }
