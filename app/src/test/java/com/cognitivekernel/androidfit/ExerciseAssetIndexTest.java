@@ -68,4 +68,27 @@ public class ExerciseAssetIndexTest {
         }
     }
 
+
+    @Test public void catalogIndexIsPersistedAndReadableAfterMemoryCacheReset() throws Exception {
+        try(ActivityController<Activity> controller=Robolectric.buildActivity(Activity.class).setup()) {
+            Activity context=controller.get();
+            assertEquals(6556,ExerciseAssetIndex.all(context).size());
+            java.io.File[] cacheFiles=context.getFilesDir().listFiles(
+                (directory,name)->name.startsWith("exercise_catalog_index_v1_")&&name.endsWith(".json"));
+            assertNotNull(cacheFiles);
+            assertEquals("Exactly one version-scoped catalog cache should be written",1,cacheFiles.length);
+            assertTrue(cacheFiles[0].isFile()&&cacheFiles[0].length()>0);
+
+            java.lang.reflect.Field memoryCache=ExerciseAssetIndex.class.getDeclaredField("cached");
+            memoryCache.setAccessible(true);
+            memoryCache.set(null,null);
+
+            java.lang.reflect.Method readCache=ExerciseAssetIndex.class.getDeclaredMethod(
+                "readDiskCache",android.content.Context.class);
+            readCache.setAccessible(true);
+            assertNotNull("The next app process must be able to restore the persisted index",
+                readCache.invoke(null,context));
+            assertEquals(6556,ExerciseAssetIndex.all(context).size());
+        }
+    }
 }
