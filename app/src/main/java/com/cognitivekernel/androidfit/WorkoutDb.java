@@ -43,6 +43,29 @@ public class WorkoutDb extends SQLiteOpenHelper {
         if(name==null||name.trim().isEmpty()) throw new IllegalArgumentException("Plan name is required");
         ContentValues v=new ContentValues(); v.put("name",name.trim()); return getWritableDatabase().insertOrThrow("plans",null,v);
     }
+    /** Creates a generated plan and all of its exercises atomically. */
+    public long addPlanWithExercises(String name, List<PersonalPlanGenerator.PlannedExercise> exercises) {
+        if (exercises == null || exercises.isEmpty()) {
+            throw new IllegalArgumentException("A generated plan must contain exercises");
+        }
+        SQLiteDatabase database = getWritableDatabase();
+        database.beginTransaction();
+        try {
+            long planId = addPlan(name);
+            for (PersonalPlanGenerator.PlannedExercise exercise : exercises) {
+                if (exercise == null || exercise.asset == null) {
+                    throw new IllegalArgumentException("Generated exercise is incomplete");
+                }
+                addExercise(planId, exercise.asset.name, exercise.sets, exercise.reps,
+                        exercise.asset.id, exercise.asset.gender);
+            }
+            database.setTransactionSuccessful();
+            return planId;
+        } finally {
+            database.endTransaction();
+        }
+    }
+
     public boolean updatePlan(long id, String name) {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Plan name is required");
@@ -58,7 +81,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
     public long addExercise(long planId,String name,int sets,int reps,String catalogId,String gender) {
         if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
         if(catalogId!=null&&!catalogId.matches("\\d{3,10}")) throw new IllegalArgumentException("Invalid exercise catalog ID");
-        if(gender!=null&&!gender.equals("male")&&!gender.equals("female")&&!gender.equals("all")) throw new IllegalArgumentException("Invalid exercise gender");
+        if(gender!=null&&!gender.equals("male")&&!gender.equals("female")&&!gender.equals("all")&&!gender.equals("unspecified")) throw new IllegalArgumentException("Invalid exercise gender");
         SQLiteDatabase database=getWritableDatabase();
         try(Cursor cursor=database.rawQuery("SELECT 1 FROM plans WHERE id=?",new String[]{String.valueOf(planId)})) {
             if(!cursor.moveToFirst()) throw new IllegalArgumentException("Workout plan does not exist");
