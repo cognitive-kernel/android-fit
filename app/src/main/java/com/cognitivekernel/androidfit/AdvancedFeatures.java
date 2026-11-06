@@ -281,7 +281,7 @@ public final class AdvancedFeatures {
   spinner.setAdapter(new ArrayAdapter<String>(a,android.R.layout.simple_spinner_dropdown_item,labels){
    @Override public View getView(int position,View convertView,android.view.ViewGroup parent){
     TextView view=(TextView)super.getView(position,convertView,parent);
-    view.setText(labels[position]);view.setTextSize(14);view.setSingleLine(true);view.setEllipsize(android.text.TextUtils.TruncateAt.END);
+    view.setText(hint+": "+labels[position]);view.setTextSize(14);view.setSingleLine(true);view.setEllipsize(android.text.TextUtils.TruncateAt.END);
     int inset=(int)(8*a.getResources().getDisplayMetrics().density);view.setPadding(inset,0,inset,0);
     view.setMinHeight((int)(44*a.getResources().getDisplayMetrics().density));
     return view;
@@ -294,13 +294,12 @@ public final class AdvancedFeatures {
  private void showLoadedExerciseLibrary(ArrayList<ExerciseLibraryRow> exercises){
   if(exercises==null||exercises.isEmpty()){message(s("exercise_library"),tr("No GIF exercises were found in the exercise assets.","هیچ فایل GIF در پوشه حرکات پیدا نشد."));return;}
   EditText search=new EditText(a);search.setSingleLine(true);search.setHint(tr("Search in Persian or English","جست‌وجو به فارسی یا انگلیسی"));
-  Spinner typeSpinner=makeCategorySpinner(EXERCISE_TYPES,tr("Exercise type","نوع حرکت"));
-  Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body part","عضو بدن"));
-  Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Equipment type","وسیله"));
+  Spinner typeSpinner=makeCategorySpinner(EXERCISE_TYPES,tr("Type","نوع"));
+  Spinner bodySpinner=makeCategorySpinner(BODY_PARTS,tr("Body","عضو"));
+  Spinner equipmentSpinner=makeCategorySpinner(EQUIPMENT_TYPES,tr("Gear","وسیله"));
   Spinner genderSpinner=makeCategorySpinner(GENDER_TYPES,tr("Gender","جنسیت"));
   ListView list=new ListView(a);ExerciseLibraryAdapter adapter=new ExerciseLibraryAdapter(new ArrayList<>());
   final int[] pageSize={50},currentPage={0};final ArrayList<ExerciseLibraryRow> filteredRows=new ArrayList<>();
-  TextView pageLabel=new TextView(a);pageLabel.setGravity(Gravity.CENTER);
   Spinner pageSizeSpinner=new Spinner(a);String[] pageSizeOptions={"10","20","50",tr("Custom","دلخواه")};
   pageSizeSpinner.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,pageSizeOptions));
   EditText customPageSize=new EditText(a);customPageSize.setSingleLine(true);customPageSize.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);customPageSize.setHint(tr("Custom items per page","تعداد دلخواه در هر صفحه"));customPageSize.setVisibility(View.GONE);
@@ -311,11 +310,11 @@ public final class AdvancedFeatures {
   LinearLayout sizeControls=new LinearLayout(a);sizeControls.setGravity(Gravity.CENTER_VERTICAL);
   sizeControls.addView(pageSizeSpinner,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(customPageSize,new LinearLayout.LayoutParams(0,-2,1));sizeControls.addView(applyPageSize,new LinearLayout.LayoutParams(-2,-2));
   LinearLayout pageControls=new LinearLayout(a);pageControls.setGravity(Gravity.CENTER);
-  pageControls.addView(firstPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(previousPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(pageLabel,new LinearLayout.LayoutParams(0,-2,2));pageControls.addView(nextPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(lastPage,new LinearLayout.LayoutParams(0,-2,1));
+  pageControls.addView(firstPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(previousPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(nextPage,new LinearLayout.LayoutParams(0,-2,1));pageControls.addView(lastPage,new LinearLayout.LayoutParams(0,-2,1));
   Runnable refreshPage=()->{
    int pageCount=Math.max(1,(filteredRows.size()+pageSize[0]-1)/pageSize[0]);currentPage[0]=Math.max(0,Math.min(currentPage[0],pageCount-1));
    int startIndex=currentPage[0]*pageSize[0],endIndex=Math.min(startIndex+pageSize[0],filteredRows.size());
-   adapter.setRows(filteredRows.subList(startIndex,endIndex));pageLabel.setText((currentPage[0]+1)+" / "+pageCount+" · "+filteredRows.size());
+   adapter.setRows(filteredRows.subList(startIndex,endIndex));
    firstPage.setEnabled(currentPage[0]>0);previousPage.setEnabled(currentPage[0]>0);nextPage.setEnabled(currentPage[0]+1<pageCount);lastPage.setEnabled(currentPage[0]+1<pageCount);
   };
   firstPage.setOnClickListener(v->{currentPage[0]=0;refreshPage.run();});previousPage.setOnClickListener(v->{currentPage[0]--;refreshPage.run();});
