@@ -799,6 +799,7 @@ public final class AdvancedFeatures {
   try{
    try(OutputStream out=new FileOutputStream(tmp)){out.write(imported);out.flush();}
    validateDatabase(tmp);
+   PlanListCache.invalidate(a);
    db.close();
    if(rollback.exists()&&!rollback.delete())throw new IOException("Cannot clear rollback file");
    if(dbFile.exists())try(InputStream in=new FileInputStream(dbFile);OutputStream out=new FileOutputStream(rollback)){copy(in,out);}
@@ -868,6 +869,7 @@ public final class AdvancedFeatures {
    a.getSharedPreferences("step_counter",Context.MODE_PRIVATE).edit()
     .putBoolean("running",false).putBoolean("paused",false).apply();
   }else throw new IOException("Unknown section");
+  if("workouts".equals(id))PlanListCache.invalidate(a);
  }
  private void restoreTable(SQLiteDatabase database,String table,JSONArray rows)throws Exception{
   database.delete(table,null,null);
