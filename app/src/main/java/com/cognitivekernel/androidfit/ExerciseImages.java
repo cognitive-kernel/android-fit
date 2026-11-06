@@ -48,18 +48,9 @@ public final class ExerciseImages {
         return ExerciseAssetIndex.findFileById(context, catalogId, gender);
     }
 
+    /** Unrestricted manual/library lookup, resolved through the same authoritative catalog. */
     public static String findGif(Context context, String exerciseName) {
-        if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
-        String wanted = normalize(exerciseName);
-        String wantedLatin = normalize(transliteratePersian(exerciseName));
-        if (wanted.isEmpty() && wantedLatin.isEmpty()) return null;
-        String cacheKey = wanted + "|" + wantedLatin;
-        synchronized (RESOLVED_GIFS) {
-            if (RESOLVED_GIFS.containsKey(cacheKey)) return RESOLVED_GIFS.get(cacheKey);
-            String resolved = resolveGif(context, wanted, wantedLatin);
-            RESOLVED_GIFS.put(cacheKey, resolved);
-            return resolved;
-        }
+        return ExerciseAssetIndex.findFile(context, exerciseName, null);
     }
 
     private static String resolveGif(Context context, String wanted, String wantedLatin) {
