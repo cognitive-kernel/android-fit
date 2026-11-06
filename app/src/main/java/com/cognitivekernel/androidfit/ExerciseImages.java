@@ -35,6 +35,19 @@ public final class ExerciseImages {
     private static final WeakHashMap<Activity, Dialog> OPEN_FULLSCREEN = new WeakHashMap<>();
     private ExerciseImages() {}
 
+    /** Gender-constrained lookup for generated catalog-backed plans. */
+    public static String findGif(Context context, String exerciseName, String gender) {
+        return ExerciseAssetIndex.findFile(context, exerciseName, gender);
+    }
+
+    public static String findGifById(Context context, String catalogId) {
+        return ExerciseAssetIndex.findFileById(context, catalogId, null);
+    }
+
+    public static String findGifById(Context context, String catalogId, String gender) {
+        return ExerciseAssetIndex.findFileById(context, catalogId, gender);
+    }
+
     public static String findGif(Context context, String exerciseName) {
         if (exerciseName == null || exerciseName.trim().isEmpty()) return null;
         String wanted = normalize(exerciseName);

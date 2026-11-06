@@ -478,14 +478,21 @@ public final class AdvancedFeatures {
     int sexIndex=sex.getSelectedItemPosition();String gender=(String)sex.getSelectedItem();
     String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+gender;
     long id=db.addPlan(planName);String eq=(String)equipment.getSelectedItem();
+    // Display labels remain localized; stable English aliases select the bundled asset.
     String[][] exercises;
-    if(eq.equals(s("equipment_none")))exercises=new String[][]{{s("lib_squat"),"3","10"},{s("lib_pushup"),"3","8"},{s("lib_lunge"),"2","10"},{s("lib_plank"),"3","30"}};
-    else if(eq.equals(s("equipment_home")))exercises=new String[][]{{s("lib_squat"),"3","12"},{s("lib_pushup"),"3","10"},{s("lib_dumbbell_row"),"3","10"},{s("lib_lunge"),"3","10"},{s("lib_plank"),"3","30"}};
-    else exercises=new String[][]{{s("lib_squat"),"4","8"},{s("lib_pushup"),"3","10"},{s("lib_dumbbell_row"),"4","10"},{s("lib_lunge"),"3","10"},{s("lib_plank"),"3","40"}};
+    if(eq.equals(s("equipment_none")))exercises=new String[][]{{s("lib_squat"),"Air Squat","3","10"},{s("lib_pushup"),"Push-up","3","8"},{s("lib_lunge"),"Lunge","2","10"},{s("lib_plank"),"Front Plank","3","30"}};
+    else if(eq.equals(s("equipment_home")))exercises=new String[][]{{s("lib_squat"),"Air Squat","3","12"},{s("lib_pushup"),"Push-up","3","10"},{s("lib_dumbbell_row"),"Dumbbell Bent Over Row","3","10"},{s("lib_lunge"),"Lunge","3","10"},{s("lib_plank"),"Front Plank","3","30"}};
+    else exercises=new String[][]{{s("lib_squat"),"Air Squat","4","8"},{s("lib_pushup"),"Push-up","3","10"},{s("lib_dumbbell_row"),"Dumbbell Bent Over Row","4","10"},{s("lib_lunge"),"Lunge","3","10"},{s("lib_plank"),"Front Plank","3","40"}};
     int goalIndex=goal.getSelectedItemPosition();
     if(mins<=20&&exercises.length>3)exercises=Arrays.copyOf(exercises,3);
     int scale=level.getSelectedItemPosition()==0?0:(level.getSelectedItemPosition()==1?1:2);
-    for(String[] ex:exercises){int sets=Integer.parseInt(ex[1])+scale;int reps=Integer.parseInt(ex[2]);if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);db.addExercise(id,ex[0],sets,reps);}
+    String selectedGender=sexIndex==0?"male":"female";
+    for(String[] ex:exercises){
+     int sets=Integer.parseInt(ex[2])+scale;int reps=Integer.parseInt(ex[3]);
+     if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);
+     ExerciseAssetIndex.ExerciseAsset asset=ExerciseAssetIndex.findBest(a,ex[1],selectedGender);
+     db.addExercise(id,ex[0],sets,reps,asset==null?null:asset.id,asset==null?selectedGender:asset.gender);
+    }
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putString("fitness_gender",gender).putInt("fitness_gender_index",sexIndex).putInt("fitness_level",level.getSelectedItemPosition()).putString("equipment",eq).apply();
     message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+n+"\n"+s("session_minutes")+": "+mins);
    }catch(Exception ex){message(s("error"),s("invalid_plan_values"));}
