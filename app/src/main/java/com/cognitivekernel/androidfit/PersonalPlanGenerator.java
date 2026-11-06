@@ -42,7 +42,12 @@ public final class PersonalPlanGenerator {
             if (isStretchOnly(asset.name)) continue;
             eligible.add(asset);
         }
-        Collections.sort(eligible, (left, right) -> left.id.compareTo(right.id));
+        Collections.sort(eligible, (left, right) -> {
+            int leftGenderRank = gender.equals(left.gender) ? 0 : 1;
+            int rightGenderRank = gender.equals(right.gender) ? 0 : 1;
+            if (leftGenderRank != rightGenderRank) return Integer.compare(leftGenderRank, rightGenderRank);
+            return left.id.compareTo(right.id);
+        });
         if (eligible.isEmpty()) throw new IllegalStateException("No exercises match the selected gender and equipment");
 
         String[] priorities;
