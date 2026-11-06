@@ -333,13 +333,8 @@ public final class AdvancedFeatures {
   header.addView(label(tr("Items per page","تعداد حرکات در هر صفحه")));
   header.addView(sizeControls,new LinearLayout.LayoutParams(-1,-2));
   header.addView(pageControls,new LinearLayout.LayoutParams(-1,-2));
-  LinearLayout filterRowOne=new LinearLayout(a);filterRowOne.setOrientation(LinearLayout.HORIZONTAL);filterRowOne.setGravity(Gravity.CENTER_VERTICAL);
-  LinearLayout filterRowTwo=new LinearLayout(a);filterRowTwo.setOrientation(LinearLayout.HORIZONTAL);filterRowTwo.setGravity(Gravity.CENTER_VERTICAL);
-  LinearLayout.LayoutParams filterCell=new LinearLayout.LayoutParams(0,-2,1f);filterCell.setMargins(0,filterGap,filterGap,0);
-  LinearLayout.LayoutParams filterCellLast=new LinearLayout.LayoutParams(0,-2,1f);filterCellLast.setMargins(0,filterGap,0,0);
-  filterRowOne.addView(typeSpinner,new LinearLayout.LayoutParams(filterCell));filterRowOne.addView(bodySpinner,new LinearLayout.LayoutParams(filterCellLast));
-  filterRowTwo.addView(equipmentSpinner,new LinearLayout.LayoutParams(filterCell));filterRowTwo.addView(genderSpinner,new LinearLayout.LayoutParams(filterCellLast));
-  header.addView(filterRowOne,new LinearLayout.LayoutParams(-1,-2));header.addView(filterRowTwo,new LinearLayout.LayoutParams(-1,-2));
+  LinearLayout filterRows=createCompactFilterRows(a,typeSpinner,bodySpinner,equipmentSpinner,genderSpinner);
+  header.addView(filterRows,new LinearLayout.LayoutParams(-1,-2));
   LinearLayout content=column();content.setLayoutParams(new LinearLayout.LayoutParams(-1,-1));
   content.addView(header,new LinearLayout.LayoutParams(-1,-2));
   content.addView(list,new LinearLayout.LayoutParams(-1,0,1f));
@@ -363,6 +358,19 @@ public final class AdvancedFeatures {
   final Dialog libraryDialog=showFullscreenLibraryDialog(a,content,s("exercise_library"));
   closeLibrary.setOnClickListener(v->libraryDialog.dismiss());
   libraryDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+ }
+
+ static LinearLayout createCompactFilterRows(Context context,View first,View second,View third,View fourth){
+  LinearLayout root=new LinearLayout(context);root.setOrientation(LinearLayout.VERTICAL);
+  int gap=(int)(4*context.getResources().getDisplayMetrics().density);
+  LinearLayout rowOne=new LinearLayout(context);rowOne.setOrientation(LinearLayout.HORIZONTAL);rowOne.setGravity(Gravity.CENTER_VERTICAL);
+  LinearLayout rowTwo=new LinearLayout(context);rowTwo.setOrientation(LinearLayout.HORIZONTAL);rowTwo.setGravity(Gravity.CENTER_VERTICAL);
+  LinearLayout.LayoutParams cell=new LinearLayout.LayoutParams(0,-2,1f);cell.setMargins(0,gap,gap,0);
+  LinearLayout.LayoutParams cellLast=new LinearLayout.LayoutParams(0,-2,1f);cellLast.setMargins(0,gap,0,0);
+  rowOne.addView(first,new LinearLayout.LayoutParams(cell));rowOne.addView(second,new LinearLayout.LayoutParams(cellLast));
+  rowTwo.addView(third,new LinearLayout.LayoutParams(cell));rowTwo.addView(fourth,new LinearLayout.LayoutParams(cellLast));
+  root.addView(rowOne,new LinearLayout.LayoutParams(-1,-2));root.addView(rowTwo,new LinearLayout.LayoutParams(-1,-2));
+  return root;
  }
 
  static Dialog showFullscreenLibraryDialog(Activity activity,View content,String title){
