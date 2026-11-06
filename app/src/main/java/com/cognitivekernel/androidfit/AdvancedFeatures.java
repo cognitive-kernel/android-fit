@@ -356,8 +356,13 @@ public final class AdvancedFeatures {
   final AlertDialog libraryDialog=new AlertDialog.Builder(a).setTitle(s("exercise_library")).setView(content).setNegativeButton(android.R.string.cancel,null).create();
   list.setOnItemClickListener((parent,view,position,id)->{ExerciseLibraryRow selected=adapter.getItem(position);if(selected!=null)showExerciseDetail(selected.displayName("en".equals(selectedLanguage())),"",selected.file,selected.sourceId);});
   libraryDialog.show();
-  android.view.Window dialogWindow=libraryDialog.getWindow();
-  if(dialogWindow!=null){android.util.DisplayMetrics metrics=a.getResources().getDisplayMetrics();dialogWindow.setLayout((int)(metrics.widthPixels*0.94f),(int)(metrics.heightPixels*0.88f));}
+  makeLibraryDialogFullscreen(libraryDialog);
+ }
+
+ static void makeLibraryDialogFullscreen(Dialog dialog){
+  if(dialog==null||dialog.getWindow()==null)return;
+  dialog.getWindow().setLayout(android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+    android.view.ViewGroup.LayoutParams.MATCH_PARENT);
  }
 
  private void addPageNumber(LinearLayout container,int page,int[] currentPage,Runnable[] refresh){
@@ -453,28 +458,34 @@ public final class AdvancedFeatures {
   l.addView(label(tr("Duration of each session — default: 35 minutes","مدت هر جلسه تمرین — پیش‌فرض: ۳۵ دقیقه")));l.addView(minutes);
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(l).setPositiveButton(s("create_plan"),(d,w)->{
    try{
-    int n=parseLocalizedInt(days.getText().toString()),mins=parseLocalizedInt(minutes.getText().toString());if(n<1||n>7||mins<10||mins>180)throw new IllegalArgumentException();
-    int sexIndex=sex.getSelectedItemPosition();String gender=(String)sex.getSelectedItem();
-    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+gender;
-    long id=db.addPlan(planName);String eq=(String)equipment.getSelectedItem();
-    // Display labels remain localized; stable English aliases select the bundled asset.
-    String[][] exercises;
-    if(eq.equals(s("equipment_none")))exercises=new String[][]{{s("lib_squat"),"Air Squat","3","10"},{s("lib_pushup"),"Push-up","3","8"},{s("lib_lunge"),"Lunge","2","10"},{s("lib_plank"),"Front Plank","3","30"}};
-    else if(eq.equals(s("equipment_home")))exercises=new String[][]{{s("lib_squat"),"Air Squat","3","12"},{s("lib_pushup"),"Push-up","3","10"},{s("lib_dumbbell_row"),"Dumbbell Bent Over Row","3","10"},{s("lib_lunge"),"Lunge","3","10"},{s("lib_plank"),"Front Plank","3","30"}};
-    else exercises=new String[][]{{s("lib_squat"),"Air Squat","4","8"},{s("lib_pushup"),"Push-up","3","10"},{s("lib_dumbbell_row"),"Dumbbell Bent Over Row","4","10"},{s("lib_lunge"),"Lunge","3","10"},{s("lib_plank"),"Front Plank","3","40"}};
+    int weeklyDays=parseLocalizedInt(days.getText().toString());
+    int sessionMinutes=parseLocalizedInt(minutes.getText().toString());
+    if(weeklyDays<1||weeklyDays>7||sessionMinutes<10||sessionMinutes>180)throw new IllegalArgumentException();
     int goalIndex=goal.getSelectedItemPosition();
-    if(mins<=20&&exercises.length>3)exercises=Arrays.copyOf(exercises,3);
-    int scale=level.getSelectedItemPosition()==0?0:(level.getSelectedItemPosition()==1?1:2);
+    int levelIndex=level.getSelectedItemPosition();
+    int equipmentIndex=equipment.getSelectedItemPosition();
+    int sexIndex=sex.getSelectedItemPosition();
     String selectedGender=sexIndex==0?"male":"female";
-    for(String[] ex:exercises){
-     int sets=Integer.parseInt(ex[2])+scale;int reps=Integer.parseInt(ex[3]);
-     if(goalIndex==0)reps=Math.min(reps,8);else if(goalIndex==1)reps=Math.max(reps,10);else if(goalIndex==3)reps=Math.max(reps,12);
-     ExerciseAssetIndex.ExerciseAsset asset=ExerciseAssetIndex.findBest(a,ex[1],selectedGender);
-     db.addExercise(id,ex[0],sets,reps,asset==null?null:asset.id,asset==null?selectedGender:asset.gender);
-    }
-    a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit().putInt("weekly_goal",n).putInt("session_minutes",mins).putString("fitness_goal",String.valueOf(goal.getSelectedItem())).putString("fitness_gender",gender).putInt("fitness_gender_index",sexIndex).putInt("fitness_level",level.getSelectedItemPosition()).putString("equipment",eq).apply();
-    message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+n+"\n"+s("session_minutes")+": "+mins);
-   }catch(Exception ex){message(s("error"),s("invalid_plan_values"));}
+    List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
+      ExerciseAssetIndex.all(a),goalIndex,levelIndex,equipmentIndex,selectedGender,sessionMinutes);
+    if(generated.isEmpty())throw new IllegalStateException("No exercises generated");
+    String genderLabel=(String)sex.getSelectedItem();
+    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+genderLabel;
+    // The database writes the plan and all generated exercises in one transaction.
+    long planId=db.addPlanWithExercises(planName,generated);
+    a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit()
+      .putInt("weekly_goal",weeklyDays).putInt("session_minutes",sessionMinutes)
+      .putString("fitness_goal",String.valueOf(goal.getSelectedItem()))
+      .putString("fitness_gender",genderLabel).putInt("fitness_gender_index",sexIndex)
+      .putInt("fitness_level",levelIndex).putString("equipment",String.valueOf(equipment.getSelectedItem()))
+      .apply();
+    message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+weeklyDays
+      +"\n"+s("session_minutes")+": "+sessionMinutes
+      +"\n"+tr("Exercises added: ","تعداد حرکات اضافه‌شده: ")+generated.size());
+   }catch(Exception ex){
+    message(s("error"),tr("The plan could not be created. No empty plan was saved. Check the selected preferences and try again.",
+      "ساخت برنامه انجام نشد و برنامهٔ خالی ذخیره نشد. مشخصات انتخاب‌شده را بررسی و دوباره تلاش کنید."));
+   }
   }).setNegativeButton(android.R.string.cancel,null).show();
  }
  private Spinner spinner(String[] values){Spinner sp=new Spinner(a);sp.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,values));return sp;}
