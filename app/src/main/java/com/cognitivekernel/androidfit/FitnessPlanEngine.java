@@ -387,7 +387,7 @@ public final class FitnessPlanEngine {
     }
     private static boolean isNone(String value) {
         String v=value==null?"":value.trim().toLowerCase(Locale.ROOT);
-        return v.equals("none")||v.equals("no")||v.equals("ندارد")||v.equals("هیچ")||v.equals("خیر");
+        return v.equals("none")||v.equals("no")||v.equals("n/a")||v.equals("na")||v.equals("ندارد")||v.equals("ندارم")||v.equals("هیچ")||v.equals("خیر")||v.equals("هیچکدام")||v.equals("هیچ‌کدام")||v.equals("بدون مورد")||v.equals("بدون بیماری")||v.equals("بدون آسیب");
     }
     private static Food food(String name,double kcal,double protein,double carbs,double fat,double unit,String unitName,int group) {
         return new Food(name,kcal,protein,carbs,fat,unit,unitName,group);
