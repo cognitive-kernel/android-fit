@@ -83,8 +83,8 @@ public final class PersonalNutritionPlanner {
         add(form,a,t(a,"Allergies","حساسیت‌ها"),allergies);add(form,a,t(a,"Foods to avoid","غذاهای نامطلوب"),dislikes);
         add(form,a,t(a,"Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
         ScrollView scroll=new ScrollView(a);scroll.addView(form);
-        new AlertDialog.Builder(a).setTitle(t(a,"Personal nutrition plan","برنامه تغذیه شخصی")).setView(scroll)
-          .setPositiveButton(t(a,"Calculate and create menu","محاسبه و ساخت برنامه غذایی"),(dialog,which)->{
+        new AlertDialog.Builder(a).setTitle(t(a,"Goal, muscle & nutrition plan","برنامه هدف، عضله‌سازی و تغذیه")).setView(scroll)
+          .setPositiveButton(t(a,"Create training and nutrition plans","ساخت برنامه تمرین و تغذیه"),(dialog,which)->{
             try {
                 FitnessPlanEngine.Profile p=FitnessProfileStore.load(a);
                 p.english="en".equalsIgnoreCase(a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa"));
@@ -103,11 +103,26 @@ public final class PersonalNutritionPlanner {
                 p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();p.medicalClearance=clearance.isChecked();
                 FitnessPlanEngine.validate(p);
                 FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(p);
+                java.util.List<PersonalPlanGenerator.PlannedExercise> generated=java.util.Collections.emptyList();
+                if(!analysis.needsMedicalReview||p.medicalClearance) {
+                    String gender=p.sexIndex==0?"male":p.sexIndex==1?"female":"all";
+                    generated=PersonalPlanGenerator.generate(ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,
+                            p.equipmentIndex,gender,p.sessionMinutes,p.injuries,p.trainingDays);
+                }
+                String report=FitnessPlanEngine.trainingReport(p,analysis,generated)+"\\n\\n"
+                        +FitnessPlanEngine.nutritionReport(p,analysis);
+                if(!generated.isEmpty()) {
+                    WorkoutDb db=new WorkoutDb(a);
+                    try {
+                        String planName=t(a,"Goal plan","برنامه هدف")+" - "+String.valueOf(goal.getSelectedItem());
+                        long planId=db.addPlanWithExercises(planName,generated);
+                        report+="\\n\\n"+t(a,"Workout plan saved in Plans & exercises (ID: ","برنامه تمرینی در بخش برنامه‌ها و حرکات ذخیره شد (شناسه: ")+planId+")";
+                    } finally { db.close(); }
+                }
                 FitnessProfileStore.save(a,p);
-                String report=FitnessPlanEngine.nutritionReport(p,analysis);
                 TextView body=new TextView(a);body.setText(report);body.setTextSize(15);body.setPadding(pad,pad,pad,pad);
                 ScrollView result=new ScrollView(a);result.addView(body);
-                new AlertDialog.Builder(a).setTitle(t(a,"Your detailed food plan","برنامه غذایی دقیق شما"))
+                new AlertDialog.Builder(a).setTitle(t(a,"Your personalized training and nutrition plan","برنامه تمرین و تغذیه شخصی شما"))
                   .setView(result).setPositiveButton(android.R.string.ok,null).show();
             } catch(Exception ex) {
                 String error=ex.getMessage();
