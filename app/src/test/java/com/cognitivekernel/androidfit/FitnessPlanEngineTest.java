@@ -9,7 +9,7 @@ public class FitnessPlanEngineTest {
         FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();p.english=true;
         p.age=30;p.heightCm=175;p.weightKg=75;p.sexIndex=0;p.goalIndex=1;
         p.activityIndex=2;p.levelIndex=1;p.equipmentIndex=2;p.trainingDays=4;
-        p.sessionMinutes=60;p.sleepHours=7.5;p.mealsPerDay=4;
+        p.sessionMinutes=60;p.sleepHours=7.5;p.mealsPerDay=4;\n        p.conditions="none";p.injuries="none";p.medications="none";p.allergies="none";
         return p;
     }
 
