@@ -10,7 +10,7 @@ import java.util.List;
 
 public class WorkoutDb extends SQLiteOpenHelper {
     public static final String DATABASE_NAME = "fit_yar.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
     private final Context appContext;
     public WorkoutDb(Context context) { super(context, DATABASE_NAME, null, DATABASE_VERSION); appContext=context.getApplicationContext(); }
     @Override public void onCreate(SQLiteDatabase db) { ensureSchema(db); }
