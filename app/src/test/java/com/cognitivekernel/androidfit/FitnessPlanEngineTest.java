@@ -121,6 +121,24 @@ public class FitnessPlanEngineTest {
         assertFalse(report.contains("Almonds"));
     }
 
+    @Test public void calorieTotalsRemainCloseAfterVegetarianAndAllergenFiltering() {
+        FitnessPlanEngine.Profile p=profile();
+        p.dietaryPreference="vegetarian";
+        p.allergies="egg, dairy, almonds";
+        String report=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        java.util.regex.Matcher matcher=java.util.regex.Pattern.compile("DAILY MENU TOTAL: ([0-9]+) kcal").matcher(report);
+        assertTrue("daily menu total missing",matcher.find());
+        double actual=Double.parseDouble(matcher.group(1));
+        double target=FitnessPlanEngine.analyze(p).targetCalories;
+        assertTrue("menu calories drifted after exclusions: "+actual+" vs "+target,
+                Math.abs(actual-target)/target<0.15);
+        assertFalse(report.contains("Egg whites"));
+        assertFalse(report.contains("Greek yogurt"));
+        assertFalse(report.contains("Almonds"));
+        assertFalse(report.contains("Chicken breast"));
+        assertFalse(report.contains("Lean beef"));
+    }
+
     @Test public void nutritionMenuHonorsThreeOrFiveMealsPerDay() {
         FitnessPlanEngine.Profile p=profile();
         p.mealsPerDay=3;
