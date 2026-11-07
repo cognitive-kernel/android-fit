@@ -166,7 +166,7 @@ public final class FitnessPlanEngine {
             }
         }
         out.append("\nRECOVERY & REVIEW\n")
-           .append("Aim for 7–9 hours of sleep where possible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake in small steps rather than reacting to one weigh-in.\n");
+           .append("Sleep reported: ").append(round(p.sleepHours)).append(" h/night. Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake in small steps rather than reacting to one weigh-in.\n");
         if(a.needsMedicalReview) out.append("\nMEDICAL SCREENING — REVIEW REQUIRED\n").append(a.medicalReason).append("\n");
         if(a.bmi<18.5) out.append("\nBMI screening is below 18.5; do not use a fat-loss target. Seek a clinician/dietitian assessment.\n");
         if(a.bmi>=30) out.append("\nBMI screening is 30 or above; BMI alone does not determine fitness or diagnosis. Progress gradually and seek clinical guidance if there are symptoms or comorbidities.\n");
@@ -204,7 +204,7 @@ public final class FitnessPlanEngine {
            .append("Adjust portions after 2–3 weeks using average weight trend, training performance, hunger and recovery. Do not treat calorie estimates as exact laboratory values.\n");
         if(a.needsMedicalReview) out.append("\nMEDICAL/DIETARY REVIEW REQUIRED\n").append(a.medicalReason).append("\n");
         if(!blank(p.allergies)) out.append("\nALLERGY NOTE: ").append(p.allergies).append(". The sample menu is generic and must be checked against the stated allergies before use.\n");
-        if(!blank(p.dislikedFoods)) out.append("Foods to avoid/replace: ").append(p.dislikedFoods).append("\n");
+        if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) out.append("Foods to avoid/replace: ").append(p.dislikedFoods).append("\n");
         return out.toString();
     }
 
