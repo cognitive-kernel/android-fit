@@ -199,7 +199,7 @@ public final class PersonalPlanGenerator {
     private static boolean isNoLimitation(String value) {
         return value==null||value.trim().isEmpty()||value.trim().equals("none")
                 ||value.trim().equals("no")||value.trim().equals("no injury")
-                ||value.trim().equals("ندارد")||value.trim().equals("خیر")
+                ||value.trim().equals("ندارد")||value.trim().equals("ندارم")||value.trim().equals("خیر")
                 ||value.trim().equals("هیچ")||value.trim().equals("هیچکدام")
                 ||value.trim().equals("هیچ‌کدام");
     }
