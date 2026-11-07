@@ -622,14 +622,50 @@ public final class AdvancedFeatures {
  private String tg(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
 
  public void showCoach(){
-  int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
-  int days=db.weeklyTrainingDays();
-  String advice;
-  if(days==0)advice=s("coach_start");
-  else if(days<goal)advice=s("coach_consistency")+" "+(goal-days)+" "+s("sessions_left");
-  else advice=s("coach_progress");
-  try(Cursor c=db.recentLogs()){if(c.moveToFirst()){int rpe=c.getInt(5);if(rpe>=9)advice+="\n\n"+s("coach_recovery");else if(rpe<=5)advice+="\n\n"+s("coach_maybe_progress");}}
-  message(s("smart_coach"),advice+"\n\n"+s("coach_safety"));
+  if(!FitnessProfileStore.hasProfile(a)){
+   message(tr("Complete your profile first","ابتدا مشخصات خود را تکمیل کنید"),
+     tr("The offline coach needs your age, height, weight, goal, activity and health restrictions before it can create a safe personalized recommendation.",
+        "مربی آفلاین پیش از ارائه برنامه شخصی و ایمن به سن، قد، وزن، هدف، فعالیت و محدودیت‌های سلامت شما نیاز دارد."));
+   PersonalNutritionPlanner.show(a);
+   return;
+  }
+  try{
+   FitnessPlanEngine.Profile profile=FitnessProfileStore.load(a);
+   FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(profile);
+   String gender=profile.sexIndex==0?"male":"female";
+   List<PersonalPlanGenerator.PlannedExercise> suggested=PersonalPlanGenerator.generate(
+     ExerciseAssetIndex.all(a),profile.goalIndex,profile.levelIndex,profile.equipmentIndex,gender,profile.sessionMinutes);
+   StringBuilder report=new StringBuilder();
+   report.append(tr("OFFLINE COACH — PERSONAL ASSESSMENT","مربی آفلاین — ارزیابی شخصی")).append("\\n")
+     .append(FitnessPlanEngine.trainingReport(profile,analysis,suggested))
+     .append("\\n").append(FitnessPlanEngine.nutritionReport(profile,analysis));
+   int weekly=db.weeklyTrainingDays();
+   report.append("\\n").append(tr("RECENT TRAINING RECORD","سوابق تمرین اخیر")).append("\\n")
+     .append(tr("Sessions logged in the last 7 days: ","جلسات ثبت‌شده در ۷ روز اخیر: ")).append(weekly)
+     .append(" / ").append(profile.trainingDays).append("\\n");
+   int count=0,totalEffort=0;String lastExercise="";
+   try(Cursor rows=db.recentLogs()){
+    while(rows.moveToNext()&&count<10){
+     if(count==0)lastExercise=rows.getString(1);
+     totalEffort+=rows.getInt(5);count++;
+    }
+   }
+   if(count==0) report.append(tr("No workout history yet. Start with the first session at an easy, controlled effort.","هنوز سابقه تمرین ثبت نشده است؛ جلسه اول را با شدت سبک و کنترل‌شده آغاز کنید.")).append("\\n");
+   else{
+    double average=(double)totalEffort/count;
+    report.append(tr("Recent logged exercises: ","تعداد حرکات ثبت‌شده اخیر: ")).append(count)
+      .append("\\n").append(tr("Most recent exercise: ","آخرین حرکت ثبت‌شده: ")).append(lastExercise)
+      .append("\\n").append(tr("Average reported effort (RPE): ","میانگین سختی گزارش‌شده (RPE): ")).append(String.format(Locale.US,"%.1f",average)).append("/10\\n");
+    if(average>=9)report.append(tr("Coach action: prioritize recovery; do not increase load or volume until effort and recovery normalize.","اقدام مربی: ریکاوری را در اولویت بگذارید؛ تا عادی‌شدن سختی و ریکاوری، وزنه یا حجم را افزایش ندهید.")).append("\\n");
+    else if(average<=5)report.append(tr("Coach action: if technique is stable and there is no pain, increase repetitions slightly or use the smallest load increase next session.","اقدام مربی: اگر تکنیک ثابت است و درد ندارید، جلسه بعد کمی تکرار اضافه کنید یا کمترین افزایش وزنه را اعمال کنید.")).append("\\n");
+    else report.append(tr("Coach action: keep the current progression and monitor sleep, soreness and performance.","اقدام مربی: روند فعلی را حفظ و خواب، کوفتگی و عملکرد را پایش کنید.")).append("\\n");
+   }
+   if(!profile.notes.trim().isEmpty())report.append("\\n").append(tr("Your notes: ","یادداشت شما: ")).append(profile.notes).append("\\n");
+   showPlanReport(tr("Offline coach","مربی آفلاین"),report.toString());
+  }catch(Exception ex){
+   message(tr("Coach could not build a plan","مربی نتوانست برنامه بسازد"),
+     tr("Review your saved profile and exercise catalog, then try again.","مشخصات ذخیره‌شده و کتابخانه حرکات را بررسی و دوباره تلاش کنید."));
+  }
  }
 
  public void showWeeklyGoal(){
