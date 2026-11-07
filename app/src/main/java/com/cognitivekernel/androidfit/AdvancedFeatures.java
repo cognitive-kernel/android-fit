@@ -467,6 +467,7 @@ public final class AdvancedFeatures {
 
  public void buildPersonalPlan(){
   FitnessPlanEngine.Profile saved=FitnessProfileStore.load(a);
+  boolean hasProfile=FitnessProfileStore.hasProfile(a);
   LinearLayout form=column();
   Spinner goal=spinner(new String[]{tr("Select a goal","هدف را انتخاب کنید"),s("goal_strength"),s("goal_muscle"),s("goal_general"),s("goal_weight")});
   Spinner level=spinner(new String[]{tr("Select experience","سطح تجربه را انتخاب کنید"),s("level_beginner"),s("level_intermediate"),s("level_advanced")});
@@ -487,9 +488,11 @@ public final class AdvancedFeatures {
   EditText dislikes=field(tr("Foods you do not eat / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
   EditText notes=field(tr("Other details (work schedule, goals, restrictions)","توضیحات تکمیلی (برنامه کاری، هدف یا محدودیت‌ها)"),saved.notes,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
   for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes,notes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
-  goal.setSelection(saved.goalIndex);level.setSelection(saved.levelIndex);equipment.setSelection(saved.equipmentIndex);
-  sex.setSelection(saved.sexIndex);activity.setSelection(saved.activityIndex);
-  diet.setSelection("vegan".equals(saved.dietaryPreference)?2:"vegetarian".equals(saved.dietaryPreference)?1:0);
+  if(hasProfile){
+   goal.setSelection(saved.goalIndex+1);level.setSelection(saved.levelIndex+1);equipment.setSelection(saved.equipmentIndex+1);
+   sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
+   diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);
+  }
   addField(form,tr("Main goal","هدف اصلی"),goal);
   addField(form,tr("Training experience","سطح تجربه تمرین"),level);
   addField(form,tr("Available equipment","تجهیزات در دسترس"),equipment);
@@ -511,9 +514,9 @@ public final class AdvancedFeatures {
    try{
     FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();
     p.age=parseLocalizedInt(age.getText().toString());p.heightCm=parseLocalizedDouble(height.getText().toString());
-    p.weightKg=parseLocalizedDouble(weight.getText().toString());p.sexIndex=sex.getSelectedItemPosition();
-    p.goalIndex=goal.getSelectedItemPosition();p.levelIndex=level.getSelectedItemPosition();
-    p.equipmentIndex=equipment.getSelectedItemPosition();p.activityIndex=activity.getSelectedItemPosition();
+    p.weightKg=parseLocalizedDouble(weight.getText().toString());p.sexIndex=sex.getSelectedItemPosition()-1;
+    p.goalIndex=goal.getSelectedItemPosition()-1;p.levelIndex=level.getSelectedItemPosition()-1;
+    p.equipmentIndex=equipment.getSelectedItemPosition()-1;p.activityIndex=activity.getSelectedItemPosition()-1;
     p.trainingDays=parseLocalizedInt(days.getText().toString());p.sessionMinutes=parseLocalizedInt(minutes.getText().toString());
     p.sleepHours=sleep.getText().toString().trim().isEmpty()?0:parseLocalizedDouble(sleep.getText().toString());p.conditions=conditions.getText().toString();
     p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
