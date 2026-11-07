@@ -391,6 +391,11 @@ public final class FitnessPlanEngine {
             default: return name;
         }
     }
+    private static boolean contains(String value,String... terms) {
+        String source=value==null?"":value.toLowerCase(Locale.ROOT);
+        for(String term:terms) if(source.contains(term.toLowerCase(Locale.ROOT))) return true;
+        return false;
+    }
     private static boolean blank(String s){return s==null||s.trim().isEmpty();}
     private static double clamp(double v,double min,double max){return Math.max(min,Math.min(max,v));}
     private static double round(double v){return Math.round(v*10.0)/10.0;}
