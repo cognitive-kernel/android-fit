@@ -474,13 +474,13 @@ ALLERGY NOTE: ","\
         if(n.contains("chicken")) return contains(dislikes,"chicken","poultry","meat","گوشت","مرغ");
         if(n.contains("beef")) return contains(dislikes,"beef","meat","گوشت","گوشت قرمز","گوشت گوساله","گوشت گاو");
         if(n.contains("oats")) return contains(dislikes,"oats","oat","gluten","wheat","جو دوسر","جوپرک","جو پرک","گندم","گلوتن");
-        if(n.contains("soy yogurt")) return contains(dislikes,"soy","soya","سویا","yogurt","ماست");
+        if(n.contains("soy yogurt")) return contains(dislikes,"soy","soya","سویا","yogurt","ماست","legume","حبوبات");
         if(n.contains("yogurt")) return contains(dislikes,"yogurt","dairy","milk","لبنیات","شیر","ماست");
         if(n.contains("almond")) return contains(dislikes,"almond","بادام","آجیل");
-        if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");
-        if(n.contains("chickpeas")) return contains(dislikes,"chickpea","chickpeas","حمص","نخود");
+        if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا","legume","حبوبات");
+        if(n.contains("chickpeas")) return contains(dislikes,"chickpea","chickpeas","حمص","نخود","legume","حبوبات");
         if(n.contains("pumpkin seeds")) return contains(dislikes,"pumpkin","seed","تخمه","تخمه کدو");
-        if(n.contains("lentil")) return contains(dislikes,"lentil","عدس");
+        if(n.contains("lentil")) return contains(dislikes,"lentil","عدس","legume","حبوبات");
         if(n.contains("rice")) return contains(dislikes,"rice","برنج");
         if(n.contains("potato")) return contains(dislikes,"potato","سیب زمینی","سیب‌زمینی");
         if(n.contains("banana")) return contains(dislikes,"banana","موز");
