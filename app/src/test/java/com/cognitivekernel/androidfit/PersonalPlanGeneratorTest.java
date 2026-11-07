@@ -69,6 +69,11 @@ public class PersonalPlanGeneratorTest {
                 }
             }
             for(int day=1;day<=4;day++)assertTrue("day "+day+" should have at least three movements",counts[day]>=3);
+            FitnessPlanEngine.Profile profile=new FitnessPlanEngine.Profile();
+            profile.english=true;profile.trainingDays=4;profile.equipmentIndex=2;
+            profile.conditions="none";profile.injuries="none";profile.medications="none";profile.allergies="none";
+            String report=FitnessPlanEngine.trainingReport(profile,FitnessPlanEngine.analyze(profile),plan);
+            for(PersonalPlanGenerator.PlannedExercise item:plan)assertTrue("report omitted "+item.asset.name,report.contains(item.asset.name));
         }
     }
 
