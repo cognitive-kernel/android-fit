@@ -8,6 +8,11 @@ public final class FitnessProfileStore {
     private static final String PREFS = "fityar_preferences";
     private FitnessProfileStore() {}
 
+    public static boolean hasProfile(Context context) {
+        SharedPreferences p=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);
+        return p.contains("coach_age") && p.contains("coach_height_bits") && p.contains("coach_weight_bits");
+    }
+
     public static FitnessPlanEngine.Profile load(Context context) {
         SharedPreferences p=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);
         FitnessPlanEngine.Profile x=new FitnessPlanEngine.Profile();
