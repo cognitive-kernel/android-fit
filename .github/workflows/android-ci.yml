@@ -204,7 +204,7 @@ jobs:
           fi
           sha256sum artifacts/fityar-large-library-v118.apk > artifacts/SHA256SUMS.txt
       - name: Publish verified APK as a GitHub Release
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/release/v1.1.22' }}
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
