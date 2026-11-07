@@ -206,7 +206,6 @@ public final class FitnessPlanEngine {
 
     public static String nutritionReport(Profile p, Analysis a) {
         validate(p);
-        List<Meal> meals=createMeals(p,a);
         StringBuilder out=new StringBuilder();
         out.append(tr(p,"DAILY NUTRITION TARGET (ESTIMATE)\n","هدف روزانه تغذیه (تخمینی)\n"))
            .append(tr(p,"Energy: ","انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal\n")
@@ -222,6 +221,7 @@ public final class FitnessPlanEngine {
                    "تا زمان بررسی شرایط یا دارو توسط پزشک یا متخصص تغذیه، منوی غذایی اختصاصی تولید نمی‌شود.\n"));
             return out.toString();
         }
+        List<Meal> meals=createMeals(p,a);
         double totalK=0,totalP=0,totalC=0,totalF=0;
         for(Meal meal:meals) {
             double mk=0,mp=0,mc=0,mf=0;
