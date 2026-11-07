@@ -91,6 +91,15 @@ public class FitnessPlanEngineTest {
         assertTrue(report.contains("Foods to avoid"));
     }
 
+    @Test public void foodDislikesAreMatchedInPersian() {
+        FitnessPlanEngine.Profile p=profile();
+        p.dislikedFoods="مرغ، گوشت قرمز، بادام";
+        String report=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertFalse(report.contains("Chicken breast"));
+        assertFalse(report.contains("Lean beef"));
+        assertFalse(report.contains("Almonds"));
+    }
+
     @Test public void trainingReportIncludesWeeklyScheduleProgressionAndRecovery() {
         FitnessPlanEngine.Profile p=profile();
         String report=FitnessPlanEngine.trainingReport(p,FitnessPlanEngine.analyze(p),Collections.emptyList());
