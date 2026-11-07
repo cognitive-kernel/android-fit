@@ -14,7 +14,8 @@ public final class FitnessPlanEngine {
     private FitnessPlanEngine() {}
 
     public static final class Profile {
-        public boolean english;\n        public int age = 30;
+        public boolean english;
+        public int age = 30;
         public double heightCm = 170;
         public double weightKg = 70;
         public int sexIndex;
@@ -114,7 +115,8 @@ public final class FitnessPlanEngine {
                 ||p.equipmentIndex<0||p.equipmentIndex>2||p.trainingDays<1||p.trainingDays>7
                 ||p.sessionMinutes<10||p.sessionMinutes>180||p.mealsPerDay<3||p.mealsPerDay>6
                 ||(!"omnivore".equals(p.dietaryPreference)&&!"vegetarian".equals(p.dietaryPreference)&&!"vegan".equals(p.dietaryPreference))
-                ||Double.isNaN(p.heightCm)||Double.isInfinite(p.heightCm)||Double.isNaN(p.weightKg)||Double.isInfinite(p.weightKg)\n                ||Double.isNaN(p.sleepHours)||Double.isInfinite(p.sleepHours)||p.sleepHours<0||p.sleepHours>24) {
+                ||Double.isNaN(p.heightCm)||Double.isInfinite(p.heightCm)||Double.isNaN(p.weightKg)||Double.isInfinite(p.weightKg)
+                ||Double.isNaN(p.sleepHours)||Double.isInfinite(p.sleepHours)||p.sleepHours<0||p.sleepHours>24) {
             throw new IllegalArgumentException("Profile values are outside supported ranges");
         }
     }
