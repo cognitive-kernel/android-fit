@@ -110,9 +110,10 @@ public final class PersonalNutritionPlanner {
                 new AlertDialog.Builder(a).setTitle(t(a,"Your detailed food plan","برنامه غذایی دقیق شما"))
                   .setView(result).setPositiveButton(android.R.string.ok,null).show();
             } catch(Exception ex) {
+                String error=ex.getMessage();
                 new AlertDialog.Builder(a).setTitle(t(a,"Check your information","اطلاعات را بررسی کنید"))
-                  .setMessage(t(a,"Enter valid measurements, select every required option, and write none in medical, injury, medicine and allergy fields when not applicable.",
-                    "اطلاعات قد، وزن و سن را معتبر وارد کنید، گزینه‌های لازم را انتخاب کنید و در صورت نداشتن بیماری، آسیب، دارو یا حساسیت، عبارت «ندارد» را بنویسید."))
+                  .setMessage(error==null?t(a,"Enter valid measurements, select every required option, and write none in medical, injury, medicine and allergy fields when not applicable.",
+                    "اطلاعات قد، وزن و سن را معتبر وارد کنید، گزینه‌های لازم را انتخاب کنید و در صورت نداشتن بیماری، آسیب، دارو یا حساسیت، عبارت «ندارد» را بنویسید."):error)
                   .setPositiveButton(android.R.string.ok,null).show();
             }
           }).setNegativeButton(android.R.string.cancel,null).show();
