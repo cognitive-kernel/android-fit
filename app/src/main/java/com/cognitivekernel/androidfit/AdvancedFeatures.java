@@ -487,6 +487,9 @@ public final class AdvancedFeatures {
   EditText allergies=field(tr("Food allergies / intolerances","حساسیت یا عدم تحمل غذایی"),saved.allergies,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
   EditText dislikes=field(tr("Foods you do not eat / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
   EditText notes=field(tr("Other details (work schedule, goals, restrictions)","توضیحات تکمیلی (برنامه کاری، هدف یا محدودیت‌ها)"),saved.notes,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  CheckBox clearance=new CheckBox(a);
+  clearance.setText(tr("I have clinician clearance for exercise and nutrition with the conditions/medicines listed above","برای تمرین و تغذیه با توجه به شرایط و داروهای ذکرشده، مجوز متخصص دارم"));
+  clearance.setChecked(saved.medicalClearance);
   for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes,notes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
   if(hasProfile){
    goal.setSelection(saved.goalIndex+1);level.setSelection(saved.levelIndex+1);equipment.setSelection(saved.equipmentIndex+1);
@@ -508,7 +511,7 @@ public final class AdvancedFeatures {
   addField(form,tr("Food allergies","حساسیت غذایی"),allergies);
   addField(form,tr("Food preference","الگوی غذایی"),diet);
   addField(form,tr("Foods to avoid","غذاهای نامطلوب"),dislikes);
-  addField(form,tr("Additional details","توضیحات بیشتر"),notes);
+  addField(form,tr("Additional details","توضیحات بیشتر"),notes);\n  addField(form,tr("Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
   ScrollView scroll=new ScrollView(a);scroll.addView(form);
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(scroll).setPositiveButton(s("create_plan"),(d,w)->{
    try{
@@ -521,9 +524,15 @@ public final class AdvancedFeatures {
     p.sleepHours=sleep.getText().toString().trim().isEmpty()?0:parseLocalizedDouble(sleep.getText().toString());p.conditions=conditions.getText().toString();
     p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
     p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();
-    p.notes=notes.getText().toString();p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
+    p.notes=notes.getText().toString();p.medicalClearance=clearance.isChecked();p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
     FitnessPlanEngine.validate(p);
     FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(p);
+    if(analysis.needsMedicalReview&&!p.medicalClearance){
+     FitnessProfileStore.save(a,p);
+     showPlanReport(tr("Medical review required","نیاز به بررسی پزشکی"),
+       FitnessPlanEngine.trainingReport(p,analysis,Collections.emptyList())+"\\n\\n"+FitnessPlanEngine.nutritionReport(p,analysis));
+     return;
+    }
     String selectedGender=p.sexIndex==0?"male":"female";
     List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
       ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,p.equipmentIndex,selectedGender,p.sessionMinutes,p.injuries);
