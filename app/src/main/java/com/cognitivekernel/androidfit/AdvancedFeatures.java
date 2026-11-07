@@ -466,133 +466,180 @@ public final class AdvancedFeatures {
  }
 
  public void buildPersonalPlan(){
-  LinearLayout l=column();
-  Spinner goal=spinner(new String[]{s("goal_strength"),s("goal_muscle"),s("goal_general"),s("goal_weight")});
-  Spinner level=spinner(new String[]{s("level_beginner"),s("level_intermediate"),s("level_advanced")});
-  Spinner equipment=spinner(new String[]{s("equipment_none"),s("equipment_home"),s("equipment_gym")});
-  Spinner sex=spinner(new String[]{tr("Male","آقایان"),tr("Female","بانوان")});
-  EditText days=field(tr("Training days per week (days)","تعداد روز تمرین در هفته (روز)"),"3",android.text.InputType.TYPE_CLASS_NUMBER);
-  EditText minutes=field(tr("Session duration (minutes)","مدت هر جلسه (دقیقه)"),"35",android.text.InputType.TYPE_CLASS_NUMBER);
-  l.addView(label(s("training_goal")));l.addView(goal);l.addView(label(s("fitness_level")));l.addView(level);l.addView(label(s("available_equipment")));l.addView(equipment);
-  l.addView(label(tr("Trainee gender","جنسیت ورزشکار")));l.addView(sex);
-  l.addView(label(tr("Training days per week — default: 3 days","روزهای تمرین در هفته — پیش‌فرض: ۳ روز")));l.addView(days);
-  l.addView(label(tr("Duration of each session — default: 35 minutes","مدت هر جلسه تمرین — پیش‌فرض: ۳۵ دقیقه")));l.addView(minutes);
-  new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(l).setPositiveButton(s("create_plan"),(d,w)->{
+  FitnessPlanEngine.Profile saved=FitnessProfileStore.load(a);
+  boolean hasProfile=FitnessProfileStore.hasProfile(a);
+  LinearLayout form=column();
+  Spinner goal=spinner(new String[]{tr("Select a goal","هدف را انتخاب کنید"),s("goal_strength"),s("goal_muscle"),s("goal_general"),s("goal_weight")});
+  Spinner level=spinner(new String[]{tr("Select experience","سطح تجربه را انتخاب کنید"),s("level_beginner"),s("level_intermediate"),s("level_advanced")});
+  Spinner equipment=spinner(new String[]{tr("Select equipment","تجهیزات را انتخاب کنید"),s("equipment_none"),s("equipment_home"),s("equipment_gym")});
+  Spinner sex=spinner(new String[]{tr("Select sex","جنسیت را انتخاب کنید"),tr("Male","مرد"),tr("Female","زن"),tr("Other / prefer not to say","سایر / ترجیح می‌دهم اعلام نکنم")});
+  Spinner activity=spinner(new String[]{tr("Select daily activity","فعالیت روزانه را انتخاب کنید"),tr("Sedentary","کم‌تحرک"),tr("Lightly active","فعالیت سبک"),tr("Moderately active","فعالیت متوسط"),tr("Very active","فعالیت زیاد")});
+  Spinner diet=spinner(new String[]{tr("Select diet preference","الگوی غذایی را انتخاب کنید"),tr("Omnivore","همه‌چیزخوار"),tr("Vegetarian","گیاه‌خوار"),tr("Vegan","وگان")});
+  Spinner meals=spinner(new String[]{tr("Select meals per day","تعداد وعده را انتخاب کنید"),tr("3 meals","۳ وعده"),tr("4 meals","۴ وعده"),tr("5 meals","۵ وعده")});
+  EditText age=field(tr("Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText height=field(tr("Height (cm)","قد (سانتی‌متر)"),(hasProfile?String.valueOf(saved.heightCm):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  EditText weight=field(tr("Current weight (kg)","وزن فعلی (کیلوگرم)"),(hasProfile?String.valueOf(saved.weightKg):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  EditText days=field(tr("Training days per week (1–6)","روزهای تمرین در هفته (۱ تا ۶)"),(hasProfile?String.valueOf(saved.trainingDays):""),android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText minutes=field(tr("Session duration (10–180 min)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),(hasProfile?String.valueOf(saved.sessionMinutes):""),android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText sleep=field(tr("Average sleep hours per night","میانگین ساعت خواب شبانه"),(saved.sleepHours>0?String.valueOf(saved.sleepHours):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  EditText conditions=field(tr("Medical conditions (write 'none' if none)","بیماری‌ها و شرایط پزشکی (در صورت نداشتن بنویسید: ندارد)"),saved.conditions,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText injuries=field(tr("Pain, injuries, surgeries or movement restrictions (or none)","درد، آسیب، جراحی یا محدودیت حرکتی (یا ندارد)"),saved.injuries,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText medications=field(tr("Medicines / supplements (write none if not applicable)","داروها و مکمل‌ها (در صورت نداشتن بنویسید: ندارد)"),saved.medications,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText allergies=field(tr("Food allergies / intolerances (or none)","حساسیت یا عدم تحمل غذایی (یا ندارد)"),saved.allergies,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText dislikes=field(tr("Foods you do not eat / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText notes=field(tr("Other details (work schedule, goals, restrictions)","توضیحات تکمیلی (برنامه کاری، هدف یا محدودیت‌ها)"),saved.notes,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  CheckBox clearance=new CheckBox(a);
+  clearance.setText(tr("I have clinician clearance for exercise and nutrition with the conditions/medicines listed above","برای تمرین و تغذیه با توجه به شرایط و داروهای ذکرشده، مجوز متخصص دارم"));
+  clearance.setChecked(saved.medicalClearance);
+  android.text.TextWatcher healthChange=new android.text.TextWatcher(){
+   public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+   public void onTextChanged(CharSequence s,int start,int before,int count){clearance.setChecked(false);}
+   public void afterTextChanged(android.text.Editable e){}
+  };
+  conditions.addTextChangedListener(healthChange);injuries.addTextChangedListener(healthChange);medications.addTextChangedListener(healthChange);
+  for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes,notes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
+  if(hasProfile){
+   goal.setSelection(saved.goalIndex+1);level.setSelection(saved.levelIndex+1);equipment.setSelection(saved.equipmentIndex+1);
+   sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
+   diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);
+   meals.setSelection(Math.max(1,Math.min(3,saved.mealsPerDay-2)));
+  }
+  addField(form,tr("Main goal","هدف اصلی"),goal);
+  addField(form,tr("Training experience","سطح تجربه تمرین"),level);
+  addField(form,tr("Available equipment","تجهیزات در دسترس"),equipment);
+  addField(form,tr("Sex used only for energy estimate","جنسیت زیستی برای تخمین انرژی"),sex);
+  addField(form,tr("Daily activity outside training","فعالیت روزانه خارج از تمرین"),activity);
+  addField(form,tr("Age","سن"),age);addField(form,tr("Height","قد"),height);addField(form,tr("Weight","وزن"),weight);
+  addField(form,tr("Training days per week","روز تمرین در هفته"),days);
+  addField(form,tr("Minutes per session","مدت هر جلسه"),minutes);
+  addField(form,tr("Sleep per night","خواب شبانه"),sleep);
+  addField(form,tr("Medical conditions","شرایط پزشکی"),conditions);
+  addField(form,tr("Injuries and limitations","آسیب‌ها و محدودیت‌ها"),injuries);
+  addField(form,tr("Medicines","داروها"),medications);
+  addField(form,tr("Food allergies","حساسیت غذایی"),allergies);
+  addField(form,tr("Food preference","الگوی غذایی"),diet);
+  addField(form,tr("Meals per day","تعداد وعده در روز"),meals);
+  addField(form,tr("Foods to avoid","غذاهای نامطلوب"),dislikes);
+  addField(form,tr("Additional details","توضیحات بیشتر"),notes);
+  addField(form,tr("Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
+  ScrollView scroll=new ScrollView(a);scroll.addView(form);
+  new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(scroll).setPositiveButton(s("create_plan"),(d,w)->{
    try{
-    int weeklyDays=parseLocalizedInt(days.getText().toString());
-    int sessionMinutes=parseLocalizedInt(minutes.getText().toString());
-    if(weeklyDays<1||weeklyDays>7||sessionMinutes<10||sessionMinutes>180)throw new IllegalArgumentException();
-    int goalIndex=goal.getSelectedItemPosition();
-    int levelIndex=level.getSelectedItemPosition();
-    int equipmentIndex=equipment.getSelectedItemPosition();
-    int sexIndex=sex.getSelectedItemPosition();
-    String selectedGender=sexIndex==0?"male":"female";
+    FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();
+    p.english="en".equals(selectedLanguage());
+    p.age=parseLocalizedInt(age.getText().toString());p.heightCm=parseLocalizedDouble(height.getText().toString());
+    p.weightKg=parseLocalizedDouble(weight.getText().toString());p.sexIndex=sex.getSelectedItemPosition()-1;
+    p.goalIndex=goal.getSelectedItemPosition()-1;p.levelIndex=level.getSelectedItemPosition()-1;
+    p.equipmentIndex=equipment.getSelectedItemPosition()-1;p.activityIndex=activity.getSelectedItemPosition()-1;
+    p.trainingDays=parseLocalizedInt(days.getText().toString());p.sessionMinutes=parseLocalizedInt(minutes.getText().toString());
+    p.sleepHours=sleep.getText().toString().trim().isEmpty()?0:parseLocalizedDouble(sleep.getText().toString());p.conditions=conditions.getText().toString();
+    p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
+    p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();
+    p.notes=notes.getText().toString();p.medicalClearance=clearance.isChecked();p.mealsPerDay=2+meals.getSelectedItemPosition();p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
+    FitnessPlanEngine.validate(p);
+    FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(p);
+    if(analysis.needsMedicalReview&&!p.medicalClearance){
+     FitnessProfileStore.save(a,p);
+     showPlanReport(tr("Medical review required","نیاز به بررسی پزشکی"),
+       FitnessPlanEngine.trainingReport(p,analysis,Collections.emptyList())+"\\n\\n"+FitnessPlanEngine.nutritionReport(p,analysis));
+     return;
+    }
+    String selectedGender=p.sexIndex==0?"male":p.sexIndex==1?"female":"all";
     List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
-      ExerciseAssetIndex.all(a),goalIndex,levelIndex,equipmentIndex,selectedGender,sessionMinutes);
+      ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,p.equipmentIndex,selectedGender,p.sessionMinutes,p.injuries,p.trainingDays);
     if(generated.isEmpty())throw new IllegalStateException("No exercises generated");
-    String genderLabel=(String)sex.getSelectedItem();
-    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+genderLabel;
-    // The database writes the plan and all generated exercises in one transaction.
+    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+sex.getSelectedItem();
     long planId=db.addPlanWithExercises(planName,generated);
     List<String[]> persisted=db.exercises(planId);
-    if(persisted.size()!=generated.size()){
-     db.deletePlan(planId);
-     throw new IllegalStateException("Generated exercise count does not match persisted exercise count");
-    }
+    if(persisted.size()!=generated.size())throw new IllegalStateException("Saved exercise count does not match generated plan");
     for(int i=0;i<generated.size();i++){
-     String[] saved=persisted.get(i);PersonalPlanGenerator.PlannedExercise expected=generated.get(i);
-     if(!expected.asset.id.equals(saved[4])||!expected.asset.gender.equals(saved[5])){
-      db.deletePlan(planId);
-      throw new IllegalStateException("Persisted exercise catalog metadata does not match generated plan");
-     }
+     String[] row=persisted.get(i);PersonalPlanGenerator.PlannedExercise expected=generated.get(i);
+     if(!expected.asset.id.equals(row[4])||!expected.asset.gender.equals(row[5])||!String.valueOf(expected.day).equals(row[6]))
+      throw new IllegalStateException("Saved exercise metadata does not match generated plan");
     }
+    FitnessProfileStore.save(a,p);
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit()
-      .putInt("weekly_goal",weeklyDays).putInt("session_minutes",sessionMinutes)
+      .putInt("fitness_gender_index",p.sexIndex).putString("fitness_gender",String.valueOf(sex.getSelectedItem()))
+      .putString("equipment",String.valueOf(equipment.getSelectedItem()))
       .putString("fitness_goal",String.valueOf(goal.getSelectedItem()))
-      .putString("fitness_gender",genderLabel).putInt("fitness_gender_index",sexIndex)
-      .putInt("fitness_level",levelIndex).putString("equipment",String.valueOf(equipment.getSelectedItem()))
-      .apply();
-    message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+weeklyDays
-      +"\n"+s("session_minutes")+": "+sessionMinutes
-      +"\n"+tr("Exercises added: ","تعداد حرکات اضافه‌شده: ")+generated.size());
+      .putString("coach_plan_report_"+planId,FitnessPlanEngine.trainingReport(p,analysis,generated))
+      .putLong("coach_last_plan_id",planId).apply();
+    showPlanReport(tr("Personal plan created","برنامه شخصی ساخته شد"),
+      FitnessPlanEngine.trainingReport(p,analysis,generated)+"\n\n"+FitnessPlanEngine.nutritionReport(p,analysis));
    }catch(Exception ex){
     String reason=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();
     message(s("error"),tr("The plan could not be created: ","ساخت برنامه انجام نشد: ")+reason);
    }
   }).setNegativeButton(android.R.string.cancel,null).show();
  }
+ private void addField(LinearLayout parent,String title,android.view.View input){
+  parent.addView(label(title));parent.addView(input);
+ }
+ private void showPlanReport(String title,String report){
+  TextView body=new TextView(a);body.setText(report);body.setTextSize(15);
+  int pad=(int)(16*a.getResources().getDisplayMetrics().density);body.setPadding(pad,pad,pad,pad);
+  ScrollView scroll=new ScrollView(a);scroll.addView(body);
+  new AlertDialog.Builder(a).setTitle(title).setView(scroll).setPositiveButton(android.R.string.ok,null).show();
+ }
  private Spinner spinner(String[] values){Spinner sp=new Spinner(a);sp.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,values));return sp;}
  private TextView label(String t){TextView v=new TextView(a);v.setText(t);v.setTextSize(15);return v;}
 
 
  /** Goal-specific exercise and nutrition guide based on age, height, weight and activity. */
+ /** Route the goal/muscle/nutrition menu through the shared medically screened planner. */
  public void buildGoalPlan(){
-  LinearLayout l=column();
-  Spinner goal=spinner(new String[]{tg("Weight loss","کاهش وزن"),tg("Fitness & body composition","فیتنس و تناسب اندام"),tg("Muscle building","عضله‌سازی")});
-  Spinner region=spinner(new String[]{tg("Full body","کل بدن"),tg("Shoulders","سرشانه"),tg("Arms","بازو"),tg("Abs / core","شکم و میان‌تنه"),tg("Legs & glutes","پا و باسن"),tg("Chest","سینه"),tg("Back","پشت و زیربغل")});
-  Spinner sex=spinner(new String[]{tg("Male","مرد"),tg("Female","زن")});
-  EditText age=field(tg("Age (years)","سن (سال)"),"30",android.text.InputType.TYPE_CLASS_NUMBER);
-  EditText height=field(tg("Height (cm)","قد (سانتی‌متر)"),"170",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
-  EditText weight=field(tg("Weight (kg)","وزن (کیلوگرم)"),"70",android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
-  Spinner activity=spinner(new String[]{tg("Low activity","فعالیت کم"),tg("Moderate activity","فعالیت متوسط"),tg("High activity","فعالیت زیاد")});
-  l.addView(label(tg("Choose your goal","هدف اصلی")));l.addView(goal);
-  l.addView(label(tg("Muscle-building target area","ناحیهٔ هدف عضله‌سازی")));l.addView(region);
-  l.addView(label(tg("Sex for calorie estimate","جنسیت برای تخمین کالری")));l.addView(sex);
-  l.addView(age);l.addView(height);l.addView(weight);l.addView(label(tg("Usual daily activity","فعالیت معمول روزانه")));l.addView(activity);
-  new AlertDialog.Builder(a).setTitle(tg("Personal training & nutrition","تمرین و تغذیهٔ شخصی")).setView(l).setPositiveButton(tg("Create guide","ساخت راهنما"),(d,w)->{
-   try{
-    int years=parseLocalizedInt(age.getText().toString());
-    double cm=parseLocalizedDouble(height.getText().toString()),kg=parseLocalizedDouble(weight.getText().toString());
-    if(years<18||years>100||cm<120||cm>230||kg<30||kg>300)throw new IllegalArgumentException();
-    int g=goal.getSelectedItemPosition(),r=region.getSelectedItemPosition(),sx=sex.getSelectedItemPosition(),act=activity.getSelectedItemPosition();
-    double bmi=kg/((cm/100.0)*(cm/100.0));
-    double bmr=10*kg+6.25*cm-5*years+(sx==0?5:-161);
-    double maintenance=bmr*(act==0?1.35:act==1?1.55:1.725);
-    double target;if(g==0)target=bmi<18.5?maintenance:Math.max(1200,maintenance-350);else target=g==1?maintenance:maintenance+200;target=Math.max(1200,target);
-    double protein=(g==2?1.8:1.5)*kg;
-    StringBuilder out=new StringBuilder();
-    out.append(tg("Profile","مشخصات")).append("\n").append(tg("BMI (screening estimate only)","BMI (فقط شاخص غربالگری تقریبی)")).append(": ").append(String.format(Locale.getDefault(),"%.1f",bmi)).append("\n")
-      .append(tg("Estimated maintenance","کالری نگهدارندهٔ تخمینی")).append(": ").append(Math.round(maintenance)).append(" kcal/day\n")
-      .append(tg("Starting energy target","هدف اولیهٔ انرژی")).append(": ").append(Math.round(target)).append(" kcal/day\n")
-      .append(tg("Protein guide","راهنمای پروتئین")).append(": ").append(Math.round(protein)).append(" g/day\n\n");
-    if(g==0&&bmi<18.5)out.append(tg("Weight note: BMI is below 18.5, so this guide does not set a calorie deficit. Consider discussing unintended weight loss or nutrition concerns with a qualified clinician.","نکتهٔ وزن: BMI کمتر از ۱۸٫۵ است؛ بنابراین این راهنما کسری کالری پیشنهاد نمی‌کند. اگر کاهش وزن ناخواسته یا نگرانی تغذیه‌ای دارید، با متخصص سلامت مشورت کنید.")).append("\n\n");
-    if(g==0){
-     out.append(tg("TRAINING — WEIGHT LOSS","تمرین — کاهش وزن")).append("\n").append(tg("3–5 days/week: 25–45 min brisk walking/cycling plus 2–3 full-body strength sessions. Keep the calorie deficit modest and increase activity gradually.","۳ تا ۵ روز در هفته: ۲۵ تا ۴۵ دقیقه پیاده‌روی تند یا دوچرخه، به‌علاوهٔ ۲ تا ۳ جلسه قدرتی کل بدن. کسری کالری ملایم داشته باشید و فعالیت را تدریجی افزایش دهید.")).append("\n\n")
-      .append(tg("FOOD — vegetables, fruit, beans, whole grains and lean protein; reduce sugary drinks and highly processed snacks. Aim for slow, sustainable loss.","تغذیه — سبزی، میوه، حبوبات، غلات کامل و پروتئین کم‌چرب را بیشتر کنید؛ نوشیدنی شیرین و تنقلات بسیار فرآوری‌شده را کاهش دهید. کاهش وزن آهسته و پایدار را هدف بگیرید."));
-    }else if(g==1){
-     out.append(tg("TRAINING — FITNESS","تمرین — فیتنس و تناسب اندام")).append("\n").append(tg("3 strength sessions/week for all major muscle groups, 2 moderate cardio sessions, and mobility work. Start with 2–3 sets of 8–15 controlled reps.","۳ جلسه قدرتی در هفته برای عضلات اصلی، ۲ جلسه هوازی متوسط و تمرین تحرک مفاصل. با ۲ تا ۳ ست و ۸ تا ۱۵ تکرار کنترل‌شده شروع کنید.")).append("\n\n")
-      .append(tg("FOOD — start near maintenance; include protein at each meal, vegetables, whole-food carbohydrates and healthy fats. Adjust after 2–3 weeks based on progress.","تغذیه — نزدیک کالری نگهدارنده شروع کنید؛ در هر وعده پروتئین، سبزیجات، کربوهیدرات کامل و چربی مفید بگنجانید. پس از ۲ تا ۳ هفته براساس روند پیشرفت تنظیم کنید."));
-    }else{
-     String area;
-     switch(r){
-      case 1: area=tg("shoulders: overhead press, lateral raises, rear-delt raises","سرشانه: پرس سرشانه، نشر جانب، نشر خم");break;
-      case 2: area=tg("arms: biceps curls, hammer curls, triceps extensions","بازو: جلو بازو، جلو بازو چکشی، پشت بازو");break;
-      case 3: area=tg("abs/core: plank, dead bug, reverse crunch; visible abs also depend on overall body fat","شکم و میان‌تنه: پلانک، ددباگ، کرانچ معکوس؛ نمایان‌شدن شکم به چربی کل بدن هم وابسته است");break;
-      case 4: area=tg("legs/glutes: squats, lunges, hip hinges, glute bridges","پا و باسن: اسکوات، لانج، هیپ‌هینج، پل باسن");break;
-      case 5: area=tg("chest: push-ups, dumbbell/floor press","سینه: شنا، پرس دمبل یا پرس روی زمین");break;
-      case 6: area=tg("back: rows, band rows, safe pulling movements","پشت و زیربغل: انواع پارویی، پارویی کشی و حرکات کششی ایمن");break;
-      default: area=tg("full body: squat, push-up, row, hip hinge and plank","کل بدن: اسکوات، شنا، پارویی، هیپ‌هینج و پلانک");
-     }
-     out.append(tg("TRAINING — MUSCLE BUILDING","تمرین — عضله‌سازی")).append("\n").append(tg("Target area: ","ناحیهٔ هدف: ")).append(area).append("\n")
-      .append(tg("Train the selected area twice weekly with about 48 hours between hard sessions. Begin with 3 exercises, 2–4 sets each and 6–15 reps; leave 1–3 good reps in reserve and increase reps/load gradually.","ناحیهٔ انتخابی را هفته‌ای ۲ بار تمرین دهید و بین جلسات سنگین حدود ۴۸ ساعت فاصله بگذارید. با ۳ حرکت، هرکدام ۲ تا ۴ ست و ۶ تا ۱۵ تکرار شروع کنید؛ ۱ تا ۳ تکرار توان اضافه باقی بگذارید و تکرار/وزنه را تدریجی افزایش دهید.")).append("\n\n")
-      .append(tg("FOOD — start near maintenance or a small surplus; spread protein across 3–4 meals, eat enough carbohydrates for training, and include vegetables, fruit and healthy fats. Review progress every 2–3 weeks.","تغذیه — نزدیک کالری نگهدارنده یا با مازاد اندک شروع کنید؛ پروتئین را در ۳ تا ۴ وعده تقسیم کنید، کربوهیدرات کافی برای تمرین بخورید و سبزی، میوه و چربی مفید مصرف کنید. هر ۲ تا ۳ هفته پیشرفت را بررسی کنید."));
-    }
-    out.append("\n\n").append(tg("Safety: these are rough estimates, not medical advice. The formula does not account for illness, medication, pregnancy or eating-disorder history. This guide is for adults; seek professional advice if needed.","ایمنی: این اعداد تخمینی‌اند و توصیهٔ پزشکی نیستند. بیماری، دارو، بارداری یا سابقهٔ اختلال خوردن در فرمول لحاظ نشده‌اند. این راهنما برای بزرگسالان است؛ در صورت نیاز با متخصص مشورت کنید."));
-    new AlertDialog.Builder(a).setTitle(tg("Your training & food guide","راهنمای تمرین و تغذیهٔ شما")).setMessage(out.toString()).setPositiveButton(android.R.string.ok,null).show();
-   }catch(Exception ex){message(tg("Check your details","اطلاعات را بررسی کنید"),tg("Enter age 18–100, height 120–230 cm, and weight 30–300 kg.","سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰ سانتی‌متر و وزن ۳۰ تا ۳۰۰ کیلوگرم وارد کنید."));}
-  }).setNegativeButton(android.R.string.cancel,null).show();
+  PersonalNutritionPlanner.show(a);
  }
  private String tg(String en,String fa){return "en".equals(selectedLanguage())?en:fa;}
 
  public void showCoach(){
-  int goal=a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).getInt("weekly_goal",3);
-  int days=db.weeklyTrainingDays();
-  String advice;
-  if(days==0)advice=s("coach_start");
-  else if(days<goal)advice=s("coach_consistency")+" "+(goal-days)+" "+s("sessions_left");
-  else advice=s("coach_progress");
-  try(Cursor c=db.recentLogs()){if(c.moveToFirst()){int rpe=c.getInt(5);if(rpe>=9)advice+="\n\n"+s("coach_recovery");else if(rpe<=5)advice+="\n\n"+s("coach_maybe_progress");}}
-  message(s("smart_coach"),advice+"\n\n"+s("coach_safety"));
+  if(!FitnessProfileStore.hasProfile(a)){
+   message(tr("Complete your profile first","ابتدا مشخصات خود را تکمیل کنید"),
+     tr("The offline coach needs your age, height, weight, goal, activity and health restrictions before it can create a safe personalized recommendation.",
+        "مربی آفلاین پیش از ارائه برنامه شخصی و ایمن به سن، قد، وزن، هدف، فعالیت و محدودیت‌های سلامت شما نیاز دارد."));
+   PersonalNutritionPlanner.show(a);
+   return;
+  }
+  try{
+   FitnessPlanEngine.Profile profile=FitnessProfileStore.load(a);
+   profile.english="en".equals(selectedLanguage());
+   FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(profile);
+   String gender=profile.sexIndex==0?"male":profile.sexIndex==1?"female":"all";
+   List<PersonalPlanGenerator.PlannedExercise> suggested=
+     analysis.needsMedicalReview&&!profile.medicalClearance?Collections.emptyList():
+       PersonalPlanGenerator.generate(ExerciseAssetIndex.all(a),profile.goalIndex,profile.levelIndex,
+         profile.equipmentIndex,gender,profile.sessionMinutes,profile.injuries,profile.trainingDays);
+   StringBuilder report=new StringBuilder();
+   report.append(tr("OFFLINE COACH — PERSONAL ASSESSMENT","مربی آفلاین — ارزیابی شخصی")).append("\\n")
+     .append(FitnessPlanEngine.trainingReport(profile,analysis,suggested))
+     .append("\\n").append(FitnessPlanEngine.nutritionReport(profile,analysis));
+   int weekly=db.weeklyTrainingDays();
+   report.append("\\n").append(tr("RECENT TRAINING RECORD","سوابق تمرین اخیر")).append("\\n")
+     .append(tr("Sessions logged in the last 7 days: ","جلسات ثبت‌شده در ۷ روز اخیر: ")).append(weekly)
+     .append(" / ").append(profile.trainingDays).append("\\n");
+   int count=0,totalEffort=0;String lastExercise="";
+   try(Cursor rows=db.recentLogs()){
+    while(rows.moveToNext()&&count<10){
+     if(count==0)lastExercise=rows.getString(1);
+     totalEffort+=rows.getInt(5);count++;
+    }
+   }
+   if(count==0) report.append(tr("No workout history yet. Start with the first session at an easy, controlled effort.","هنوز سابقه تمرین ثبت نشده است؛ جلسه اول را با شدت سبک و کنترل‌شده آغاز کنید.")).append("\\n");
+   else{
+    double average=(double)totalEffort/count;
+    report.append(tr("Recent logged exercises: ","تعداد حرکات ثبت‌شده اخیر: ")).append(count)
+      .append("\\n").append(tr("Most recent exercise: ","آخرین حرکت ثبت‌شده: ")).append(lastExercise)
+      .append("\\n").append(tr("Average reported effort (RPE): ","میانگین سختی گزارش‌شده (RPE): ")).append(String.format(Locale.US,"%.1f",average)).append("/10\\n");
+    if(average>=9)report.append(tr("Coach action: prioritize recovery; do not increase load or volume until effort and recovery normalize.","اقدام مربی: ریکاوری را در اولویت بگذارید؛ تا عادی‌شدن سختی و ریکاوری، وزنه یا حجم را افزایش ندهید.")).append("\\n");
+    else if(average<=5)report.append(tr("Coach action: if technique is stable and there is no pain, increase repetitions slightly or use the smallest load increase next session.","اقدام مربی: اگر تکنیک ثابت است و درد ندارید، جلسه بعد کمی تکرار اضافه کنید یا کمترین افزایش وزنه را اعمال کنید.")).append("\\n");
+    else report.append(tr("Coach action: keep the current progression and monitor sleep, soreness and performance.","اقدام مربی: روند فعلی را حفظ و خواب، کوفتگی و عملکرد را پایش کنید.")).append("\\n");
+   }
+   if(!profile.notes.trim().isEmpty())report.append("\\n").append(tr("Your notes: ","یادداشت شما: ")).append(profile.notes).append("\\n");
+   showPlanReport(tr("Offline coach","مربی آفلاین"),report.toString());
+  }catch(Exception ex){
+   message(tr("Coach could not build a plan","مربی نتوانست برنامه بسازد"),
+     tr("Review your saved profile and exercise catalog, then try again.","مشخصات ذخیره‌شده و کتابخانه حرکات را بررسی و دوباره تلاش کنید."));
+  }
  }
 
  public void showWeeklyGoal(){

@@ -48,6 +48,44 @@ public class PersonalPlanGeneratorTest {
         }
     }
 
+    @Test public void weeklyPlanAssignsDistinctMovementsToTheCorrectTrainingDays() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<ExerciseAssetIndex.ExerciseAsset> catalog=ExerciseAssetIndex.all(controller.get());
+            List<PersonalPlanGenerator.PlannedExercise> plan=PersonalPlanGenerator.generate(
+                    catalog,1,1,2,"all",45,"none",4);
+            int[] counts=new int[5];
+            Set<String> ids=new HashSet<>();
+            for(PersonalPlanGenerator.PlannedExercise item:plan) {
+                assertTrue(item.day>=1&&item.day<=4);
+                assertTrue(ids.add(item.asset.id));
+                counts[item.day]++;
+                String category=PersonalPlanGenerator.category(item.asset.name);
+                if(item.day%2==1) {
+                    assertTrue("upper day contains lower-body movement: "+item.asset.name,
+                            "push".equals(category)||"pull".equals(category)||"other".equals(category));
+                } else {
+                    assertTrue("lower day contains upper-body movement: "+item.asset.name,
+                            "legs".equals(category)||"glutes".equals(category)||"core".equals(category)||"other".equals(category));
+                }
+            }
+            for(int day=1;day<=4;day++)assertTrue("day "+day+" should have at least three movements",counts[day]>=3);
+            FitnessPlanEngine.Profile profile=new FitnessPlanEngine.Profile();
+            profile.english=true;profile.trainingDays=4;profile.equipmentIndex=2;
+            profile.conditions="none";profile.injuries="none";profile.medications="none";profile.allergies="none";
+            String report=FitnessPlanEngine.trainingReport(profile,FitnessPlanEngine.analyze(profile),plan);
+            for(PersonalPlanGenerator.PlannedExercise item:plan)assertTrue("report omitted "+item.asset.name,report.contains(item.asset.name));
+        }
+    }
+
+    @Test public void complexAndPostSurgicalRestrictionsRequireClinicianReviewedExerciseSelection() {
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("knee pain after surgery"));
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("shoulder tendon tear"));
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("شکستگی زانو"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("knee"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("درد زانو"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("none"));
+    }
+
     @Test public void equipmentFreePlanDoesNotSelectEquipmentDependentMovements() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             List<PersonalPlanGenerator.PlannedExercise> plan = PersonalPlanGenerator.generate(
@@ -95,6 +133,40 @@ public class PersonalPlanGeneratorTest {
             } finally {
                 db.close();
             }
+        }
+    }
+
+    @Test public void fiveAndSixDayPlansUseTheExpectedWeeklySplit() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<ExerciseAssetIndex.ExerciseAsset> catalog=ExerciseAssetIndex.all(controller.get());
+            List<PersonalPlanGenerator.PlannedExercise> five=PersonalPlanGenerator.generate(
+                    catalog,1,1,2,"all",45,"none",5);
+            int[] fiveCounts=new int[6];
+            for(PersonalPlanGenerator.PlannedExercise item:five)fiveCounts[item.day]++;
+            for(int day=1;day<=5;day++)assertTrue("five-day split missing day "+day,fiveCounts[day]>=3);
+            List<PersonalPlanGenerator.PlannedExercise> six=PersonalPlanGenerator.generate(
+                    catalog,1,1,2,"all",45,"none",6);
+            int[] sixCounts=new int[7];
+            for(PersonalPlanGenerator.PlannedExercise item:six)sixCounts[item.day]++;
+            for(int day=1;day<=6;day++)assertTrue("six-day split missing day "+day,sixCounts[day]>=3);
+        }
+    }
+
+    @Test public void weeklyDayAssignmentsSurviveDatabasePersistence() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity=controller.get();
+            WorkoutDb db=new WorkoutDb(activity);
+            try {
+                List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
+                        ExerciseAssetIndex.all(activity),1,1,2,"all",45,"none",4);
+                long planId=db.addPlanWithExercises("Four day plan",generated);
+                List<String[]> rows=db.exercises(planId);
+                assertEquals(generated.size(),rows.size());
+                for(int i=0;i<generated.size();i++) {
+                    assertEquals(String.valueOf(generated.get(i).day),rows.get(i)[6]);
+                    assertEquals(generated.get(i).asset.id,rows.get(i)[4]);
+                }
+            } finally { db.close(); }
         }
     }
 

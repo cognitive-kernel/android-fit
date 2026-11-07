@@ -105,7 +105,7 @@ public class WorkoutDbTest {
   try(android.database.Cursor c=db.allLogs()){
    assertTrue(c.moveToFirst());assertEquals("Squat",c.getString(2));assertEquals(60,c.getInt(6));assertEquals(7,c.getInt(7));assertEquals("",c.getString(8));
   }
-  assertEquals(5,db.getReadableDatabase().getVersion());
+  assertEquals(6,db.getReadableDatabase().getVersion());
   try(android.database.Cursor c=db.sleepLogs()){assertFalse(c.moveToFirst());}
  }
  @Test public void upgradesVersionTwoDetailedSchemaFromOtherBranch(){

@@ -13,11 +13,16 @@ public final class PersonalPlanGenerator {
         public final ExerciseAssetIndex.ExerciseAsset asset;
         public final int sets;
         public final int reps;
+        public final int day;
 
         PlannedExercise(ExerciseAssetIndex.ExerciseAsset asset, int sets, int reps) {
+            this(asset,sets,reps,1);
+        }
+        PlannedExercise(ExerciseAssetIndex.ExerciseAsset asset, int sets, int reps, int day) {
             this.asset = asset;
             this.sets = sets;
             this.reps = reps;
+            this.day = day;
         }
     }
 
@@ -26,10 +31,29 @@ public final class PersonalPlanGenerator {
     public static List<PlannedExercise> generate(
             List<ExerciseAssetIndex.ExerciseAsset> catalog,
             int goal, int level, int equipment, String gender, int sessionMinutes) {
+        return generate(catalog,goal,level,equipment,gender,sessionMinutes,"");
+    }
+
+    public static List<PlannedExercise> generate(
+            List<ExerciseAssetIndex.ExerciseAsset> catalog,
+            int goal, int level, int equipment, String gender, int sessionMinutes, String limitations) {
+        return generateInternal(catalog,goal,level,equipment,gender,sessionMinutes,limitations,3,false);
+    }
+
+    public static List<PlannedExercise> generate(
+            List<ExerciseAssetIndex.ExerciseAsset> catalog,
+            int goal, int level, int equipment, String gender, int sessionMinutes, String limitations, int trainingDays) {
+        return generateInternal(catalog,goal,level,equipment,gender,sessionMinutes,limitations,trainingDays,true);
+    }
+
+    private static List<PlannedExercise> generateInternal(
+            List<ExerciseAssetIndex.ExerciseAsset> catalog,
+            int goal, int level, int equipment, String gender, int sessionMinutes, String limitations,
+            int trainingDays, boolean weeklyPlan) {
         if (catalog == null || catalog.isEmpty()) throw new IllegalArgumentException("Exercise catalog is empty");
         if (goal < 0 || goal > 3 || level < 0 || level > 2 || equipment < 0 || equipment > 2
-                || sessionMinutes < 10 || sessionMinutes > 180
-                || (!"male".equals(gender) && !"female".equals(gender))) {
+                || sessionMinutes < 10 || sessionMinutes > 180 || trainingDays < 1 || trainingDays > 6
+                || (!"male".equals(gender) && !"female".equals(gender) && !"all".equals(gender))) {
             throw new IllegalArgumentException("Invalid personal plan preferences");
         }
 
@@ -37,8 +61,9 @@ public final class PersonalPlanGenerator {
         ArrayList<ExerciseAssetIndex.ExerciseAsset> eligible = new ArrayList<>();
         for (ExerciseAssetIndex.ExerciseAsset asset : catalog) {
             if (asset == null || asset.name == null || asset.name.trim().isEmpty()) continue;
-            if (!gender.equals(asset.gender) && !"unspecified".equals(asset.gender)) continue;
+            if (!"all".equals(gender) && !gender.equals(asset.gender) && !"unspecified".equals(asset.gender)) continue;
             if (!supportsEquipment(asset.name, equipment)) continue;
+            if (!isCompatibleWithLimitations(asset.name, limitations)) continue;
             if (isStretchOnly(asset.name)) continue;
             eligible.add(asset);
         }
@@ -48,38 +73,71 @@ public final class PersonalPlanGenerator {
             if (leftGenderRank != rightGenderRank) return Integer.compare(leftGenderRank, rightGenderRank);
             return left.id.compareTo(right.id);
         });
-        if (eligible.isEmpty()) throw new IllegalStateException("No exercises match the selected gender and equipment");
+        if (hasUnmappedLimitation(limitations)) {
+            throw new IllegalStateException("Specify the affected body region and clinician-approved movement restrictions; this offline coach cannot safely map the reported limitation");
+        }
+        if (eligible.isEmpty()) throw new IllegalStateException(limitations==null||limitations.trim().isEmpty()? "No exercises match the selected gender and equipment" : "No exercises match the reported injury restrictions; request a clinician-reviewed exercise selection");
 
-        String[] priorities;
-        if (goal == 0) priorities = new String[]{"legs", "push", "pull", "glutes", "core", "legs", "push", "pull"};
-        else if (goal == 1) priorities = new String[]{"legs", "push", "pull", "glutes", "core", "push", "pull", "legs"};
-        else if (goal == 3) priorities = new String[]{"cardio", "legs", "push", "pull", "core", "cardio", "glutes", "core"};
-        else priorities = new String[]{"legs", "push", "pull", "core", "cardio", "glutes", "push", "legs"};
-
-        ArrayList<ExerciseAssetIndex.ExerciseAsset> selected = new ArrayList<>();
+        ArrayList<PlannedExercise> result = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
         Set<String> usedNames = new HashSet<>();
-        for (String category : priorities) {
-            if (selected.size() >= count) break;
-            ExerciseAssetIndex.ExerciseAsset candidate = choose(eligible, category, usedIds, usedNames);
-            if (candidate != null) add(candidate, selected, usedIds, usedNames);
+        int daysToBuild=weeklyPlan?trainingDays:1;
+        for(int day=1;day<=daysToBuild;day++) {
+            String split=weeklyPlan?splitKey(trainingDays,day):"full";
+            String[] priorities=prioritiesFor(goal,split,day);
+            ArrayList<ExerciseAssetIndex.ExerciseAsset> selected=new ArrayList<>();
+            for(String category:priorities) {
+                if(selected.size()>=count)break;
+                ExerciseAssetIndex.ExerciseAsset candidate=choose(eligible,category,usedIds,usedNames);
+                if(candidate!=null)add(candidate,selected,usedIds,usedNames);
+            }
+            for(ExerciseAssetIndex.ExerciseAsset candidate:eligible) {
+                if(selected.size()>=count)break;
+                String category=category(candidate.name);
+                if(matchesSplit(split,category))add(candidate,selected,usedIds,usedNames);
+            }
+            if(selected.size()<Math.min(3,count)) {
+                throw new IllegalStateException("Not enough distinct catalog movements for training day "+day+" ("+split+")");
+            }
+            int sets=(trainingDays>=5||level==0)?2:3;
+            int reps=goal==0?(level==0?8:6):goal==1?10:goal==2?12:15;
+            for(ExerciseAssetIndex.ExerciseAsset asset:selected) {
+                result.add(new PlannedExercise(asset,sets,reps,day));
+            }
         }
-        // Category classification is only a prioritization hint, never an eligibility rule.
-        // Fill every remaining slot from the already gender- and equipment-filtered catalog.
-        for (ExerciseAssetIndex.ExerciseAsset candidate : eligible) {
-            if (selected.size() >= count) break;
-            add(candidate, selected, usedIds, usedNames);
-        }
-        if (selected.isEmpty()) throw new IllegalStateException("No suitable exercises could be generated");
-
-        int sets = (goal == 2 || goal == 3 ? 2 : 3) + level;
-        int reps = goal == 0 ? (level == 0 ? 8 : 6)
-                : goal == 1 ? 10 : goal == 2 ? 12 : 15;
-        ArrayList<PlannedExercise> result = new ArrayList<>();
-        for (ExerciseAssetIndex.ExerciseAsset asset : selected) {
-            result.add(new PlannedExercise(asset, sets, reps));
-        }
+        if(result.isEmpty())throw new IllegalStateException("No suitable exercises could be generated");
         return Collections.unmodifiableList(result);
+    }
+
+    private static String splitKey(int days,int day) {
+        if(days<=3)return "full";
+        if(days==5)return day==1?"push":day==2?"pull":day==3?"legs":day==4?"upper":"lower";
+        return day%2==1?"upper":"lower";
+    }
+
+    private static String[] prioritiesFor(int goal,String split,int day) {
+        if("push".equals(split))return new String[]{"push","other"};
+        if("pull".equals(split))return new String[]{"pull","other"};
+        if("legs".equals(split))return new String[]{"legs","glutes","core","other"};
+        if("upper".equals(split))return new String[]{"pull","push","other"};
+        if("lower".equals(split))return new String[]{"legs","glutes","core","other"};
+        String[] base=goal==0?new String[]{"legs","push","pull","glutes","core","other"}
+                :goal==1?new String[]{"legs","push","pull","glutes","core","other"}
+                :goal==3?new String[]{"cardio","legs","push","pull","core","glutes","other"}
+                :new String[]{"legs","push","pull","core","cardio","glutes","other"};
+        int rotate=(day-1)%base.length;
+        String[] ordered=new String[base.length];
+        for(int i=0;i<base.length;i++)ordered[i]=base[(i+rotate)%base.length];
+        return ordered;
+    }
+
+    private static boolean matchesSplit(String split,String category) {
+        if("full".equals(split))return true;
+        if("upper".equals(split))return "push".equals(category)||"pull".equals(category)||"other".equals(category);
+        if("lower".equals(split)||"legs".equals(split))return "legs".equals(category)||"glutes".equals(category)||"core".equals(category)||"other".equals(category);
+        if("push".equals(split))return "push".equals(category)||"other".equals(category);
+        if("pull".equals(split))return "pull".equals(category)||"other".equals(category);
+        return false;
     }
 
     private static ExerciseAssetIndex.ExerciseAsset choose(
@@ -98,7 +156,7 @@ public final class PersonalPlanGenerator {
         if (usedIds.add(asset.id) && usedNames.add(name)) selected.add(asset);
     }
 
-    private static String category(String name) {
+    static String category(String name) {
         String n = normalize(name);
         if (contains(n, "running", "run ", "jog", "cycling", "treadmill", "jump rope", "jumping jack",
                 "burpee", "mountain climber", "high knees", "skipping")) return "cardio";
@@ -113,6 +171,51 @@ public final class PersonalPlanGenerator {
                 "chest fly", "chest fly", "overhead press", "shoulder press", "lateral raise",
                 "triceps", "dip")) return "push";
         return "other";
+    }
+
+    static boolean isCompatibleWithLimitations(String exerciseName,String limitations) {
+        String n=normalize(exerciseName==null?"":exerciseName);
+        String l=(limitations==null?"":limitations).toLowerCase(Locale.ROOT).trim();
+        if(isNoLimitation(l)) return true;
+        boolean knee=contains(l,"knee","meniscus","زانو","مینیسک");
+        boolean shoulder=contains(l,"shoulder","شانه","سرشانه","روتاتور کاف");
+        boolean back=contains(l,"back","spine","lumbar","scoliosis","kyphosis","lordosis","sciatica","herniated disc","slipped disc","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک","اسکولیوز","سیاتیک");
+        boolean wrist=contains(l,"wrist","carpal tunnel","مچ دست","تونل کارپال");
+        boolean ankle=contains(l,"ankle","achilles","مچ پا","آشیل","کف پا","پاشنه");
+        boolean hip=contains(l,"hip","لگن","مفصل ران");
+        boolean elbow=contains(l,"elbow","آرنج");
+        boolean neck=contains(l,"neck","گردن");
+        if(knee&&contains(n,"squat","lunge","leg press","leg extension","step up","step-up","jump","running","treadmill")) return false;
+        if(shoulder&&contains(n,"overhead press","shoulder press","lateral raise","front raise","upright row","dip","chest fly")) return false;
+        if(back&&contains(n,"deadlift","good morning","bent over","hyperextension","back extension","sit up","sit-up","barbell row")) return false;
+        if(wrist&&contains(n,"push up","push-up","pushup","plank","burpee","handstand","front rack")) return false;
+        if(ankle&&contains(n,"jump","running","treadmill","lunge","step up","step-up")) return false;
+        if(hip&&contains(n,"squat","lunge","deadlift","hip thrust","leg press","adductor","abductor")) return false;
+        if(elbow&&contains(n,"curl","triceps","dip","push up","push-up","pull up","pull-up","row")) return false;
+        if(neck&&contains(n,"shrug","overhead press","shoulder press","handstand","loaded carry")) return false;
+        return true;
+    }
+
+    private static boolean isNoLimitation(String value) {
+        return value==null||value.trim().isEmpty()||value.trim().equals("none")
+                ||value.trim().equals("no")||value.trim().equals("no injury")
+                ||value.trim().equals("ندارد")||value.trim().equals("ندارم")||value.trim().equals("خیر")
+                ||value.trim().equals("هیچ")||value.trim().equals("هیچکدام")
+                ||value.trim().equals("هیچ‌کدام");
+    }
+
+    static boolean hasUnmappedLimitation(String value) {
+        if(isNoLimitation(value))return false;
+        String l=value.toLowerCase(Locale.ROOT);
+        // A body-region keyword alone is not enough to map complex diagnoses or post-operative restrictions.
+        if(contains(l,"surgery","surgical","post-op","post op","fracture","arthritis","tendon","ligament",
+                "sprain","strain","tear","replacement","dislocation","impingement","nerve","numbness",
+                "tingling","جراحی","شکستگی","آرتروز","تاندون","رباط","پارگی","تعویض مفصل","دررفتگی",
+                "گیر افتادگی","عصب","بی‌حسی","گزگز")) return true;
+        return !contains(l,"knee","meniscus","زانو","مینیسک","shoulder","شانه","سرشانه","روتاتور کاف",
+                "back","spine","lumbar","scoliosis","kyphosis","lordosis","sciatica","herniated disc","slipped disc","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک","اسکولیوز","سیاتیک",
+                "wrist","carpal tunnel","مچ دست","تونل کارپال","ankle","achilles","مچ پا","آشیل","کف پا","پاشنه","hip","لگن","مفصل ران",
+                "elbow","آرنج","neck","گردن");
     }
 
     private static boolean supportsEquipment(String name, int equipment) {

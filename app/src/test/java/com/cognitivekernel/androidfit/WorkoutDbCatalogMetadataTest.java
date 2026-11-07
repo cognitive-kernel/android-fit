@@ -85,6 +85,7 @@ public class WorkoutDbCatalogMetadataTest {
         String[] manual=db.exercises(4).get(0);
         assertEquals("Manual squat (male)",manual[1]);
         assertNull(manual[5]);
-        assertEquals(5,db.getReadableDatabase().getVersion());
+        assertEquals(6,db.getReadableDatabase().getVersion());
+        assertEquals("1",db.exercises(1).get(0)[6]);
     }
 }
