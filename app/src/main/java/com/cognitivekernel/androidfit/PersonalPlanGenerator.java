@@ -32,6 +32,12 @@ public final class PersonalPlanGenerator {
     public static List<PlannedExercise> generate(
             List<ExerciseAssetIndex.ExerciseAsset> catalog,
             int goal, int level, int equipment, String gender, int sessionMinutes, String limitations) {
+        return generate(catalog,goal,level,equipment,gender,sessionMinutes,limitations,3);
+    }
+
+    public static List<PlannedExercise> generate(
+            List<ExerciseAssetIndex.ExerciseAsset> catalog,
+            int goal, int level, int equipment, String gender, int sessionMinutes, String limitations, int trainingDays) {
         if (catalog == null || catalog.isEmpty()) throw new IllegalArgumentException("Exercise catalog is empty");
         if (goal < 0 || goal > 3 || level < 0 || level > 2 || equipment < 0 || equipment > 2
                 || sessionMinutes < 10 || sessionMinutes > 180
