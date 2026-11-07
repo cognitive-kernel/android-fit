@@ -41,6 +41,20 @@ public class FitnessPlanEngineTest {
         assertTrue(a.medicalReason.contains("right shoulder pain"));
     }
 
+    @Test public void medicalDisclosureRequiresClearanceBeforeDetailedWorkoutAndMenu() {
+        FitnessPlanEngine.Profile p=profile();
+        p.conditions="hypertension";
+        FitnessPlanEngine.Analysis a=FitnessPlanEngine.analyze(p);
+        String training=FitnessPlanEngine.trainingReport(p,a,Collections.emptyList());
+        String nutrition=FitnessPlanEngine.nutritionReport(p,a);
+        assertTrue(training.contains("No individualized exercise prescription"));
+        assertTrue(nutrition.contains("No individualized food menu"));
+        assertFalse(nutrition.contains("Breakfast"));
+        p.medicalClearance=true;
+        assertTrue(FitnessPlanEngine.trainingReport(p,FitnessPlanEngine.analyze(p),Collections.emptyList()).contains("Day 1"));
+        assertTrue(FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p)).contains("Breakfast"));
+    }
+
     @Test public void noneValuesDoNotTriggerMedicalWarning() {
         FitnessPlanEngine.Profile p=profile();
         p.conditions="ندارد";p.injuries="none";p.medications="no";
