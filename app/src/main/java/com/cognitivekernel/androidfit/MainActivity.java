@@ -98,7 +98,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     else if(gif==null&&image!=null){item.removeView(image);holder[0]=null;holder[1]=null;}
     else if(image!=null)image.setContentDescription(exerciseDisplayName(exercise[1],english()));
     TextView label=(TextView)holder[2];if(label==null){label=new TextView(MainActivity.this);label.setTextSize(15);label.setPadding(pad,0,pad,0);item.addView(label,new LinearLayout.LayoutParams(0,-2,1));holder[2]=label;}
-    label.setText(exerciseDisplayName(exercise[1],english())+"\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));return item;
+    label.setText((rows.stream().anyMatch(row->row.length>6&&!"1".equals(row[6]))?tr("Day ","روز ")+exercise[6]+" — ":"")+exerciseDisplayName(exercise[1],english())+"\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));return item;
    }
   };
   list.setAdapter(adapterRef[0]);Runnable refresh=()->{rows.clear();rows.addAll(db.exercises(planId));adapterRef[0].notifyDataSetChanged();};
