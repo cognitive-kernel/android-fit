@@ -301,26 +301,30 @@ public final class FitnessPlanEngine {
             }
         }
         if(!"omnivore".equals(p.dietaryPreference)) {
-            // Vegetarian/vegan profiles must not silently receive meat or egg portions.
+            // Vegetarian/vegan profiles must not silently receive meat or animal-derived foods.
             for(Meal m:result) {
-                m.portions.removeIf(x -> "vegetarian".equals(p.dietaryPreference)
-                        ? ("Chicken breast (cooked)".equals(x.food.name)||"Lean beef (cooked)".equals(x.food.name))
-                        : ("Chicken breast (cooked)".equals(x.food.name)||"Lean beef (cooked)".equals(x.food.name)
-                           ||"Egg whites".equals(x.food.name)||"Plain Greek yogurt, low-fat".equals(x.food.name)));
+                for(int i=m.portions.size()-1;i>=0;i--) {
+                    String name=m.portions.get(i).food.name;
+                    boolean animal="Chicken breast (cooked)".equals(name)||"Lean beef (cooked)".equals(name);
+                    boolean veganOnly="vegan".equals(p.dietaryPreference)
+                            &&("Egg whites".equals(name)||"Plain Greek yogurt, low-fat".equals(name));
+                    if(animal||veganOnly)m.portions.remove(i);
+                }
             }
             result.get(1).add(food("Lentils (cooked)",116,9,20.1,0.4,0,"g",0),180*pFactor);
             result.get(3).add(food("Firm tofu",144,17.3,2.8,8.7,0,"g",0),150*pFactor);
             if("vegan".equals(p.dietaryPreference)) {
-                result.get(0).portions.removeIf(x -> "Egg whites".equals(x.food.name));
                 result.get(2).add(food("Unsweetened soy yogurt",50,4,3,2.5,0,"g",0),200*pFactor);
             }
         }
         String allergy=p.allergies==null?"":p.allergies.toLowerCase(Locale.ROOT);
+        String dislikes=p.dislikedFoods==null?"":p.dislikedFoods.toLowerCase(Locale.ROOT);
         for(Meal m:result) {
-            m.portions.removeIf(x -> allergyMatches(allergy,x.food.name));
-            if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) {
-                String dislikes=p.dislikedFoods.toLowerCase(Locale.ROOT);
-                m.portions.removeIf(x -> isDisliked(dislikes,x.food.name));
+            for(int i=m.portions.size()-1;i>=0;i--) {
+                String name=m.portions.get(i).food.name;
+                if(allergyMatches(allergy,name)||(!blank(dislikes)&&!isNone(dislikes)&&isDisliked(dislikes,name))) {
+                    m.portions.remove(i);
+                }
             }
         }
         if(p.mealsPerDay==3) {
