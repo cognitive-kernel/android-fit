@@ -425,11 +425,11 @@ ALLERGY NOTE: ","\
                 menuKcal+=portion.kcal();menuProtein+=portion.protein();menuFat+=portion.fat();
             }
         }
-        if(menuProtein<a.proteinGrams*0.85) {
+        if(menuProtein<a.proteinGrams*0.85||menuProtein>a.proteinGrams*1.15) {
             throw new IllegalStateException(tr(p,"The remaining safe foods cannot meet the estimated protein target. Add suitable tolerated protein foods with a dietitian.",
                     "غذاهای باقی‌مانده پروتئین هدف تخمینی را تأمین نمی‌کنند؛ با کمک متخصص تغذیه منابع پروتئینی قابل‌تحمل دیگری اضافه کنید."));
         }
-        if(menuFat<a.fatGrams*0.70) {
+        if(menuFat<a.fatGrams*0.70||menuFat>a.fatGrams*1.50) {
             throw new IllegalStateException(tr(p,"The remaining foods cannot provide a balanced fat target. Review exclusions with a dietitian.",
                     "غذاهای باقی‌مانده چربی هدف را تأمین نمی‌کنند؛ فهرست حذف‌ها را با متخصص تغذیه بازبینی کنید."));
         }
