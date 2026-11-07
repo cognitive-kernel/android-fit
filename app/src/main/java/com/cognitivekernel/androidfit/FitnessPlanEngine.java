@@ -113,6 +113,7 @@ public final class FitnessPlanEngine {
                 ||p.activityIndex<0||p.activityIndex>3||p.levelIndex<0||p.levelIndex>2
                 ||p.equipmentIndex<0||p.equipmentIndex>2||p.trainingDays<1||p.trainingDays>7
                 ||p.sessionMinutes<10||p.sessionMinutes>180||p.mealsPerDay<3||p.mealsPerDay>6
+                ||(!"omnivore".equals(p.dietaryPreference)&&!"vegetarian".equals(p.dietaryPreference)&&!"vegan".equals(p.dietaryPreference))
                 ||p.sleepHours<0||p.sleepHours>24) {
             throw new IllegalArgumentException("Profile values are outside supported ranges");
         }
@@ -120,9 +121,9 @@ public final class FitnessPlanEngine {
 
     private static String medicalReviewReason(Profile p) {
         StringBuilder result=new StringBuilder();
-        if(!blank(p.conditions)) result.append("Reported medical conditions: ").append(p.conditions.trim()).append(". ");
-        if(!blank(p.injuries)) result.append("Reported pain/injury/limitations: ").append(p.injuries.trim()).append(". ");
-        if(!blank(p.medications)) result.append("Medication use reported: ").append(p.medications.trim()).append(". ");
+        if(!blank(p.conditions) && !isNone(p.conditions)) result.append("Reported medical conditions: ").append(p.conditions.trim()).append(". ");
+        if(!blank(p.injuries) && !isNone(p.injuries)) result.append("Reported pain/injury/limitations: ").append(p.injuries.trim()).append(". ");
+        if(!blank(p.medications) && !isNone(p.medications)) result.append("Medication use reported: ").append(p.medications.trim()).append(". ");
         if(!blank(result.toString())) result.append("Get individualized clearance from a qualified clinician before starting or changing exercise/nutrition; this offline app cannot assess severity or medication interactions.");
         return result.toString();
     }
@@ -249,6 +250,14 @@ public final class FitnessPlanEngine {
                 if(x.food.group==1)m.portions.set(i,new Portion(x.food,x.grams*carbFactor));
             }
         }
+        String allergy=p.allergies==null?"":p.allergies.toLowerCase(Locale.ROOT);
+        for(Meal m:result) {
+            m.portions.removeIf(x -> allergyMatches(allergy,x.food.name));
+            if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) {
+                String dislikes=p.dislikedFoods.toLowerCase(Locale.ROOT);
+                m.portions.removeIf(x -> contains(dislikes,foodKeyword(x.food.name)));
+            }
+        }
         if(!"omnivore".equals(p.dietaryPreference)) {
             // Vegetarian/vegan profiles must not silently receive meat or egg portions.
             for(Meal m:result) {
@@ -267,6 +276,37 @@ public final class FitnessPlanEngine {
         return result;
     }
 
+    private static boolean allergyMatches(String allergy,String food) {
+        String n=food.toLowerCase(Locale.ROOT);
+        if(contains(allergy,"egg","تخم مرغ","تخم‌مرغ") && n.contains("egg")) return true;
+        if(contains(allergy,"milk","dairy","lactose","لبنیات","شیر") && (n.contains("yogurt")||n.contains("milk"))) return true;
+        if(contains(allergy,"nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی") && n.contains("almond")) return true;
+        if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;
+        if(contains(allergy,"beef","گوشت گاو","گوشت قرمز") && n.contains("beef")) return true;
+        if(contains(allergy,"chicken","poultry","مرغ") && n.contains("chicken")) return true;
+        if(contains(allergy,"gluten","wheat","گندم","گلوتن") && n.contains("oats")) return true;
+        return false;
+    }
+    private static String foodKeyword(String name) {
+        String n=name.toLowerCase(Locale.ROOT);
+        if(n.contains("egg")) return "egg";
+        if(n.contains("chicken")) return "chicken";
+        if(n.contains("beef")) return "beef";
+        if(n.contains("oats")) return "oats";
+        if(n.contains("yogurt")) return "yogurt";
+        if(n.contains("almond")) return "almond";
+        if(n.contains("tofu")) return "tofu";
+        if(n.contains("lentil")) return "lentil";
+        if(n.contains("rice")) return "rice";
+        if(n.contains("potato")) return "potato";
+        if(n.contains("banana")) return "banana";
+        if(n.contains("apple")) return "apple";
+        return n;
+    }
+    private static boolean isNone(String value) {
+        String v=value==null?"":value.trim().toLowerCase(Locale.ROOT);
+        return v.equals("none")||v.equals("no")||v.equals("ندارد")||v.equals("هیچ")||v.equals("خیر");
+    }
     private static Food food(String name,double kcal,double protein,double carbs,double fat,double unit,String unitName,int group) {
         return new Food(name,kcal,protein,carbs,fat,unit,unitName,group);
     }
