@@ -198,6 +198,7 @@ SESSION PRESCRIPTION\
 ",
                "حجم شروع: برای هر حرکت انتخاب‌شده ۲ ست کاری اجرا کنید. مجموع ست‌های هفتگی را از تقسیم‌بندی روزها محاسبه و فقط در صورت ریکاوری مناسب به‌تدریج افزایش دهید.\
 "))
+           .append(p.goalIndex==1?tr(p,"Hypertrophy: gradually build toward about 10 weekly sets per major muscle group when recovery and training history allow. Compound exercises train overlapping muscles.\\n","عضله‌سازی: در صورت تناسب با سابقه و ریکاوری، حجم را به‌تدریج به حدود ۱۰ ست هفتگی برای هر گروه عضلانی اصلی نزدیک کنید. حرکات چندمفصلی عضلات هم‌پوشان را درگیر می‌کنند.\\n"):"")
            .append(tr(p,"Effort: keep about 2–3 good repetitions in reserve on most sets; failure is not required. Add reps first, then the smallest load increase when all sets reach the top of the range with good technique.\
 ",
                "شدت: در پایان بیشتر ست‌ها حدود ۲ تا ۳ تکرار توان باقی بماند؛ تمرین تا ناتوانی ضروری نیست. ابتدا تکرار را افزایش دهید و پس از رسیدن همه ست‌ها به سقف دامنه با تکنیک صحیح، کمترین افزایش وزنه را اعمال کنید.\
