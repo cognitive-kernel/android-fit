@@ -42,16 +42,17 @@ public final class PersonalNutritionPlanner {
         EditText height=input(a,t(a,"Height (cm)","قد (سانتی‌متر)"),String.valueOf(saved.heightCm),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText weight=input(a,t(a,"Current weight (kg)","وزن فعلی (کیلوگرم)"),String.valueOf(saved.weightKg),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText conditions=input(a,t(a,"Medical conditions (or 'none')","بیماری‌ها و شرایط پزشکی (یا «ندارد»)"),saved.conditions,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        EditText injuries=input(a,t(a,"Pain, injuries, surgeries or movement restrictions","درد، آسیب، جراحی یا محدودیت حرکتی"),saved.injuries,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText medications=input(a,t(a,"Medicines and supplements","داروها و مکمل‌های مصرفی"),saved.medications,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText allergies=input(a,t(a,"Food allergies / intolerances","حساسیت یا عدم تحمل غذایی"),saved.allergies,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText dislikes=input(a,t(a,"Foods to avoid / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        for(EditText e:new EditText[]{conditions,medications,allergies,dislikes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
+        for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
         goal.setSelection(saved.goalIndex);sex.setSelection(saved.sexIndex);activity.setSelection(saved.activityIndex);
         diet.setSelection("vegan".equals(saved.dietaryPreference)?2:"vegetarian".equals(saved.dietaryPreference)?1:0);
         add(form,a,t(a,"Goal","هدف"),goal);add(form,a,t(a,"Sex for energy estimate","جنسیت برای تخمین انرژی"),sex);
         add(form,a,t(a,"Age","سن"),age);add(form,a,t(a,"Height","قد"),height);add(form,a,t(a,"Weight","وزن"),weight);
         add(form,a,t(a,"Daily activity","فعالیت روزانه"),activity);add(form,a,t(a,"Diet preference","الگوی غذایی"),diet);
-        add(form,a,t(a,"Medical conditions","شرایط پزشکی"),conditions);add(form,a,t(a,"Medicines","داروها"),medications);
+        add(form,a,t(a,"Medical conditions (include pregnancy/breastfeeding if applicable)","شرایط پزشکی (در صورت ارتباط بارداری یا شیردهی را هم ذکر کنید)"),conditions);add(form,a,t(a,"Injuries and movement restrictions","آسیب‌ها و محدودیت‌های حرکتی"),injuries);add(form,a,t(a,"Medicines","داروها"),medications);
         add(form,a,t(a,"Allergies","حساسیت‌ها"),allergies);add(form,a,t(a,"Foods to avoid","غذاهای نامطلوب"),dislikes);
         ScrollView scroll=new ScrollView(a);scroll.addView(form);
         new AlertDialog.Builder(a).setTitle(t(a,"Personal nutrition plan","برنامه تغذیه شخصی")).setView(scroll)
@@ -64,7 +65,7 @@ public final class PersonalNutritionPlanner {
                 p.sexIndex=sex.getSelectedItemPosition();p.goalIndex=goal.getSelectedItemPosition();
                 p.activityIndex=activity.getSelectedItemPosition();
                 p.dietaryPreference=diet.getSelectedItemPosition()==2?"vegan":diet.getSelectedItemPosition()==1?"vegetarian":"omnivore";
-                p.conditions=conditions.getText().toString();p.medications=medications.getText().toString();
+                p.conditions=conditions.getText().toString();p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
                 p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();
                 FitnessPlanEngine.validate(p);
                 FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(p);
