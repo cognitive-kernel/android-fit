@@ -176,12 +176,19 @@ public final class FitnessPlanEngine {
            .append(tr(p,"Warm up 5–10 minutes and perform lighter ramp-up sets before demanding lifts. Stop for chest pain, faintness, unusual breathlessness, or sharp/worsening pain.\\n",
                "۵ تا ۱۰ دقیقه گرم کنید و پیش از حرکات سنگین چند ست سبک انجام دهید. در صورت درد قفسه سینه، غش، تنگی نفس غیرعادی یا درد تیز و تشدیدشونده تمرین را متوقف کنید.\\n"));
         if(exercises!=null&&!exercises.isEmpty()) {
-            out.append(tr(p,"\\nMOVEMENT SELECTION\\n","\\nحرکات انتخاب‌شده\\n"));
-            int i=1;
-            for(PersonalPlanGenerator.PlannedExercise item:exercises) {
-                out.append(i++).append(". ").append(p.english?item.asset.name:ExerciseNameLocalizer.toPersian(item.asset.name))
-                   .append(" — ").append(item.sets).append(tr(p," sets × "," ست × "))
-                   .append(item.reps).append(tr(p," reps\\n"," تکرار\\n"));
+            out.append(tr(p,"\\nDAY-BY-DAY EXERCISE ASSIGNMENT\\n","\\nتقسیم حرکات در روزهای تمرین\\n"));
+            for(int day=1;day<=p.trainingDays;day++) {
+                String split=splitKey(p,day);
+                out.append(tr(p,"Day ","روز ")).append(day).append(" — ").append(splitLabel(p,split)).append("\\n");
+                int shown=0;
+                for(PersonalPlanGenerator.PlannedExercise item:exercises) {
+                    String category=PersonalPlanGenerator.category(item.asset.name);
+                    if(!matchesSplit(split,category)) continue;
+                    appendExercise(out,p,item,++shown);
+                }
+                if(shown==0) {
+                    for(PersonalPlanGenerator.PlannedExercise item:exercises) appendExercise(out,p,item,++shown);
+                }
             }
         }
         out.append(tr(p,"\\nRECOVERY & REVIEW\\n","\\nریکاوری و ارزیابی مجدد\\n"))
@@ -369,6 +376,36 @@ public final class FitnessPlanEngine {
     private static Food food(String name,double kcal,double protein,double carbs,double fat,double unit,String unitName,int group) {
         return new Food(name,kcal,protein,carbs,fat,unit,unitName,group);
     }
+    private static String splitKey(Profile p,int day) {
+        if(p.trainingDays<=3) return "full";
+        if(p.trainingDays==5) return day==1||day==4?"push":day==2||day==5?"pull":"legs";
+        return day%2==1?"upper":"lower";
+    }
+    private static String splitLabel(Profile p,String key) {
+        switch(key) {
+            case "upper": return tr(p,"Upper body","بالاتنه");
+            case "lower": return tr(p,"Lower body","پایین‌تنه");
+            case "push": return tr(p,"Push","فشاری");
+            case "pull": return tr(p,"Pull","کششی");
+            case "legs": return tr(p,"Legs & core","پا و میان‌تنه");
+            default: return tr(p,"Full body","کل بدن");
+        }
+    }
+    private static boolean matchesSplit(String split,String category) {
+        if("full".equals(split)) return true;
+        if("upper".equals(split)) return "push".equals(category)||"pull".equals(category)||"other".equals(category);
+        if("lower".equals(split)||"legs".equals(split)) return "legs".equals(category)||"glutes".equals(category)||"core".equals(category);
+        if("push".equals(split)) return "push".equals(category)||"other".equals(category);
+        if("pull".equals(split)) return "pull".equals(category)||"other".equals(category);
+        return true;
+    }
+    private static void appendExercise(StringBuilder out,Profile p,PersonalPlanGenerator.PlannedExercise item,int index) {
+        out.append("  ").append(index).append(". ")
+           .append(p.english?item.asset.name:ExerciseNameLocalizer.toPersian(item.asset.name))
+           .append(" — ").append(item.sets).append(tr(p," sets × "," ست × "))
+           .append(item.reps).append(tr(p," reps\\n"," تکرار\\n"));
+    }
+
     private static String tr(Profile p,String english,String persian){return p.english?english:persian;}
     private static String displayFoodName(Profile p,String name) {
         if(p.english)return name;
