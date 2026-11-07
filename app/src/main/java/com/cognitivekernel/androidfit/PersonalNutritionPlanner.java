@@ -109,14 +109,14 @@ public final class PersonalNutritionPlanner {
                     generated=PersonalPlanGenerator.generate(ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,
                             p.equipmentIndex,gender,p.sessionMinutes,p.injuries,p.trainingDays);
                 }
-                String report=FitnessPlanEngine.trainingReport(p,analysis,generated)+"\\n\\n"
+                String report=FitnessPlanEngine.trainingReport(p,analysis,generated)+"\n\n"
                         +FitnessPlanEngine.nutritionReport(p,analysis);
                 if(!generated.isEmpty()) {
                     WorkoutDb db=new WorkoutDb(a);
                     try {
                         String planName=t(a,"Goal plan","برنامه هدف")+" - "+String.valueOf(goal.getSelectedItem());
                         long planId=db.addPlanWithExercises(planName,generated);
-                        report+="\\n\\n"+t(a,"Workout plan saved in Plans & exercises (ID: ","برنامه تمرینی در بخش برنامه‌ها و حرکات ذخیره شد (شناسه: ")+planId+")";
+                        report+="\n\n"+t(a,"Workout plan saved in Plans & exercises (ID: ","برنامه تمرینی در بخش برنامه‌ها و حرکات ذخیره شد (شناسه: ")+planId+")";
                     } finally { db.close(); }
                 }
                 FitnessProfileStore.save(a,p);
