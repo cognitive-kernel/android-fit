@@ -30,7 +30,7 @@ public final class FitnessProfileStore {
         x.trainingDays=p.getInt("weekly_goal",3);
         x.sessionMinutes=p.getInt("session_minutes",45);
         x.mealsPerDay=p.getInt("coach_meals",4);
-        x.sleepHours=Double.longBitsToDouble(p.getLong("coach_sleep_bits",Double.doubleToLongBits(7.5)));
+        x.sleepHours=Double.longBitsToDouble(p.getLong("coach_sleep_bits",Double.doubleToLongBits(0)));
         x.conditions=p.getString("coach_conditions","");
         x.injuries=p.getString("coach_injuries","");
         x.medications=p.getString("coach_medications","");
