@@ -137,19 +137,35 @@ public final class FitnessPlanEngine {
     public static String trainingReport(Profile p, Analysis a, List<PersonalPlanGenerator.PlannedExercise> exercises) {
         validate(p);
         StringBuilder out=new StringBuilder();
-        out.append(tr(p,"PROFILE & TARGET\\n","مشخصات و هدف\\n"))
+        out.append(tr(p,"PROFILE & TARGET\
+","مشخصات و هدف\
+"))
            .append(tr(p,"Age: ","سن: ")).append(p.age)
            .append(tr(p," | Height: "," | قد: ")).append(round(p.heightCm))
-           .append(tr(p," cm | Weight: "," سانتی‌متر | وزن: ")).append(round(p.weightKg)).append(" kg\\n")
-           .append(tr(p,"BMI screening estimate (not a diagnosis): ","BMI تخمینی (تشخیص پزشکی نیست): ")).append(round(a.bmi)).append("\\n")
-           .append(tr(p,"Estimated maintenance: ","کالری نگهدارنده تخمینی: ")).append(Math.round(a.maintenanceCalories)).append(" kcal/day\\n")
-           .append(tr(p,"Starting energy target: ","هدف اولیه انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal/day\\n\\n")
-           .append(tr(p,"WEEKLY TRAINING STRUCTURE\\n","ساختار تمرین هفتگی\\n"));
+           .append(tr(p," cm | Weight: "," سانتی‌متر | وزن: ")).append(round(p.weightKg)).append(" kg\
+")
+           .append(tr(p,"BMI screening estimate (not a diagnosis): ","BMI تخمینی (تشخیص پزشکی نیست): ")).append(round(a.bmi)).append("\
+")
+           .append(tr(p,"Estimated maintenance: ","کالری نگهدارنده تخمینی: ")).append(Math.round(a.maintenanceCalories)).append(" kcal/day\
+")
+           .append(tr(p,"Starting energy target: ","هدف اولیه انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal/day\
+\
+")
+           .append(tr(p,"WEEKLY TRAINING STRUCTURE\
+","ساختار تمرین هفتگی\
+"));
         if(a.needsMedicalReview&&!p.medicalClearance) {
-            out.append(tr(p,"\\nMEDICAL REVIEW REQUIRED BEFORE TRAINING\\n","\\nپیش از تجویز تمرین، بررسی پزشکی لازم است\\n"))
-               .append(a.medicalReason).append("\\n")
-               .append(tr(p,"No individualized exercise prescription has been generated until a qualified clinician reviews the reported condition, injury or medication.\\n",
-                   "تا زمان بررسی شرایط پزشکی، آسیب یا دارو توسط متخصص واجد صلاحیت، نسخه تمرینی اختصاصی تولید نمی‌شود.\\n"));
+            out.append(tr(p,"\
+MEDICAL REVIEW REQUIRED BEFORE TRAINING\
+","\
+پیش از تجویز تمرین، بررسی پزشکی لازم است\
+"))
+               .append(a.medicalReason).append("\
+")
+               .append(tr(p,"No individualized exercise prescription has been generated until a qualified clinician reviews the reported condition, injury or medication.\
+",
+                   "تا زمان بررسی شرایط پزشکی، آسیب یا دارو توسط متخصص واجد صلاحیت، نسخه تمرینی اختصاصی تولید نمی‌شود.\
+"));
             return out.toString();
         }
         for(int day=1;day<=p.trainingDays;day++) {
@@ -160,27 +176,46 @@ public final class FitnessPlanEngine {
             else if(p.trainingDays==5) split=tr(p,day==1?"Push":day==2?"Pull":day==3?"Legs & core":day==4?"Upper body":"Lower body",day==1?"فشاری":day==2?"کششی":day==3?"پا و میان‌تنه":day==4?"بالاتنه":"پایین‌تنه");
             else split=tr(p,day%2==1?"Upper body":"Lower body",day%2==1?"بالاتنه":"پایین‌تنه");
             out.append(tr(p,"Day ","روز ")).append(day).append(": ").append(split)
-               .append(" — ").append(p.sessionMinutes).append(tr(p," min\\n"," دقیقه\\n"));
+               .append(" — ").append(p.sessionMinutes).append(tr(p," min\
+"," دقیقه\
+"));
         }
         int sets=(p.trainingDays>=5||p.levelIndex==0)?2:3;
         int repsLow=p.goalIndex==0?4:p.goalIndex==1?6:8;
         int repsHigh=p.goalIndex==0?8:p.goalIndex==1?12:15;
-        out.append(tr(p,"\\nSESSION PRESCRIPTION\\n","\\nنسخه تمرین هر جلسه\\n"))
+        out.append(tr(p,"\
+SESSION PRESCRIPTION\
+","\
+نسخه تمرین هر جلسه\
+"))
            .append(tr(p,"Use ","برای هر حرکت ")).append(sets).append(tr(p," working sets, "," ست کاری، "))
            .append(repsLow).append("–").append(repsHigh)
-           .append(tr(p," reps. Use controlled full range of motion; rest 2–3 min for compound lifts and 60–120 sec for isolation work.\\n",
-               " تکرار با دامنه کامل و کنترل‌شده اجرا کنید؛ استراحت حرکات چندمفصلی ۲ تا ۳ دقیقه و حرکات تک‌مفصلی ۶۰ تا ۱۲۰ ثانیه باشد.\\n"))
-           .append(tr(p,"Initial volume: start with 2 working sets per selected movement. Count weekly sets from the day-by-day assignment and increase gradually only when recovery allows.\\n",
-               "حجم شروع: برای هر حرکت انتخاب‌شده ۲ ست کاری اجرا کنید. مجموع ست‌های هفتگی را از تقسیم‌بندی روزها محاسبه و فقط در صورت ریکاوری مناسب به‌تدریج افزایش دهید.\\n"))
-           .append(tr(p,"Effort: keep about 2–3 good repetitions in reserve on most sets; failure is not required. Add reps first, then the smallest load increase when all sets reach the top of the range with good technique.\\n",
-               "شدت: در پایان بیشتر ست‌ها حدود ۲ تا ۳ تکرار توان باقی بماند؛ تمرین تا ناتوانی ضروری نیست. ابتدا تکرار را افزایش دهید و پس از رسیدن همه ست‌ها به سقف دامنه با تکنیک صحیح، کمترین افزایش وزنه را اعمال کنید.\\n"))
-           .append(tr(p,"Warm up 5–10 minutes and perform lighter ramp-up sets before demanding lifts. Stop for chest pain, faintness, unusual breathlessness, or sharp/worsening pain.\\n",
-               "۵ تا ۱۰ دقیقه گرم کنید و پیش از حرکات سنگین چند ست سبک انجام دهید. در صورت درد قفسه سینه، غش، تنگی نفس غیرعادی یا درد تیز و تشدیدشونده تمرین را متوقف کنید.\\n"));
+           .append(tr(p," reps. Use controlled full range of motion; rest 2–3 min for compound lifts and 60–120 sec for isolation work.\
+",
+               " تکرار با دامنه کامل و کنترل‌شده اجرا کنید؛ استراحت حرکات چندمفصلی ۲ تا ۳ دقیقه و حرکات تک‌مفصلی ۶۰ تا ۱۲۰ ثانیه باشد.\
+"))
+           .append(tr(p,"Initial volume: start with 2 working sets per selected movement. Count weekly sets from the day-by-day assignment and increase gradually only when recovery allows.\
+",
+               "حجم شروع: برای هر حرکت انتخاب‌شده ۲ ست کاری اجرا کنید. مجموع ست‌های هفتگی را از تقسیم‌بندی روزها محاسبه و فقط در صورت ریکاوری مناسب به‌تدریج افزایش دهید.\
+"))
+           .append(tr(p,"Effort: keep about 2–3 good repetitions in reserve on most sets; failure is not required. Add reps first, then the smallest load increase when all sets reach the top of the range with good technique.\
+",
+               "شدت: در پایان بیشتر ست‌ها حدود ۲ تا ۳ تکرار توان باقی بماند؛ تمرین تا ناتوانی ضروری نیست. ابتدا تکرار را افزایش دهید و پس از رسیدن همه ست‌ها به سقف دامنه با تکنیک صحیح، کمترین افزایش وزنه را اعمال کنید.\
+"))
+           .append(tr(p,"Warm up 5–10 minutes and perform lighter ramp-up sets before demanding lifts. Stop for chest pain, faintness, unusual breathlessness, or sharp/worsening pain.\
+",
+               "۵ تا ۱۰ دقیقه گرم کنید و پیش از حرکات سنگین چند ست سبک انجام دهید. در صورت درد قفسه سینه، غش، تنگی نفس غیرعادی یا درد تیز و تشدیدشونده تمرین را متوقف کنید.\
+"));
         if(exercises!=null&&!exercises.isEmpty()) {
-            out.append(tr(p,"\\nDAY-BY-DAY EXERCISE ASSIGNMENT\\n","\\nتقسیم حرکات در روزهای تمرین\\n"));
+            out.append(tr(p,"\
+DAY-BY-DAY EXERCISE ASSIGNMENT\
+","\
+تقسیم حرکات در روزهای تمرین\
+"));
             for(int day=1;day<=p.trainingDays;day++) {
                 String split=splitKey(p,day);
-                out.append(tr(p,"Day ","روز ")).append(day).append(" — ").append(splitLabel(p,split)).append("\\n");
+                out.append(tr(p,"Day ","روز ")).append(day).append(" — ").append(splitLabel(p,split)).append("\
+");
                 int shown=0;
                 for(PersonalPlanGenerator.PlannedExercise item:exercises) {
                     String category=PersonalPlanGenerator.category(item.asset.name);
@@ -189,17 +224,36 @@ public final class FitnessPlanEngine {
                 }
             }
         }
-        out.append(tr(p,"\\nRECOVERY & REVIEW\\n","\\nریکاوری و ارزیابی مجدد\\n"))
+        out.append(tr(p,"\
+RECOVERY & REVIEW\
+","\
+ریکاوری و ارزیابی مجدد\
+"))
            .append(p.sleepHours>0
                ? tr(p,"Sleep reported: ","خواب گزارش‌شده: ")+round(p.sleepHours)+tr(p," h/night. "," ساعت در شب. ")
                : tr(p,"Sleep duration not provided. ","مدت خواب وارد نشده است. "))
-           .append(tr(p,"Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake gradually.\\n",
-               "در صورت امکان به ۷ تا ۹ ساعت خواب نزدیک شوید. هر هفته دست‌کم یک روز ریکاوری داشته باشید. عملکرد، روند وزن، درد، خواب و سختی تمرین را هر دو هفته بررسی و تغییرات را تدریجی اعمال کنید.\\n"));
-        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL NOTE — FOLLOW YOUR CLINICIAN’S RESTRICTIONS\\n","\\nیادآوری پزشکی — محدودیت‌های متخصص را رعایت کنید\\n")).append(a.medicalReason).append("\\n");
-        if(a.bmi<18.5) out.append(tr(p,"\\nBMI screening is below 18.5; do not use a fat-loss target. Seek a clinician/dietitian assessment.\\n",
-            "\\nBMI کمتر از ۱۸٫۵ است؛ هدف کاهش وزن اعمال نشود و ارزیابی پزشک یا متخصص تغذیه انجام شود.\\n"));
-        if(a.bmi>=30) out.append(tr(p,"\\nBMI is 30 or above; BMI alone is not a diagnosis. Progress gradually and seek clinical guidance if symptoms or comorbidities are present.\\n",
-            "\\nBMI برابر یا بیشتر از ۳۰ است؛ این شاخص به‌تنهایی تشخیص پزشکی نیست. تدریجی پیش بروید و در صورت وجود علائم یا بیماری همراه، راهنمایی بالینی بگیرید.\\n"));
+           .append(tr(p,"Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake gradually.\
+",
+               "در صورت امکان به ۷ تا ۹ ساعت خواب نزدیک شوید. هر هفته دست‌کم یک روز ریکاوری داشته باشید. عملکرد، روند وزن، درد، خواب و سختی تمرین را هر دو هفته بررسی و تغییرات را تدریجی اعمال کنید.\
+"));
+        if(a.needsMedicalReview) out.append(tr(p,"\
+MEDICAL NOTE — FOLLOW YOUR CLINICIAN’S RESTRICTIONS\
+","\
+یادآوری پزشکی — محدودیت‌های متخصص را رعایت کنید\
+")).append(a.medicalReason).append("\
+");
+        if(a.bmi<18.5) out.append(tr(p,"\
+BMI screening is below 18.5; do not use a fat-loss target. Seek a clinician/dietitian assessment.\
+",
+            "\
+BMI کمتر از ۱۸٫۵ است؛ هدف کاهش وزن اعمال نشود و ارزیابی پزشک یا متخصص تغذیه انجام شود.\
+"));
+        if(a.bmi>=30) out.append(tr(p,"\
+BMI is 30 or above; BMI alone is not a diagnosis. Progress gradually and seek clinical guidance if symptoms or comorbidities are present.\
+",
+            "\
+BMI برابر یا بیشتر از ۳۰ است؛ این شاخص به‌تنهایی تشخیص پزشکی نیست. تدریجی پیش بروید و در صورت وجود علائم یا بیماری همراه، راهنمایی بالینی بگیرید.\
+"));
         return out.toString();
     }
 
@@ -207,24 +261,40 @@ public final class FitnessPlanEngine {
         validate(p);
         List<Meal> meals=createMeals(p,a);
         StringBuilder out=new StringBuilder();
-        out.append(tr(p,"DAILY NUTRITION TARGET (ESTIMATE)\\n","هدف روزانه تغذیه (تخمینی)\\n"))
-           .append(tr(p,"Energy: ","انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal\\n")
+        out.append(tr(p,"DAILY NUTRITION TARGET (ESTIMATE)\
+","هدف روزانه تغذیه (تخمینی)\
+"))
+           .append(tr(p,"Energy: ","انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal\
+")
            .append(tr(p,"Protein: ","پروتئین: ")).append(Math.round(a.proteinGrams))
            .append(tr(p," g | Carbohydrate: "," گرم | کربوهیدرات: ")).append(Math.round(a.carbohydrateGrams))
-           .append(tr(p," g | Fat: "," گرم | چربی: ")).append(Math.round(a.fatGrams)).append(" g\\n")
-           .append(tr(p,"Values are estimates; brands, cooking method, water loss and edible portion change actual values. Weigh rice, potato and meat in the stated cooked state.\\n\\n",
-               "مقادیر تخمینی‌اند و با برند، روش پخت، کاهش آب و بخش خوراکی تغییر می‌کنند. برنج، سیب‌زمینی و گوشت را مطابق وضعیت پخته‌شده ذکرشده وزن کنید.\\n\\n"));
+           .append(tr(p," g | Fat: "," گرم | چربی: ")).append(Math.round(a.fatGrams)).append(" g\
+")
+           .append(tr(p,"Values are estimates; brands, cooking method, water loss and edible portion change actual values. Weigh rice, potato and meat in the stated cooked state.\
+\
+",
+               "مقادیر تخمینی‌اند و با برند، روش پخت، کاهش آب و بخش خوراکی تغییر می‌کنند. برنج، سیب‌زمینی و گوشت را مطابق وضعیت پخته‌شده ذکرشده وزن کنید.\
+\
+"));
         if(a.needsMedicalReview&&!p.medicalClearance) {
-            out.append(tr(p,"\\nMEDICAL/DIETARY REVIEW REQUIRED\\n","\\nپیش از ساخت منوی غذایی، بررسی پزشکی/تغذیه‌ای لازم است\\n"))
-               .append(a.medicalReason).append("\\n")
-               .append(tr(p,"No individualized food menu has been generated until a qualified clinician/dietitian reviews the reported condition or medication.\\n",
-                   "تا زمان بررسی شرایط یا دارو توسط پزشک یا متخصص تغذیه، منوی غذایی اختصاصی تولید نمی‌شود.\\n"));
+            out.append(tr(p,"\
+MEDICAL/DIETARY REVIEW REQUIRED\
+","\
+پیش از ساخت منوی غذایی، بررسی پزشکی/تغذیه‌ای لازم است\
+"))
+               .append(a.medicalReason).append("\
+")
+               .append(tr(p,"No individualized food menu has been generated until a qualified clinician/dietitian reviews the reported condition or medication.\
+",
+                   "تا زمان بررسی شرایط یا دارو توسط پزشک یا متخصص تغذیه، منوی غذایی اختصاصی تولید نمی‌شود.\
+"));
             return out.toString();
         }
         double totalK=0,totalP=0,totalC=0,totalF=0;
         for(Meal meal:meals) {
             double mk=0,mp=0,mc=0,mf=0;
-            out.append(meal.title).append("\\n");
+            out.append(meal.title).append("\
+");
             for(Portion portion:meal.portions) {
                 if(portion.grams<=0) continue;
                 mk+=portion.kcal();mp+=portion.protein();mc+=portion.carbs();mf+=portion.fat();
@@ -233,23 +303,40 @@ public final class FitnessPlanEngine {
                     +(p.english?" egg whites (~":" عدد سفیده تخم‌مرغ (حدود ")+Math.round(portion.grams)+(p.english?" g)":" گرم)");
                 else amount=Math.round(portion.grams)+(p.english?" g":" گرم");
                 out.append("• ").append(displayFoodName(p,portion.food.name)).append(": ").append(amount)
-                   .append(" — ").append(Math.round(portion.kcal())).append(tr(p," kcal\\n"," کیلوکالری\\n"));
+                   .append(" — ").append(Math.round(portion.kcal())).append(tr(p," kcal\
+"," کیلوکالری\
+"));
             }
             totalK+=mk;totalP+=mp;totalC+=mc;totalF+=mf;
             out.append(tr(p,"Meal subtotal: ","جمع این وعده: ")).append(Math.round(mk)).append(" kcal | P ").append(Math.round(mp))
-               .append(" g | C ").append(Math.round(mc)).append(" g | F ").append(Math.round(mf)).append(" g\\n\\n");
+               .append(" g | C ").append(Math.round(mc)).append(" g | F ").append(Math.round(mf)).append(" g\
+\
+");
         }
         out.append(tr(p,"DAILY MENU TOTAL: ","مجموع کل منوی روز: ")).append(Math.round(totalK)).append(" kcal | ")
            .append(tr(p,"Protein ","پروتئین ")).append(Math.round(totalP))
            .append(" g | ").append(tr(p,"Carbs ","کربوهیدرات ")).append(Math.round(totalC))
-           .append(" g | ").append(tr(p,"Fat ","چربی ")).append(Math.round(totalF)).append(" g\\n")
-           .append(tr(p,"Adjust portions after 2–3 weeks using average weight trend, training performance, hunger and recovery. Calorie values are not laboratory-exact.\\n",
-               "پس از ۲ تا ۳ هفته با توجه به میانگین روند وزن، عملکرد تمرین، گرسنگی و ریکاوری مقدارها را تنظیم کنید. کالری‌ها مقدار آزمایشگاهی دقیق نیستند.\\n"));
-        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL/DIETARY NOTE — FOLLOW YOUR CLINICIAN’S RESTRICTIONS\\n","\\nیادآوری پزشکی/تغذیه‌ای — محدودیت‌های متخصص را رعایت کنید\\n")).append(a.medicalReason).append("\\n");
-        if(!blank(p.allergies) && !isNone(p.allergies)) out.append(tr(p,"\\nALLERGY NOTE: ","\\nهشدار حساسیت غذایی: ")).append(p.allergies)
-           .append(tr(p,". Recognized matching foods are omitted, but ingredients and cross-contamination cannot be verified offline. Check labels and consult a dietitian for replacements.\\n",
-               "؛ موارد شناخته‌شده حذف می‌شوند، اما ترکیبات و آلودگی متقاطع به‌صورت آفلاین قابل بررسی نیست. برچسب محصولات را بررسی و برای جایگزین با متخصص تغذیه مشورت کنید.\\n"));
-        if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) out.append(tr(p,"Foods to avoid/replace: ","غذاهای حذف‌شده یا نامطلوب: ")).append(p.dislikedFoods).append("\\n");
+           .append(" g | ").append(tr(p,"Fat ","چربی ")).append(Math.round(totalF)).append(" g\
+")
+           .append(tr(p,"Adjust portions after 2–3 weeks using average weight trend, training performance, hunger and recovery. Calorie values are not laboratory-exact.\
+",
+               "پس از ۲ تا ۳ هفته با توجه به میانگین روند وزن، عملکرد تمرین، گرسنگی و ریکاوری مقدارها را تنظیم کنید. کالری‌ها مقدار آزمایشگاهی دقیق نیستند.\
+"));
+        if(a.needsMedicalReview) out.append(tr(p,"\
+MEDICAL/DIETARY NOTE — FOLLOW YOUR CLINICIAN’S RESTRICTIONS\
+","\
+یادآوری پزشکی/تغذیه‌ای — محدودیت‌های متخصص را رعایت کنید\
+")).append(a.medicalReason).append("\
+");
+        if(!blank(p.allergies) && !isNone(p.allergies)) out.append(tr(p,"\
+ALLERGY NOTE: ","\
+هشدار حساسیت غذایی: ")).append(p.allergies)
+           .append(tr(p,". Recognized matching foods are omitted, but ingredients and cross-contamination cannot be verified offline. Check labels and consult a dietitian for replacements.\
+",
+               "؛ موارد شناخته‌شده حذف می‌شوند، اما ترکیبات و آلودگی متقاطع به‌صورت آفلاین قابل بررسی نیست. برچسب محصولات را بررسی و برای جایگزین با متخصص تغذیه مشورت کنید.\
+"));
+        if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) out.append(tr(p,"Foods to avoid/replace: ","غذاهای حذف‌شده یا نامطلوب: ")).append(p.dislikedFoods).append("\
+");
         return out.toString();
     }
 
@@ -265,7 +352,9 @@ public final class FitnessPlanEngine {
         Food apple=food("Apple (edible)",52,0.3,13.8,0.2,0,"g",1);
         Food almonds=food("Almonds",579,21.2,21.6,49.9,0,"g",2);
         Food beef=food("Lean beef (cooked)",217,26,0,12,0,"g",0);
-        Food potato=food("Potato (boiled)",87,1.9,20.1,0.1,0,"g",1);\n        Food chickpeas=food("Chickpeas (cooked)",164,8.9,27.4,2.6,0,"g",0);\n        Food pumpkinSeeds=food("Pumpkin seeds",559,30.2,10.7,49.1,0,"g",0);
+        Food potato=food("Potato (boiled)",87,1.9,20.1,0.1,0,"g",1);
+        Food chickpeas=food("Chickpeas (cooked)",164,8.9,27.4,2.6,0,"g",0);
+        Food pumpkinSeeds=food("Pumpkin seeds",559,30.2,10.7,49.1,0,"g",0);
         Meal breakfast=new Meal(tr(p,"Breakfast","صبحانه"));
         breakfast.add(oats,50);breakfast.add(egg,132);breakfast.add(banana,100);
         Meal lunch=new Meal(tr(p,"Lunch","ناهار"));
@@ -370,7 +459,8 @@ public final class FitnessPlanEngine {
         if(contains(allergy,"egg","تخم مرغ","تخم‌مرغ") && n.contains("egg")) return true;
         if(contains(allergy,"milk","dairy","lactose","casein","whey","لبنیات","شیر") && (n.contains("yogurt")||n.contains("milk")) && !n.contains("soy yogurt")) return true;
         if(contains(allergy,"nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی") && n.contains("almond")) return true;
-        if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;\n        if(contains(allergy,"seed","pumpkin","تخمه","دانه") && n.contains("pumpkin seeds")) return true;
+        if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;
+        if(contains(allergy,"seed","pumpkin","تخمه","دانه") && n.contains("pumpkin seeds")) return true;
         if(contains(allergy,"beef","گوشت گاو","گوشت قرمز") && n.contains("beef")) return true;
         if(contains(allergy,"chicken","poultry","مرغ") && n.contains("chicken")) return true;
         if(contains(allergy,"gluten","wheat","گندم","گلوتن") && n.contains("oats")) return true;
@@ -384,7 +474,9 @@ public final class FitnessPlanEngine {
         if(n.contains("oats")) return contains(dislikes,"oats","oat","gluten","wheat","جو دوسر","جوپرک","جو پرک","گندم","گلوتن");
         if(n.contains("yogurt")) return contains(dislikes,"yogurt","dairy","milk","لبنیات","شیر","ماست");
         if(n.contains("almond")) return contains(dislikes,"almond","بادام","آجیل");
-        if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");\n        if(n.contains("chickpeas")) return contains(dislikes,"chickpea","chickpeas","حمص","نخود");\n        if(n.contains("pumpkin seeds")) return contains(dislikes,"pumpkin","seed","تخمه","تخمه کدو");
+        if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");
+        if(n.contains("chickpeas")) return contains(dislikes,"chickpea","chickpeas","حمص","نخود");
+        if(n.contains("pumpkin seeds")) return contains(dislikes,"pumpkin","seed","تخمه","تخمه کدو");
         if(n.contains("lentil")) return contains(dislikes,"lentil","عدس");
         if(n.contains("rice")) return contains(dislikes,"rice","برنج");
         if(n.contains("potato")) return contains(dislikes,"potato","سیب زمینی","سیب‌زمینی");
@@ -444,7 +536,9 @@ public final class FitnessPlanEngine {
         out.append("  ").append(index).append(". ")
            .append(p.english?item.asset.name:ExerciseNameLocalizer.toPersian(item.asset.name))
            .append(" — ").append(item.sets).append(tr(p," sets × "," ست × "))
-           .append(item.reps).append(tr(p," reps\\n"," تکرار\\n"));
+           .append(item.reps).append(tr(p," reps\
+"," تکرار\
+"));
     }
 
     private static String tr(Profile p,String english,String persian){return p.english?english:persian;}
@@ -465,7 +559,9 @@ public final class FitnessPlanEngine {
             case "Potato (boiled)": return "سیب‌زمینی آب‌پز";
             case "Lentils (cooked)": return "عدس پخته";
             case "Firm tofu": return "توفوی سفت";
-            case "Unsweetened soy yogurt": return "ماست سویای بدون شکر";\n            case "Chickpeas (cooked)": return "نخود پخته";\n            case "Pumpkin seeds": return "تخمه کدو";
+            case "Unsweetened soy yogurt": return "ماست سویای بدون شکر";
+            case "Chickpeas (cooked)": return "نخود پخته";
+            case "Pumpkin seeds": return "تخمه کدو";
             default: return name;
         }
     }
