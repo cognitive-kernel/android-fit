@@ -536,7 +536,7 @@ public final class AdvancedFeatures {
     }
     String selectedGender=p.sexIndex==0?"male":"female";
     List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
-      ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,p.equipmentIndex,selectedGender,p.sessionMinutes,p.injuries);
+      ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,p.equipmentIndex,selectedGender,p.sessionMinutes,p.injuries,p.trainingDays);
     if(generated.isEmpty())throw new IllegalStateException("No exercises generated");
     String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+sex.getSelectedItem();
     long planId=db.addPlanWithExercises(planName,generated);
@@ -649,7 +649,7 @@ public final class AdvancedFeatures {
    List<PersonalPlanGenerator.PlannedExercise> suggested=
      analysis.needsMedicalReview&&!profile.medicalClearance?Collections.emptyList():
        PersonalPlanGenerator.generate(ExerciseAssetIndex.all(a),profile.goalIndex,profile.levelIndex,
-         profile.equipmentIndex,gender,profile.sessionMinutes,profile.injuries);
+         profile.equipmentIndex,gender,profile.sessionMinutes,profile.injuries,profile.trainingDays);
    StringBuilder report=new StringBuilder();
    report.append(tr("OFFLINE COACH — PERSONAL ASSESSMENT","مربی آفلاین — ارزیابی شخصی")).append("\\n")
      .append(FitnessPlanEngine.trainingReport(profile,analysis,suggested))
