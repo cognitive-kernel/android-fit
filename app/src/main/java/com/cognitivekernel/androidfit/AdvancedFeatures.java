@@ -472,7 +472,7 @@ public final class AdvancedFeatures {
   Spinner goal=spinner(new String[]{tr("Select a goal","هدف را انتخاب کنید"),s("goal_strength"),s("goal_muscle"),s("goal_general"),s("goal_weight")});
   Spinner level=spinner(new String[]{tr("Select experience","سطح تجربه را انتخاب کنید"),s("level_beginner"),s("level_intermediate"),s("level_advanced")});
   Spinner equipment=spinner(new String[]{tr("Select equipment","تجهیزات را انتخاب کنید"),s("equipment_none"),s("equipment_home"),s("equipment_gym")});
-  Spinner sex=spinner(new String[]{tr("Select sex","جنسیت را انتخاب کنید"),tr("Male","مرد"),tr("Female","زن")});
+  Spinner sex=spinner(new String[]{tr("Select sex","جنسیت را انتخاب کنید"),tr("Male","مرد"),tr("Female","زن"),tr("Other / prefer not to say","سایر / ترجیح می‌دهم اعلام نکنم")});
   Spinner activity=spinner(new String[]{tr("Select daily activity","فعالیت روزانه را انتخاب کنید"),tr("Sedentary","کم‌تحرک"),tr("Lightly active","فعالیت سبک"),tr("Moderately active","فعالیت متوسط"),tr("Very active","فعالیت زیاد")});
   Spinner diet=spinner(new String[]{tr("Select diet preference","الگوی غذایی را انتخاب کنید"),tr("Omnivore","همه‌چیزخوار"),tr("Vegetarian","گیاه‌خوار"),tr("Vegan","وگان")});
   EditText age=field(tr("Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),android.text.InputType.TYPE_CLASS_NUMBER);
@@ -534,7 +534,7 @@ public final class AdvancedFeatures {
        FitnessPlanEngine.trainingReport(p,analysis,Collections.emptyList())+"\\n\\n"+FitnessPlanEngine.nutritionReport(p,analysis));
      return;
     }
-    String selectedGender=p.sexIndex==0?"male":"female";
+    String selectedGender=p.sexIndex==0?"male":p.sexIndex==1?"female":"all";
     List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
       ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,p.equipmentIndex,selectedGender,p.sessionMinutes,p.injuries,p.trainingDays);
     if(generated.isEmpty())throw new IllegalStateException("No exercises generated");
@@ -645,7 +645,7 @@ public final class AdvancedFeatures {
   try{
    FitnessPlanEngine.Profile profile=FitnessProfileStore.load(a);
    FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(profile);
-   String gender=profile.sexIndex==0?"male":"female";
+   String gender=profile.sexIndex==0?"male":profile.sexIndex==1?"female":"all";
    List<PersonalPlanGenerator.PlannedExercise> suggested=
      analysis.needsMedicalReview&&!profile.medicalClearance?Collections.emptyList():
        PersonalPlanGenerator.generate(ExerciseAssetIndex.all(a),profile.goalIndex,profile.levelIndex,
