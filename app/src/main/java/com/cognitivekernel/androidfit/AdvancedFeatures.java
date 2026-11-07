@@ -466,60 +466,97 @@ public final class AdvancedFeatures {
  }
 
  public void buildPersonalPlan(){
-  LinearLayout l=column();
+  FitnessPlanEngine.Profile saved=FitnessProfileStore.load(a);
+  LinearLayout form=column();
   Spinner goal=spinner(new String[]{s("goal_strength"),s("goal_muscle"),s("goal_general"),s("goal_weight")});
   Spinner level=spinner(new String[]{s("level_beginner"),s("level_intermediate"),s("level_advanced")});
   Spinner equipment=spinner(new String[]{s("equipment_none"),s("equipment_home"),s("equipment_gym")});
-  Spinner sex=spinner(new String[]{tr("Male","آقایان"),tr("Female","بانوان")});
-  EditText days=field(tr("Training days per week (days)","تعداد روز تمرین در هفته (روز)"),"3",android.text.InputType.TYPE_CLASS_NUMBER);
-  EditText minutes=field(tr("Session duration (minutes)","مدت هر جلسه (دقیقه)"),"35",android.text.InputType.TYPE_CLASS_NUMBER);
-  l.addView(label(s("training_goal")));l.addView(goal);l.addView(label(s("fitness_level")));l.addView(level);l.addView(label(s("available_equipment")));l.addView(equipment);
-  l.addView(label(tr("Trainee gender","جنسیت ورزشکار")));l.addView(sex);
-  l.addView(label(tr("Training days per week — default: 3 days","روزهای تمرین در هفته — پیش‌فرض: ۳ روز")));l.addView(days);
-  l.addView(label(tr("Duration of each session — default: 35 minutes","مدت هر جلسه تمرین — پیش‌فرض: ۳۵ دقیقه")));l.addView(minutes);
-  new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(l).setPositiveButton(s("create_plan"),(d,w)->{
+  Spinner sex=spinner(new String[]{tr("Male","مرد"),tr("Female","زن")});
+  Spinner activity=spinner(new String[]{tr("Sedentary","کم‌تحرک"),tr("Lightly active","فعالیت سبک"),tr("Moderately active","فعالیت متوسط"),tr("Very active","فعالیت زیاد")});
+  Spinner diet=spinner(new String[]{tr("Omnivore","همه‌چیزخوار"),tr("Vegetarian","گیاه‌خوار"),tr("Vegan","وگان")});
+  EditText age=field(tr("Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),String.valueOf(saved.age),android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText height=field(tr("Height (cm)","قد (سانتی‌متر)"),String.valueOf(saved.heightCm),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  EditText weight=field(tr("Current weight (kg)","وزن فعلی (کیلوگرم)"),String.valueOf(saved.weightKg),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  EditText days=field(tr("Training days per week (1–7)","روزهای تمرین در هفته (۱ تا ۷)"),String.valueOf(saved.trainingDays),android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText minutes=field(tr("Session duration (10–180 min)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),String.valueOf(saved.sessionMinutes),android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText sleep=field(tr("Average sleep hours per night","میانگین ساعت خواب شبانه"),String.valueOf(saved.sleepHours),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+  EditText conditions=field(tr("Medical conditions (write 'none' if none)","بیماری‌ها و شرایط پزشکی (در صورت نداشتن بنویسید: ندارد)"),saved.conditions,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText injuries=field(tr("Pain, injuries, surgeries or movement restrictions","درد، آسیب، جراحی یا محدودیت حرکتی"),saved.injuries,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText medications=field(tr("Regular medicines / supplements (optional)","داروها و مکمل‌های مصرفی (اختیاری)"),saved.medications,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText allergies=field(tr("Food allergies / intolerances","حساسیت یا عدم تحمل غذایی"),saved.allergies,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText dislikes=field(tr("Foods you do not eat / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText notes=field(tr("Other details (work schedule, goals, restrictions)","توضیحات تکمیلی (برنامه کاری، هدف یا محدودیت‌ها)"),saved.notes,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes,notes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
+  goal.setSelection(saved.goalIndex);level.setSelection(saved.levelIndex);equipment.setSelection(saved.equipmentIndex);
+  sex.setSelection(saved.sexIndex);activity.setSelection(saved.activityIndex);
+  diet.setSelection("vegan".equals(saved.dietaryPreference)?2:"vegetarian".equals(saved.dietaryPreference)?1:0);
+  addField(form,tr("Main goal","هدف اصلی"),goal);
+  addField(form,tr("Training experience","سطح تجربه تمرین"),level);
+  addField(form,tr("Available equipment","تجهیزات در دسترس"),equipment);
+  addField(form,tr("Sex used only for energy estimate","جنسیت زیستی برای تخمین انرژی"),sex);
+  addField(form,tr("Daily activity outside training","فعالیت روزانه خارج از تمرین"),activity);
+  addField(form,tr("Age","سن"),age);addField(form,tr("Height","قد"),height);addField(form,tr("Weight","وزن"),weight);
+  addField(form,tr("Training days per week","روز تمرین در هفته"),days);
+  addField(form,tr("Minutes per session","مدت هر جلسه"),minutes);
+  addField(form,tr("Sleep per night","خواب شبانه"),sleep);
+  addField(form,tr("Medical conditions","شرایط پزشکی"),conditions);
+  addField(form,tr("Injuries and limitations","آسیب‌ها و محدودیت‌ها"),injuries);
+  addField(form,tr("Medicines","داروها"),medications);
+  addField(form,tr("Food allergies","حساسیت غذایی"),allergies);
+  addField(form,tr("Food preference","الگوی غذایی"),diet);
+  addField(form,tr("Foods to avoid","غذاهای نامطلوب"),dislikes);
+  addField(form,tr("Additional details","توضیحات بیشتر"),notes);
+  ScrollView scroll=new ScrollView(a);scroll.addView(form);
+  new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(scroll).setPositiveButton(s("create_plan"),(d,w)->{
    try{
-    int weeklyDays=parseLocalizedInt(days.getText().toString());
-    int sessionMinutes=parseLocalizedInt(minutes.getText().toString());
-    if(weeklyDays<1||weeklyDays>7||sessionMinutes<10||sessionMinutes>180)throw new IllegalArgumentException();
-    int goalIndex=goal.getSelectedItemPosition();
-    int levelIndex=level.getSelectedItemPosition();
-    int equipmentIndex=equipment.getSelectedItemPosition();
-    int sexIndex=sex.getSelectedItemPosition();
-    String selectedGender=sexIndex==0?"male":"female";
+    FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();
+    p.age=parseLocalizedInt(age.getText().toString());p.heightCm=parseLocalizedDouble(height.getText().toString());
+    p.weightKg=parseLocalizedDouble(weight.getText().toString());p.sexIndex=sex.getSelectedItemPosition();
+    p.goalIndex=goal.getSelectedItemPosition();p.levelIndex=level.getSelectedItemPosition();
+    p.equipmentIndex=equipment.getSelectedItemPosition();p.activityIndex=activity.getSelectedItemPosition();
+    p.trainingDays=parseLocalizedInt(days.getText().toString());p.sessionMinutes=parseLocalizedInt(minutes.getText().toString());
+    p.sleepHours=parseLocalizedDouble(sleep.getText().toString());p.conditions=conditions.getText().toString();
+    p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
+    p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();
+    p.notes=notes.getText().toString();p.dietaryPreference=diet.getSelectedItemPosition()==2?"vegan":diet.getSelectedItemPosition()==1?"vegetarian":"omnivore";
+    FitnessPlanEngine.validate(p);
+    FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(p);
+    String selectedGender=p.sexIndex==0?"male":"female";
     List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
-      ExerciseAssetIndex.all(a),goalIndex,levelIndex,equipmentIndex,selectedGender,sessionMinutes);
+      ExerciseAssetIndex.all(a),p.goalIndex,p.levelIndex,p.equipmentIndex,selectedGender,p.sessionMinutes);
     if(generated.isEmpty())throw new IllegalStateException("No exercises generated");
-    String genderLabel=(String)sex.getSelectedItem();
-    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+genderLabel;
-    // The database writes the plan and all generated exercises in one transaction.
+    String planName=s("personal_plan_name")+" - "+goal.getSelectedItem()+" - "+sex.getSelectedItem();
     long planId=db.addPlanWithExercises(planName,generated);
     List<String[]> persisted=db.exercises(planId);
-    if(persisted.size()!=generated.size()){
-     db.deletePlan(planId);
-     throw new IllegalStateException("Generated exercise count does not match persisted exercise count");
-    }
+    if(persisted.size()!=generated.size())throw new IllegalStateException("Saved exercise count does not match generated plan");
     for(int i=0;i<generated.size();i++){
-     String[] saved=persisted.get(i);PersonalPlanGenerator.PlannedExercise expected=generated.get(i);
-     if(!expected.asset.id.equals(saved[4])||!expected.asset.gender.equals(saved[5])){
-      db.deletePlan(planId);
-      throw new IllegalStateException("Persisted exercise catalog metadata does not match generated plan");
-     }
+     String[] row=persisted.get(i);PersonalPlanGenerator.PlannedExercise expected=generated.get(i);
+     if(!expected.asset.id.equals(row[4])||!expected.asset.gender.equals(row[5]))
+      throw new IllegalStateException("Saved exercise metadata does not match generated plan");
     }
+    FitnessProfileStore.save(a,p);
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit()
-      .putInt("weekly_goal",weeklyDays).putInt("session_minutes",sessionMinutes)
+      .putInt("fitness_gender_index",p.sexIndex).putString("fitness_gender",String.valueOf(sex.getSelectedItem()))
+      .putInt("fitness_level",p.levelIndex).putString("equipment",String.valueOf(equipment.getSelectedItem()))
       .putString("fitness_goal",String.valueOf(goal.getSelectedItem()))
-      .putString("fitness_gender",genderLabel).putInt("fitness_gender_index",sexIndex)
-      .putInt("fitness_level",levelIndex).putString("equipment",String.valueOf(equipment.getSelectedItem()))
-      .apply();
-    message(s("plan_created"),s("plan_created_detail")+"\n"+s("weekly_target")+": "+weeklyDays
-      +"\n"+s("session_minutes")+": "+sessionMinutes
-      +"\n"+tr("Exercises added: ","تعداد حرکات اضافه‌شده: ")+generated.size());
+      .putString("coach_plan_report_"+planId,FitnessPlanEngine.trainingReport(p,analysis,generated))
+      .putLong("coach_last_plan_id",planId).apply();
+    showPlanReport(tr("Personal plan created","برنامه شخصی ساخته شد"),
+      FitnessPlanEngine.trainingReport(p,analysis,generated)+"\n\n"+FitnessPlanEngine.nutritionReport(p,analysis));
    }catch(Exception ex){
     String reason=ex.getMessage()==null?ex.getClass().getSimpleName():ex.getMessage();
     message(s("error"),tr("The plan could not be created: ","ساخت برنامه انجام نشد: ")+reason);
    }
   }).setNegativeButton(android.R.string.cancel,null).show();
+ }
+ private void addField(LinearLayout parent,String title,android.view.View input){
+  parent.addView(label(title));parent.addView(input);
+ }
+ private void showPlanReport(String title,String report){
+  TextView body=new TextView(a);body.setText(report);body.setTextSize(15);
+  int pad=(int)(16*a.getResources().getDisplayMetrics().density);body.setPadding(pad,pad,pad,pad);
+  ScrollView scroll=new ScrollView(a);scroll.addView(body);
+  new AlertDialog.Builder(a).setTitle(title).setView(scroll).setPositiveButton(android.R.string.ok,null).show();
  }
  private Spinner spinner(String[] values){Spinner sp=new Spinner(a);sp.setAdapter(new ArrayAdapter<>(a,android.R.layout.simple_spinner_dropdown_item,values));return sp;}
  private TextView label(String t){TextView v=new TextView(a);v.setText(t);v.setTextSize(15);return v;}
