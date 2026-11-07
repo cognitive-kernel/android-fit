@@ -38,6 +38,25 @@ public class FitnessProfileStoreTest {
         }
     }
 
+    @Test public void coachProfileDoesNotOverwriteExistingWeeklyGoalOrFitnessPreferences() {
+        try(ActivityController<Activity> controller=Robolectric.buildActivity(Activity.class).setup()) {
+            Activity a=controller.get();
+            android.content.SharedPreferences prefs=a.getSharedPreferences("fityar_preferences",0);
+            prefs.edit().putInt("weekly_goal",3).putInt("session_minutes",30).putInt("fitness_level",2).commit();
+            FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();
+            p.conditions="none";p.injuries="none";p.medications="none";p.allergies="none";
+            p.trainingDays=5;p.sessionMinutes=60;p.levelIndex=1;
+            FitnessProfileStore.save(a,p);
+            assertEquals(3,prefs.getInt("weekly_goal",-1));
+            assertEquals(30,prefs.getInt("session_minutes",-1));
+            assertEquals(2,prefs.getInt("fitness_level",-1));
+            FitnessPlanEngine.Profile loaded=FitnessProfileStore.load(a);
+            assertEquals(5,loaded.trainingDays);
+            assertEquals(60,loaded.sessionMinutes);
+            assertEquals(1,loaded.levelIndex);
+        }
+    }
+
     @Test public void savingProfileDoesNotModifyExistingWorkoutRecords() {
         try(ActivityController<Activity> controller=Robolectric.buildActivity(Activity.class).setup()) {
             Activity a=controller.get();
