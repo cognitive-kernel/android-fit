@@ -278,28 +278,6 @@ public final class FitnessPlanEngine {
         Meal dinner=new Meal(tr(p,"Dinner","شام"));
         dinner.add(beef,130);dinner.add(potato,200);dinner.add(veg,150);dinner.add(oil,5);
         List<Meal> result=new ArrayList<>();Collections.addAll(result,breakfast,lunch,snack,dinner);
-        double baseProtein=0,baseFat=0,baseCarbs=0;
-        for(Meal m:result)for(Portion x:m.portions){baseProtein+=x.protein();baseFat+=x.fat();baseCarbs+=x.carbs();}
-        double pFactor=baseProtein<=0?1:clamp(a.proteinGrams/baseProtein,0.65,1.8);
-        double fFactor=baseFat<=0?1:clamp(a.fatGrams/baseFat,0.65,1.8);
-        for(Meal m:result) {
-            for(int i=0;i<m.portions.size();i++) {
-                Portion x=m.portions.get(i);
-                double factor=x.food.group==0?pFactor:x.food.group==2?fFactor:1.0;
-                double grams=x.grams*factor;
-                if("egg whites".equals(x.food.unit)) grams=Math.max(x.food.unitGrams,Math.round(grams/x.food.unitGrams)*x.food.unitGrams);
-                m.portions.set(i,new Portion(x.food,grams));
-            }
-        }
-        double currentK=0,carbK=0;
-        for(Meal m:result)for(Portion x:m.portions){currentK+=x.kcal();if(x.food.group==1)carbK+=x.kcal();}
-        double carbFactor=carbK<=0?1:clamp((a.targetCalories-currentK+carbK)/carbK,0.5,2.5);
-        for(Meal m:result) {
-            for(int i=0;i<m.portions.size();i++) {
-                Portion x=m.portions.get(i);
-                if(x.food.group==1)m.portions.set(i,new Portion(x.food,x.grams*carbFactor));
-            }
-        }
         if(!"omnivore".equals(p.dietaryPreference)) {
             // Vegetarian/vegan profiles must not silently receive meat or animal-derived foods.
             for(Meal m:result) {
@@ -325,6 +303,28 @@ public final class FitnessPlanEngine {
                 if(allergyMatches(allergy,name)||(!blank(dislikes)&&!isNone(dislikes)&&isDisliked(dislikes,name))) {
                     m.portions.remove(i);
                 }
+            }
+        }
+        double baseProtein=0,baseFat=0,baseCarbs=0;
+        for(Meal m:result)for(Portion x:m.portions){baseProtein+=x.protein();baseFat+=x.fat();baseCarbs+=x.carbs();}
+        double pFactor=baseProtein<=0?1:clamp(a.proteinGrams/baseProtein,0.65,1.8);
+        double fFactor=baseFat<=0?1:clamp(a.fatGrams/baseFat,0.65,1.8);
+        for(Meal m:result) {
+            for(int i=0;i<m.portions.size();i++) {
+                Portion x=m.portions.get(i);
+                double factor=x.food.group==0?pFactor:x.food.group==2?fFactor:1.0;
+                double grams=x.grams*factor;
+                if("egg whites".equals(x.food.unit)) grams=Math.max(x.food.unitGrams,Math.round(grams/x.food.unitGrams)*x.food.unitGrams);
+                m.portions.set(i,new Portion(x.food,grams));
+            }
+        }
+        double currentK=0,carbK=0;
+        for(Meal m:result)for(Portion x:m.portions){currentK+=x.kcal();if(x.food.group==1)carbK+=x.kcal();}
+        double carbFactor=carbK<=0?1:clamp((a.targetCalories-currentK+carbK)/carbK,0.5,2.5);
+        for(Meal m:result) {
+            for(int i=0;i<m.portions.size();i++) {
+                Portion x=m.portions.get(i);
+                if(x.food.group==1)m.portions.set(i,new Portion(x.food,x.grams*carbFactor));
             }
         }
         if(p.mealsPerDay==3) {
