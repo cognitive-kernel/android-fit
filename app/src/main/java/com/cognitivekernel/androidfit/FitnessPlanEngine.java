@@ -238,7 +238,9 @@ public final class FitnessPlanEngine {
             for(int i=0;i<m.portions.size();i++) {
                 Portion x=m.portions.get(i);
                 double factor=x.food.group==0?pFactor:x.food.group==2?fFactor:1.0;
-                m.portions.set(i,new Portion(x.food,x.grams*factor));
+                double grams=x.grams*factor;
+                if("egg whites".equals(x.food.unit)) grams=Math.max(x.food.unitGrams,Math.round(grams/x.food.unitGrams)*x.food.unitGrams);
+                m.portions.set(i,new Portion(x.food,grams));
             }
         }
         double currentK=0,carbK=0;
