@@ -250,14 +250,6 @@ public final class FitnessPlanEngine {
                 if(x.food.group==1)m.portions.set(i,new Portion(x.food,x.grams*carbFactor));
             }
         }
-        String allergy=p.allergies==null?"":p.allergies.toLowerCase(Locale.ROOT);
-        for(Meal m:result) {
-            m.portions.removeIf(x -> allergyMatches(allergy,x.food.name));
-            if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) {
-                String dislikes=p.dislikedFoods.toLowerCase(Locale.ROOT);
-                m.portions.removeIf(x -> contains(dislikes,foodKeyword(x.food.name)));
-            }
-        }
         if(!"omnivore".equals(p.dietaryPreference)) {
             // Vegetarian/vegan profiles must not silently receive meat or egg portions.
             for(Meal m:result) {
@@ -271,6 +263,14 @@ public final class FitnessPlanEngine {
             if("vegan".equals(p.dietaryPreference)) {
                 result.get(0).portions.removeIf(x -> "Egg whites".equals(x.food.name));
                 result.get(2).add(food("Unsweetened soy yogurt",50,4,3,2.5,0,"g",0),200*pFactor);
+            }
+        }
+        String allergy=p.allergies==null?"":p.allergies.toLowerCase(Locale.ROOT);
+        for(Meal m:result) {
+            m.portions.removeIf(x -> allergyMatches(allergy,x.food.name));
+            if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) {
+                String dislikes=p.dislikedFoods.toLowerCase(Locale.ROOT);
+                m.portions.removeIf(x -> contains(dislikes,foodKeyword(x.food.name)));
             }
         }
         return result;
