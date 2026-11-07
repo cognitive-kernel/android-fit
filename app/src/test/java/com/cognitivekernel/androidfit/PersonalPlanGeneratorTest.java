@@ -48,6 +48,30 @@ public class PersonalPlanGeneratorTest {
         }
     }
 
+    @Test public void weeklyPlanAssignsDistinctMovementsToTheCorrectTrainingDays() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<ExerciseAssetIndex.ExerciseAsset> catalog=ExerciseAssetIndex.all(controller.get());
+            List<PersonalPlanGenerator.PlannedExercise> plan=PersonalPlanGenerator.generate(
+                    catalog,1,1,2,"all",45,"none",4);
+            int[] counts=new int[5];
+            Set<String> ids=new HashSet<>();
+            for(PersonalPlanGenerator.PlannedExercise item:plan) {
+                assertTrue(item.day>=1&&item.day<=4);
+                assertTrue(ids.add(item.asset.id));
+                counts[item.day]++;
+                String category=PersonalPlanGenerator.category(item.asset.name);
+                if(item.day%2==1) {
+                    assertTrue("upper day contains lower-body movement: "+item.asset.name,
+                            "push".equals(category)||"pull".equals(category)||"other".equals(category));
+                } else {
+                    assertTrue("lower day contains upper-body movement: "+item.asset.name,
+                            "legs".equals(category)||"glutes".equals(category)||"core".equals(category)||"other".equals(category));
+                }
+            }
+            for(int day=1;day<=4;day++)assertTrue("day "+day+" should have at least three movements",counts[day]>=3);
+        }
+    }
+
     @Test public void equipmentFreePlanDoesNotSelectEquipmentDependentMovements() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             List<PersonalPlanGenerator.PlannedExercise> plan = PersonalPlanGenerator.generate(
