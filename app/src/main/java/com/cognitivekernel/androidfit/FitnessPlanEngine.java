@@ -295,7 +295,7 @@ public final class FitnessPlanEngine {
             m.portions.removeIf(x -> allergyMatches(allergy,x.food.name));
             if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) {
                 String dislikes=p.dislikedFoods.toLowerCase(Locale.ROOT);
-                m.portions.removeIf(x -> contains(dislikes,foodKeyword(x.food.name)));
+                m.portions.removeIf(x -> isDisliked(dislikes,x.food.name));
             }
         }
         return result;
@@ -311,6 +311,23 @@ public final class FitnessPlanEngine {
         if(contains(allergy,"chicken","poultry","مرغ") && n.contains("chicken")) return true;
         if(contains(allergy,"gluten","wheat","گندم","گلوتن") && n.contains("oats")) return true;
         return false;
+    }
+    private static boolean isDisliked(String dislikes,String name) {
+        String n=name.toLowerCase(Locale.ROOT);
+        if(n.contains("egg")) return contains(dislikes,"egg","تخم مرغ","تخم‌مرغ");
+        if(n.contains("chicken")) return contains(dislikes,"chicken","مرغ");
+        if(n.contains("beef")) return contains(dislikes,"beef","گوشت قرمز","گوشت گوساله","گوشت گاو");
+        if(n.contains("oats")) return contains(dislikes,"oats","جو دوسر","جوپرک");
+        if(n.contains("yogurt")) return contains(dislikes,"yogurt","ماست");
+        if(n.contains("almond")) return contains(dislikes,"almond","بادام","آجیل");
+        if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");
+        if(n.contains("lentil")) return contains(dislikes,"lentil","عدس");
+        if(n.contains("rice")) return contains(dislikes,"rice","برنج");
+        if(n.contains("potato")) return contains(dislikes,"potato","سیب زمینی","سیب‌زمینی");
+        if(n.contains("banana")) return contains(dislikes,"banana","موز");
+        if(n.contains("apple")) return contains(dislikes,"apple","سیب");
+        if(n.contains("olive oil")) return contains(dislikes,"olive oil","روغن زیتون");
+        return contains(dislikes,n);
     }
     private static String foodKeyword(String name) {
         String n=name.toLowerCase(Locale.ROOT);
