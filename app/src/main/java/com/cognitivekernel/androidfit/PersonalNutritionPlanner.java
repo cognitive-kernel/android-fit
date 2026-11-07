@@ -57,6 +57,14 @@ public final class PersonalNutritionPlanner {
         CheckBox clearance=new CheckBox(a);
         clearance.setText(t(a,"I have clinician clearance for nutrition with the conditions/medicines listed above","برای تغذیه با توجه به شرایط و داروهای ذکرشده، مجوز متخصص دارم"));
         clearance.setChecked(saved.medicalClearance);
+        android.text.TextWatcher healthChange=new android.text.TextWatcher(){
+            public void beforeTextChanged(CharSequence s,int start,int count,int after){}
+            public void onTextChanged(CharSequence s,int start,int before,int count){clearance.setChecked(false);}
+            public void afterTextChanged(android.text.Editable e){}
+        };
+        conditions.addTextChangedListener(healthChange);
+        injuries.addTextChangedListener(healthChange);
+        medications.addTextChangedListener(healthChange);
         for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
         if(hasProfile) {
             goal.setSelection(saved.goalIndex+1);sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
