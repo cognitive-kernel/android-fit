@@ -26,6 +26,12 @@ public final class PersonalPlanGenerator {
     public static List<PlannedExercise> generate(
             List<ExerciseAssetIndex.ExerciseAsset> catalog,
             int goal, int level, int equipment, String gender, int sessionMinutes) {
+        return generate(catalog,goal,level,equipment,gender,sessionMinutes,"");
+    }
+
+    public static List<PlannedExercise> generate(
+            List<ExerciseAssetIndex.ExerciseAsset> catalog,
+            int goal, int level, int equipment, String gender, int sessionMinutes, String limitations) {
         if (catalog == null || catalog.isEmpty()) throw new IllegalArgumentException("Exercise catalog is empty");
         if (goal < 0 || goal > 3 || level < 0 || level > 2 || equipment < 0 || equipment > 2
                 || sessionMinutes < 10 || sessionMinutes > 180
@@ -113,6 +119,23 @@ public final class PersonalPlanGenerator {
                 "chest fly", "chest fly", "overhead press", "shoulder press", "lateral raise",
                 "triceps", "dip")) return "push";
         return "other";
+    }
+
+    static boolean isCompatibleWithLimitations(String exerciseName,String limitations) {
+        String n=normalize(exerciseName==null?"":exerciseName);
+        String l=(limitations==null?"":limitations).toLowerCase(Locale.ROOT);
+        if(l.trim().isEmpty()||l.contains("none")||l.contains("ندارد")||l.contains("no injury")) return true;
+        boolean knee=contains(l,"knee","زانو");
+        boolean shoulder=contains(l,"shoulder","شانه","سرشانه","روتاتور کاف");
+        boolean back=contains(l,"back pain","lower back","spine","کمر","ستون فقرات","دیسک");
+        boolean wrist=contains(l,"wrist","مچ دست");
+        boolean ankle=contains(l,"ankle","مچ پا");
+        if(knee&&contains(n,"squat","lunge","leg press","leg extension","step up","step-up","jump","running","treadmill")) return false;
+        if(shoulder&&contains(n,"overhead press","shoulder press","lateral raise","front raise","upright row","dip","chest fly")) return false;
+        if(back&&contains(n,"deadlift","good morning","bent over","hyperextension","back extension","sit up","sit-up")) return false;
+        if(wrist&&contains(n,"push up","push-up","pushup","plank","burpee","handstand")) return false;
+        if(ankle&&contains(n,"jump","running","treadmill","lunge","step up","step-up")) return false;
+        return true;
     }
 
     private static boolean supportsEquipment(String name, int equipment) {
