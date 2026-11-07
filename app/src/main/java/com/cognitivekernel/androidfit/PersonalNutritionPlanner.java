@@ -79,6 +79,7 @@ public final class PersonalNutritionPlanner {
           .setPositiveButton(t(a,"Calculate and create menu","محاسبه و ساخت برنامه غذایی"),(dialog,which)->{
             try {
                 FitnessPlanEngine.Profile p=FitnessProfileStore.load(a);
+                p.english="en".equalsIgnoreCase(a.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString("language","fa"));
                 p.age=GoalPlanner.parseInteger(age.getText().toString());
                 p.heightCm=GoalPlanner.parseDecimal(height.getText().toString());
                 p.weightKg=GoalPlanner.parseDecimal(weight.getText().toString());
