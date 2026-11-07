@@ -46,7 +46,7 @@ public class FitnessProfileStoreTest {
                 long plan=db.addPlan("Keep existing");
                 long exercise=db.addExercise(plan,"Manual exercise",3,10);
                 db.log("1405/08/16","Keep existing","Manual exercise",3,10,20);
-                FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();
+                FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();p.conditions="none";p.injuries="none";p.medications="none";p.allergies="none";
                 FitnessProfileStore.save(a,p);
                 assertEquals(1,db.plans().size());
                 assertEquals(String.valueOf(plan),db.plans().get(0)[0]);
