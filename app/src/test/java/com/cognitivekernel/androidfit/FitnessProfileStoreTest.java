@@ -33,7 +33,8 @@ public class FitnessProfileStoreTest {
             assertEquals("controlled asthma",restored.conditions);
             assertEquals("peanuts",restored.allergies);
             assertEquals("vegetarian",restored.dietaryPreference);
-            assertEquals("night shift",restored.notes);\n            assertTrue(restored.medicalClearance);
+            assertEquals("night shift",restored.notes);
+            assertTrue(restored.medicalClearance);
         }
     }
 
