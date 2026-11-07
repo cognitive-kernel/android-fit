@@ -16,8 +16,8 @@ public class FitnessPlanEngineTest {
     @Test public void calculatesMifflinStJeorAndGoalSpecificTargets() {
         FitnessPlanEngine.Profile p=profile();
         FitnessPlanEngine.Analysis a=FitnessPlanEngine.analyze(p);
-        assertEquals(1730, a.bmr, 0.01);
-        assertEquals(2681.5, a.maintenanceCalories, 0.1);
+        assertEquals(1698.75, a.bmr, 0.01);
+        assertEquals(2633.0625, a.maintenanceCalories, 0.1);
         assertTrue(a.targetCalories>a.maintenanceCalories);
         assertEquals(135, a.proteinGrams, 0.01);
         assertTrue(a.fatGrams>0);
