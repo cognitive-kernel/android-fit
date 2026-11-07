@@ -162,18 +162,16 @@ public final class FitnessPlanEngine {
             out.append(tr(p,"Day ","روز ")).append(day).append(": ").append(split)
                .append(" — ").append(p.sessionMinutes).append(tr(p," min\\n"," دقیقه\\n"));
         }
-        int sets=p.trainingDays>=4||p.goalIndex>=2?2:(p.levelIndex==0?2:3);
+        int sets=2;
         int repsLow=p.goalIndex==0?4:p.goalIndex==1?6:8;
         int repsHigh=p.goalIndex==0?8:p.goalIndex==1?12:15;
-        int weeklySets=p.levelIndex==0?6:p.levelIndex==1?10:12;
         out.append(tr(p,"\\nSESSION PRESCRIPTION\\n","\\nنسخه تمرین هر جلسه\\n"))
            .append(tr(p,"Use ","برای هر حرکت ")).append(sets).append(tr(p," working sets, "," ست کاری، "))
            .append(repsLow).append("–").append(repsHigh)
            .append(tr(p," reps. Use controlled full range of motion; rest 2–3 min for compound lifts and 60–120 sec for isolation work.\\n",
                " تکرار با دامنه کامل و کنترل‌شده اجرا کنید؛ استراحت حرکات چندمفصلی ۲ تا ۳ دقیقه و حرکات تک‌مفصلی ۶۰ تا ۱۲۰ ثانیه باشد.\\n"))
-           .append(tr(p,"Initial volume: about ","حجم شروع: حدود ")).append(weeklySets)
-           .append(tr(p," challenging sets per major muscle group per week. For hypertrophy, build toward ~10+ weekly sets only when recovery allows.\\n",
-               " ست مؤثر برای هر گروه عضلانی در هفته. در عضله‌سازی فقط در صورت ریکاوری مناسب به حدود ۱۰ ست یا بیشتر برسید.\\n"))
+           .append(tr(p,"Initial volume: start with 2 working sets per selected movement. Count weekly sets from the day-by-day assignment and increase gradually only when recovery allows.\\n",
+               "حجم شروع: برای هر حرکت انتخاب‌شده ۲ ست کاری اجرا کنید. مجموع ست‌های هفتگی را از تقسیم‌بندی روزها محاسبه و فقط در صورت ریکاوری مناسب به‌تدریج افزایش دهید.\\n"))
            .append(tr(p,"Effort: keep about 2–3 good repetitions in reserve on most sets; failure is not required. Add reps first, then the smallest load increase when all sets reach the top of the range with good technique.\\n",
                "شدت: در پایان بیشتر ست‌ها حدود ۲ تا ۳ تکرار توان باقی بماند؛ تمرین تا ناتوانی ضروری نیست. ابتدا تکرار را افزایش دهید و پس از رسیدن همه ست‌ها به سقف دامنه با تکنیک صحیح، کمترین افزایش وزنه را اعمال کنید.\\n"))
            .append(tr(p,"Warm up 5–10 minutes and perform lighter ramp-up sets before demanding lifts. Stop for chest pain, faintness, unusual breathlessness, or sharp/worsening pain.\\n",
