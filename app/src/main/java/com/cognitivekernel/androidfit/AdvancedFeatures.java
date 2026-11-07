@@ -646,8 +646,10 @@ public final class AdvancedFeatures {
    FitnessPlanEngine.Profile profile=FitnessProfileStore.load(a);
    FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(profile);
    String gender=profile.sexIndex==0?"male":"female";
-   List<PersonalPlanGenerator.PlannedExercise> suggested=PersonalPlanGenerator.generate(
-     ExerciseAssetIndex.all(a),profile.goalIndex,profile.levelIndex,profile.equipmentIndex,gender,profile.sessionMinutes,profile.injuries);
+   List<PersonalPlanGenerator.PlannedExercise> suggested=
+     analysis.needsMedicalReview&&!profile.medicalClearance?Collections.emptyList():
+       PersonalPlanGenerator.generate(ExerciseAssetIndex.all(a),profile.goalIndex,profile.levelIndex,
+         profile.equipmentIndex,gender,profile.sessionMinutes,profile.injuries);
    StringBuilder report=new StringBuilder();
    report.append(tr("OFFLINE COACH — PERSONAL ASSESSMENT","مربی آفلاین — ارزیابی شخصی")).append("\\n")
      .append(FitnessPlanEngine.trainingReport(profile,analysis,suggested))
