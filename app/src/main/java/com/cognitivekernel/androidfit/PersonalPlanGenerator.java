@@ -207,6 +207,11 @@ public final class PersonalPlanGenerator {
     static boolean hasUnmappedLimitation(String value) {
         if(isNoLimitation(value))return false;
         String l=value.toLowerCase(Locale.ROOT);
+        // A body-region keyword alone is not enough to map complex diagnoses or post-operative restrictions.
+        if(contains(l,"surgery","surgical","post-op","post op","fracture","arthritis","tendon","ligament",
+                "sprain","strain","tear","replacement","dislocation","impingement","nerve","numbness",
+                "tingling","جراحی","شکستگی","آرتروز","تاندون","رباط","پارگی","تعویض مفصل","دررفتگی",
+                "گیر افتادگی","عصب","بی‌حسی","گزگز")) return true;
         return !contains(l,"knee","meniscus","زانو","مینیسک","shoulder","شانه","سرشانه","روتاتور کاف",
                 "back","spine","lumbar","scoliosis","kyphosis","lordosis","sciatica","herniated disc","slipped disc","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک","اسکولیوز","سیاتیک",
                 "wrist","carpal tunnel","مچ دست","تونل کارپال","ankle","achilles","مچ پا","آشیل","کف پا","پاشنه","hip","لگن","مفصل ران",
