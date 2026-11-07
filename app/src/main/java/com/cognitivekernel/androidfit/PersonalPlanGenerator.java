@@ -85,8 +85,8 @@ public final class PersonalPlanGenerator {
         }
         if (selected.isEmpty()) throw new IllegalStateException("No suitable exercises could be generated");
 
-        int sets = (goal == 2 || goal == 3 ? 2 : 3) + level;
-        if(trainingDays>=4) sets=Math.min(sets,2);
+        int sets = (goal == 2 || goal == 3 || level == 0) ? 2 : 3;
+        if(trainingDays>=4) sets=2;
         int reps = goal == 0 ? (level == 0 ? 8 : 6)
                 : goal == 1 ? 10 : goal == 2 ? 12 : 15;
         ArrayList<PlannedExercise> result = new ArrayList<>();
