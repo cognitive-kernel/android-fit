@@ -35,7 +35,8 @@ public class PersonalPlanInjuryFilterTest {
     }
 
     @Test public void unknownInjuryRegionsAreNotSilentlyTreatedAsSafe() {
-        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("arthritis"));\n        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("scoliosis"));
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("arthritis"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("scoliosis"));
         assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("none"));
         assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("knee pain and shoulder injury"));
     }
