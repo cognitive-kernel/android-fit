@@ -114,6 +114,25 @@ public class FitnessPlanEngineTest {
         assertFalse(report.contains("Almonds"));
     }
 
+    @Test public void nutritionMenuHonorsThreeOrFiveMealsPerDay() {
+        FitnessPlanEngine.Profile p=profile();
+        p.mealsPerDay=3;
+        String three=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertTrue(three.contains("Breakfast + snack"));
+        assertEquals(3,count(three,"Meal subtotal:"));
+        p.mealsPerDay=5;
+        String five=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertTrue(five.contains("Snack 1"));
+        assertTrue(five.contains("Snack 2"));
+        assertEquals(5,count(five,"Meal subtotal:"));
+    }
+
+    private static int count(String source,String needle) {
+        int total=0,at=0;
+        while((at=source.indexOf(needle,at))>=0){total++;at+=needle.length();}
+        return total;
+    }
+
     @Test public void trainingReportIncludesWeeklyScheduleProgressionAndRecovery() {
         FitnessPlanEngine.Profile p=profile();
         String report=FitnessPlanEngine.trainingReport(p,FitnessPlanEngine.analyze(p),Collections.emptyList());
