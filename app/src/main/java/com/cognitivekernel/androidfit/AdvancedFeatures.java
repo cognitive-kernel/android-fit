@@ -482,9 +482,9 @@ public final class AdvancedFeatures {
   EditText minutes=field(tr("Session duration (10–180 min)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),(hasProfile?String.valueOf(saved.sessionMinutes):""),android.text.InputType.TYPE_CLASS_NUMBER);
   EditText sleep=field(tr("Average sleep hours per night","میانگین ساعت خواب شبانه"),(saved.sleepHours>0?String.valueOf(saved.sleepHours):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
   EditText conditions=field(tr("Medical conditions (write 'none' if none)","بیماری‌ها و شرایط پزشکی (در صورت نداشتن بنویسید: ندارد)"),saved.conditions,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-  EditText injuries=field(tr("Pain, injuries, surgeries or movement restrictions","درد، آسیب، جراحی یا محدودیت حرکتی"),saved.injuries,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-  EditText medications=field(tr("Regular medicines / supplements (optional)","داروها و مکمل‌های مصرفی (اختیاری)"),saved.medications,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-  EditText allergies=field(tr("Food allergies / intolerances","حساسیت یا عدم تحمل غذایی"),saved.allergies,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText injuries=field(tr("Pain, injuries, surgeries or movement restrictions (or none)","درد، آسیب، جراحی یا محدودیت حرکتی (یا ندارد)"),saved.injuries,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText medications=field(tr("Medicines / supplements (write none if not applicable)","داروها و مکمل‌ها (در صورت نداشتن بنویسید: ندارد)"),saved.medications,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+  EditText allergies=field(tr("Food allergies / intolerances (or none)","حساسیت یا عدم تحمل غذایی (یا ندارد)"),saved.allergies,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
   EditText dislikes=field(tr("Foods you do not eat / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
   EditText notes=field(tr("Other details (work schedule, goals, restrictions)","توضیحات تکمیلی (برنامه کاری، هدف یا محدودیت‌ها)"),saved.notes,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
   CheckBox clearance=new CheckBox(a);
