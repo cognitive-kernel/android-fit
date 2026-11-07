@@ -204,7 +204,7 @@ public final class PersonalPlanGenerator {
                 ||value.trim().equals("هیچ‌کدام");
     }
 
-    private static boolean hasUnmappedLimitation(String value) {
+    static boolean hasUnmappedLimitation(String value) {
         if(isNoLimitation(value))return false;
         String l=value.toLowerCase(Locale.ROOT);
         return !contains(l,"knee","زانو","shoulder","شانه","سرشانه","روتاتور کاف",
