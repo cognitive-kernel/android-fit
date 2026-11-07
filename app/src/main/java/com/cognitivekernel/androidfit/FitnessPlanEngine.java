@@ -162,7 +162,7 @@ public final class FitnessPlanEngine {
             out.append(tr(p,"Day ","روز ")).append(day).append(": ").append(split)
                .append(" — ").append(p.sessionMinutes).append(tr(p," min\\n"," دقیقه\\n"));
         }
-        int sets=2;
+        int sets=(p.trainingDays>=5||p.levelIndex==0)?2:3;
         int repsLow=p.goalIndex==0?4:p.goalIndex==1?6:8;
         int repsHigh=p.goalIndex==0?8:p.goalIndex==1?12:15;
         out.append(tr(p,"\\nSESSION PRESCRIPTION\\n","\\nنسخه تمرین هر جلسه\\n"))
