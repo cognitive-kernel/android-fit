@@ -355,9 +355,9 @@ public final class FitnessPlanEngine {
     private static boolean isDisliked(String dislikes,String name) {
         String n=name.toLowerCase(Locale.ROOT);
         if(n.contains("egg")) return contains(dislikes,"egg","تخم مرغ","تخم‌مرغ");
-        if(n.contains("chicken")) return contains(dislikes,"chicken","مرغ");
-        if(n.contains("beef")) return contains(dislikes,"beef","گوشت قرمز","گوشت گوساله","گوشت گاو");
-        if(n.contains("oats")) return contains(dislikes,"oats","جو دوسر","جوپرک");
+        if(n.contains("chicken")) return contains(dislikes,"chicken","poultry","meat","گوشت","مرغ");
+        if(n.contains("beef")) return contains(dislikes,"beef","meat","گوشت","گوشت قرمز","گوشت گوساله","گوشت گاو");
+        if(n.contains("oats")) return contains(dislikes,"oats","oat","جو دوسر","جوپرک","جو پرک");
         if(n.contains("yogurt")) return contains(dislikes,"yogurt","ماست");
         if(n.contains("almond")) return contains(dislikes,"almond","بادام","آجیل");
         if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");
@@ -366,7 +366,8 @@ public final class FitnessPlanEngine {
         if(n.contains("potato")) return contains(dislikes,"potato","سیب زمینی","سیب‌زمینی");
         if(n.contains("banana")) return contains(dislikes,"banana","موز");
         if(n.contains("apple")) return contains(dislikes,"apple","سیب");
-        if(n.contains("olive oil")) return contains(dislikes,"olive oil","روغن زیتون");
+        if(n.contains("olive oil")) return contains(dislikes,"olive oil","oil","روغن زیتون","روغن");
+        if(n.contains("vegetables")) return contains(dislikes,"vegetable","greens","سبزی","سبزیجات");
         return contains(dislikes,n);
     }
     private static String foodKeyword(String name) {
