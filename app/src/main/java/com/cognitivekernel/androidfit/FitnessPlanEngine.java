@@ -154,7 +154,7 @@ public final class FitnessPlanEngine {
         int repsHigh=p.goalIndex==0?8:p.goalIndex==1?12:15;
         int weeklySets=p.levelIndex==0?6:p.levelIndex==1?10:12;
         out.append(tr(p,"\\nSESSION PRESCRIPTION\\n","\\nنسخه تمرین هر جلسه\\n"))
-           .append(tr(p,"Use ","برای هر حرکت ").append(sets).append(tr(p," working sets, "," ست کاری، "))
+           .append(tr(p,"Use ","برای هر حرکت ")).append(sets).append(tr(p," working sets, "," ست کاری، "))
            .append(repsLow).append("–").append(repsHigh)
            .append(tr(p," reps. Use controlled full range of motion; rest 2–3 min for compound lifts and 60–120 sec for isolation work.\\n",
                " تکرار با دامنه کامل و کنترل‌شده اجرا کنید؛ استراحت حرکات چندمفصلی ۲ تا ۳ دقیقه و حرکات تک‌مفصلی ۶۰ تا ۱۲۰ ثانیه باشد.\\n"))
