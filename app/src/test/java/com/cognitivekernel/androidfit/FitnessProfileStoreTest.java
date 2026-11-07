@@ -20,7 +20,7 @@ public class FitnessProfileStoreTest {
             p.activityIndex=2;p.levelIndex=1;p.equipmentIndex=2;p.trainingDays=4;
             p.sessionMinutes=55;p.sleepHours=6.5;p.conditions="controlled asthma";
             p.injuries="none";p.medications="inhaler";p.allergies="peanuts";
-            p.dietaryPreference="vegetarian";p.dislikedFoods="mushrooms";p.notes="night shift";
+            p.dietaryPreference="vegetarian";p.dislikedFoods="mushrooms";p.notes="night shift";p.medicalClearance=true;
             FitnessProfileStore.save(a,p);
             FitnessPlanEngine.Profile restored=FitnessProfileStore.load(a);
             assertTrue(FitnessProfileStore.hasProfile(a));
@@ -33,7 +33,7 @@ public class FitnessProfileStoreTest {
             assertEquals("controlled asthma",restored.conditions);
             assertEquals("peanuts",restored.allergies);
             assertEquals("vegetarian",restored.dietaryPreference);
-            assertEquals("night shift",restored.notes);
+            assertEquals("night shift",restored.notes);\n            assertTrue(restored.medicalClearance);
         }
     }
 
