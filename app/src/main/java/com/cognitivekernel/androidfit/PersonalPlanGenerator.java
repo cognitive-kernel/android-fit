@@ -177,11 +177,11 @@ public final class PersonalPlanGenerator {
         String n=normalize(exerciseName==null?"":exerciseName);
         String l=(limitations==null?"":limitations).toLowerCase(Locale.ROOT).trim();
         if(isNoLimitation(l)) return true;
-        boolean knee=contains(l,"knee","زانو");
+        boolean knee=contains(l,"knee","meniscus","زانو","مینیسک");
         boolean shoulder=contains(l,"shoulder","شانه","سرشانه","روتاتور کاف");
-        boolean back=contains(l,"back","spine","lumbar","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک");
-        boolean wrist=contains(l,"wrist","مچ دست");
-        boolean ankle=contains(l,"ankle","مچ پا");
+        boolean back=contains(l,"back","spine","lumbar","scoliosis","kyphosis","lordosis","sciatica","herniated disc","slipped disc","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک","اسکولیوز","سیاتیک");
+        boolean wrist=contains(l,"wrist","carpal tunnel","مچ دست","تونل کارپال");
+        boolean ankle=contains(l,"ankle","achilles","مچ پا","آشیل","کف پا","پاشنه");
         boolean hip=contains(l,"hip","لگن","مفصل ران");
         boolean elbow=contains(l,"elbow","آرنج");
         boolean neck=contains(l,"neck","گردن");
@@ -207,9 +207,9 @@ public final class PersonalPlanGenerator {
     static boolean hasUnmappedLimitation(String value) {
         if(isNoLimitation(value))return false;
         String l=value.toLowerCase(Locale.ROOT);
-        return !contains(l,"knee","زانو","shoulder","شانه","سرشانه","روتاتور کاف",
-                "back","spine","lumbar","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک",
-                "wrist","مچ دست","ankle","مچ پا","hip","لگن","مفصل ران",
+        return !contains(l,"knee","meniscus","زانو","مینیسک","shoulder","شانه","سرشانه","روتاتور کاف",
+                "back","spine","lumbar","scoliosis","kyphosis","lordosis","sciatica","herniated disc","slipped disc","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک","اسکولیوز","سیاتیک",
+                "wrist","carpal tunnel","مچ دست","تونل کارپال","ankle","achilles","مچ پا","آشیل","کف پا","پاشنه","hip","لگن","مفصل ران",
                 "elbow","آرنج","neck","گردن");
     }
 
