@@ -25,7 +25,7 @@ public final class FitnessPlanEngine {
         public int trainingDays = 3;
         public int sessionMinutes = 45;
         public int mealsPerDay = 4;
-        public double sleepHours = 7.5;
+        public double sleepHours = 0;
         public String conditions = "";
         public String injuries = "";
         public String medications = "";
