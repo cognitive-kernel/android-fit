@@ -139,6 +139,15 @@ public class FitnessPlanEngineTest {
         assertFalse(report.contains("Lean beef"));
     }
 
+    @Test public void broadPersianFoodExclusionsRemoveMatchingItems() {
+        FitnessPlanEngine.Profile p=profile();
+        p.dislikedFoods="گوشت، سبزیجات";
+        String report=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertFalse(report.contains("Chicken breast"));
+        assertFalse(report.contains("Lean beef"));
+        assertFalse(report.contains("Mixed non-starchy vegetables"));
+    }
+
     @Test public void nutritionMenuHonorsThreeOrFiveMealsPerDay() {
         FitnessPlanEngine.Profile p=profile();
         p.mealsPerDay=3;
