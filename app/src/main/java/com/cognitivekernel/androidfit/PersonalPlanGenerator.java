@@ -73,6 +73,9 @@ public final class PersonalPlanGenerator {
             if (leftGenderRank != rightGenderRank) return Integer.compare(leftGenderRank, rightGenderRank);
             return left.id.compareTo(right.id);
         });
+        if (hasUnmappedLimitation(limitations)) {
+            throw new IllegalStateException("Specify the affected body region and clinician-approved movement restrictions; this offline coach cannot safely map the reported limitation");
+        }
         if (eligible.isEmpty()) throw new IllegalStateException(limitations==null||limitations.trim().isEmpty()? "No exercises match the selected gender and equipment" : "No exercises match the reported injury restrictions; request a clinician-reviewed exercise selection");
 
         ArrayList<PlannedExercise> result = new ArrayList<>();
@@ -172,19 +175,42 @@ public final class PersonalPlanGenerator {
 
     static boolean isCompatibleWithLimitations(String exerciseName,String limitations) {
         String n=normalize(exerciseName==null?"":exerciseName);
-        String l=(limitations==null?"":limitations).toLowerCase(Locale.ROOT);
-        if(l.trim().isEmpty()||l.contains("none")||l.contains("ندارد")||l.contains("no injury")) return true;
+        String l=(limitations==null?"":limitations).toLowerCase(Locale.ROOT).trim();
+        if(isNoLimitation(l)) return true;
         boolean knee=contains(l,"knee","زانو");
         boolean shoulder=contains(l,"shoulder","شانه","سرشانه","روتاتور کاف");
-        boolean back=contains(l,"back pain","lower back","spine","کمر","ستون فقرات","دیسک");
+        boolean back=contains(l,"back","spine","lumbar","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک");
         boolean wrist=contains(l,"wrist","مچ دست");
         boolean ankle=contains(l,"ankle","مچ پا");
+        boolean hip=contains(l,"hip","لگن","مفصل ران");
+        boolean elbow=contains(l,"elbow","آرنج");
+        boolean neck=contains(l,"neck","گردن");
         if(knee&&contains(n,"squat","lunge","leg press","leg extension","step up","step-up","jump","running","treadmill")) return false;
         if(shoulder&&contains(n,"overhead press","shoulder press","lateral raise","front raise","upright row","dip","chest fly")) return false;
-        if(back&&contains(n,"deadlift","good morning","bent over","hyperextension","back extension","sit up","sit-up")) return false;
-        if(wrist&&contains(n,"push up","push-up","pushup","plank","burpee","handstand")) return false;
+        if(back&&contains(n,"deadlift","good morning","bent over","hyperextension","back extension","sit up","sit-up","barbell row")) return false;
+        if(wrist&&contains(n,"push up","push-up","pushup","plank","burpee","handstand","front rack")) return false;
         if(ankle&&contains(n,"jump","running","treadmill","lunge","step up","step-up")) return false;
+        if(hip&&contains(n,"squat","lunge","deadlift","hip thrust","leg press","adductor","abductor")) return false;
+        if(elbow&&contains(n,"curl","triceps","dip","push up","push-up","pull up","pull-up","row")) return false;
+        if(neck&&contains(n,"shrug","overhead press","shoulder press","handstand","loaded carry")) return false;
         return true;
+    }
+
+    private static boolean isNoLimitation(String value) {
+        return value==null||value.trim().isEmpty()||value.trim().equals("none")
+                ||value.trim().equals("no")||value.trim().equals("no injury")
+                ||value.trim().equals("ندارد")||value.trim().equals("خیر")
+                ||value.trim().equals("هیچ")||value.trim().equals("هیچکدام")
+                ||value.trim().equals("هیچ‌کدام");
+    }
+
+    private static boolean hasUnmappedLimitation(String value) {
+        if(isNoLimitation(value))return false;
+        String l=value.toLowerCase(Locale.ROOT);
+        return !contains(l,"knee","زانو","shoulder","شانه","سرشانه","روتاتور کاف",
+                "back","spine","lumbar","کمر","کمردرد","کمر درد","پشت","ستون فقرات","دیسک",
+                "wrist","مچ دست","ankle","مچ پا","hip","لگن","مفصل ران",
+                "elbow","آرنج","neck","گردن");
     }
 
     private static boolean supportsEquipment(String name, int equipment) {
