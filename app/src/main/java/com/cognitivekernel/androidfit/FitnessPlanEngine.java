@@ -265,13 +265,13 @@ public final class FitnessPlanEngine {
         Food apple=food("Apple (edible)",52,0.3,13.8,0.2,0,"g",1);
         Food almonds=food("Almonds",579,21.2,21.6,49.9,0,"g",2);
         Food beef=food("Lean beef (cooked)",217,26,0,12,0,"g",0);
-        Food potato=food("Potato (boiled)",87,1.9,20.1,0.1,0,"g",1);
+        Food potato=food("Potato (boiled)",87,1.9,20.1,0.1,0,"g",1);\n        Food chickpeas=food("Chickpeas (cooked)",164,8.9,27.4,2.6,0,"g",0);\n        Food pumpkinSeeds=food("Pumpkin seeds",559,30.2,10.7,49.1,0,"g",0);
         Meal breakfast=new Meal(tr(p,"Breakfast","صبحانه"));
         breakfast.add(oats,50);breakfast.add(egg,132);breakfast.add(banana,100);
         Meal lunch=new Meal(tr(p,"Lunch","ناهار"));
-        lunch.add(chicken,150);lunch.add(rice,180);lunch.add(veg,150);lunch.add(oil,5);
+        lunch.add(chicken,150);lunch.add(rice,180);lunch.add(veg,150);lunch.add(chickpeas,200);lunch.add(oil,5);
         Meal snack=new Meal(tr(p,"Snack","میان‌وعده"));
-        snack.add(yogurt,200);snack.add(apple,150);snack.add(almonds,10);
+        snack.add(yogurt,200);snack.add(apple,150);snack.add(almonds,10);snack.add(pumpkinSeeds,20);
         Meal dinner=new Meal(tr(p,"Dinner","شام"));
         dinner.add(beef,130);dinner.add(potato,200);dinner.add(veg,150);dinner.add(oil,5);
         List<Meal> result=new ArrayList<>();Collections.addAll(result,breakfast,lunch,snack,dinner);
@@ -370,7 +370,7 @@ public final class FitnessPlanEngine {
         if(contains(allergy,"egg","تخم مرغ","تخم‌مرغ") && n.contains("egg")) return true;
         if(contains(allergy,"milk","dairy","lactose","casein","whey","لبنیات","شیر") && (n.contains("yogurt")||n.contains("milk")) && !n.contains("soy yogurt")) return true;
         if(contains(allergy,"nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی") && n.contains("almond")) return true;
-        if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;
+        if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;\n        if(contains(allergy,"seed","pumpkin","تخمه","دانه") && n.contains("pumpkin seeds")) return true;
         if(contains(allergy,"beef","گوشت گاو","گوشت قرمز") && n.contains("beef")) return true;
         if(contains(allergy,"chicken","poultry","مرغ") && n.contains("chicken")) return true;
         if(contains(allergy,"gluten","wheat","گندم","گلوتن") && n.contains("oats")) return true;
@@ -384,7 +384,7 @@ public final class FitnessPlanEngine {
         if(n.contains("oats")) return contains(dislikes,"oats","oat","gluten","wheat","جو دوسر","جوپرک","جو پرک","گندم","گلوتن");
         if(n.contains("yogurt")) return contains(dislikes,"yogurt","dairy","milk","لبنیات","شیر","ماست");
         if(n.contains("almond")) return contains(dislikes,"almond","بادام","آجیل");
-        if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");
+        if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");\n        if(n.contains("chickpeas")) return contains(dislikes,"chickpea","chickpeas","حمص","نخود");\n        if(n.contains("pumpkin seeds")) return contains(dislikes,"pumpkin","seed","تخمه","تخمه کدو");
         if(n.contains("lentil")) return contains(dislikes,"lentil","عدس");
         if(n.contains("rice")) return contains(dislikes,"rice","برنج");
         if(n.contains("potato")) return contains(dislikes,"potato","سیب زمینی","سیب‌زمینی");
@@ -465,7 +465,7 @@ public final class FitnessPlanEngine {
             case "Potato (boiled)": return "سیب‌زمینی آب‌پز";
             case "Lentils (cooked)": return "عدس پخته";
             case "Firm tofu": return "توفوی سفت";
-            case "Unsweetened soy yogurt": return "ماست سویای بدون شکر";
+            case "Unsweetened soy yogurt": return "ماست سویای بدون شکر";\n            case "Chickpeas (cooked)": return "نخود پخته";\n            case "Pumpkin seeds": return "تخمه کدو";
             default: return name;
         }
     }
