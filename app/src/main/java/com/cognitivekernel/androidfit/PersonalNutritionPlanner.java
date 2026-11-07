@@ -65,9 +65,9 @@ public final class PersonalNutritionPlanner {
                 p.age=GoalPlanner.parseInteger(age.getText().toString());
                 p.heightCm=GoalPlanner.parseDecimal(height.getText().toString());
                 p.weightKg=GoalPlanner.parseDecimal(weight.getText().toString());
-                p.sexIndex=sex.getSelectedItemPosition();p.goalIndex=goal.getSelectedItemPosition();
-                p.activityIndex=activity.getSelectedItemPosition();
-                p.dietaryPreference=diet.getSelectedItemPosition()==2?"vegan":diet.getSelectedItemPosition()==1?"vegetarian":"omnivore";
+                p.sexIndex=sex.getSelectedItemPosition()-1;p.goalIndex=goal.getSelectedItemPosition()-1;
+                p.activityIndex=activity.getSelectedItemPosition()-1;
+                p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
                 p.conditions=conditions.getText().toString();p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
                 p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();
                 FitnessPlanEngine.validate(p);
