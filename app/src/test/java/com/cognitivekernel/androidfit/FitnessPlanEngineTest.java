@@ -103,6 +103,22 @@ public class FitnessPlanEngineTest {
         assertTrue(report.contains("ALLERGY NOTE"));
     }
 
+    @Test public void foodAllergiesMatchAdditionalEnglishAndPersianMenuIngredients() {
+        FitnessPlanEngine.Profile p=profile();
+        p.allergies="banana";
+        String banana=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertFalse(banana.contains("Banana (edible)"));
+        p.allergies="برنج";
+        String rice=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertFalse(rice.contains("White rice (cooked)"));
+        p.allergies="نخود";
+        String chickpeas=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertFalse(chickpeas.contains("Chickpeas (cooked)"));
+        p.allergies="سیب‌زمینی";
+        String potato=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertFalse(potato.contains("Potato (boiled)"));
+    }
+
     @Test public void dairyAllergyKeepsDairyFreeSoyYogurtButSoyAllergyRemovesIt() {
         FitnessPlanEngine.Profile p=profile();
         p.dietaryPreference="vegan";
