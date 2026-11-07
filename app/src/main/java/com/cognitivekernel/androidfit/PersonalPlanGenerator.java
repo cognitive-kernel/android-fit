@@ -108,7 +108,7 @@ public final class PersonalPlanGenerator {
 
     private static String splitKey(int days,int day) {
         if(days<=3)return "full";
-        if(days==5)return day==1||day==4?"push":day==2||day==5?"pull":"legs";
+        if(days==5)return day==1?"push":day==2?"pull":day==3?"legs":day==4?"upper":"lower";
         return day%2==1?"upper":"lower";
     }
 
