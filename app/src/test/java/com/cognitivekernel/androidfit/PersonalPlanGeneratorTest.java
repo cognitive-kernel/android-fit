@@ -77,6 +77,15 @@ public class PersonalPlanGeneratorTest {
         }
     }
 
+    @Test public void complexAndPostSurgicalRestrictionsRequireClinicianReviewedExerciseSelection() {
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("knee pain after surgery"));
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("shoulder tendon tear"));
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("شکستگی زانو"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("knee"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("درد زانو"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("none"));
+    }
+
     @Test public void equipmentFreePlanDoesNotSelectEquipmentDependentMovements() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             List<PersonalPlanGenerator.PlannedExercise> plan = PersonalPlanGenerator.generate(
