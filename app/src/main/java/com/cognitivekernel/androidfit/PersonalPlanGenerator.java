@@ -54,7 +54,7 @@ public final class PersonalPlanGenerator {
             if (leftGenderRank != rightGenderRank) return Integer.compare(leftGenderRank, rightGenderRank);
             return left.id.compareTo(right.id);
         });
-        if (eligible.isEmpty()) throw new IllegalStateException("No exercises match the selected gender and equipment");
+        if (eligible.isEmpty()) throw new IllegalStateException(limitations==null||limitations.trim().isEmpty()? "No exercises match the selected gender and equipment" : "No exercises match the reported injury restrictions; request a clinician-reviewed exercise selection");
 
         String[] priorities;
         if (goal == 0) priorities = new String[]{"legs", "push", "pull", "glutes", "core", "legs", "push", "pull"};
