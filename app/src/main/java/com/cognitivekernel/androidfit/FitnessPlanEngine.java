@@ -91,7 +91,7 @@ public final class FitnessPlanEngine {
     public static Analysis analyze(Profile p) {
         validate(p);
         double bmi=p.weightKg/Math.pow(p.heightCm/100.0,2);
-        double bmr=10*p.weightKg+6.25*p.heightCm-5*p.age+(p.sexIndex==0?5:-161);
+        double bmr=10*p.weightKg+6.25*p.heightCm-5*p.age+(p.sexIndex==0?5:p.sexIndex==1?-161:-78);
         double[] activity={1.20,1.375,1.55,1.725};
         double maintenance=bmr*activity[p.activityIndex];
         double target=maintenance;
@@ -114,7 +114,7 @@ public final class FitnessPlanEngine {
             throw new IllegalArgumentException("Enter none explicitly when no condition, injury, medicine or food allergy applies");
         }
         if(p.age<18||p.age>100||p.heightCm<120||p.heightCm>230||p.weightKg<30||p.weightKg>300
-                ||p.sexIndex<0||p.sexIndex>1||p.goalIndex<0||p.goalIndex>3
+                ||p.sexIndex<0||p.sexIndex>2||p.goalIndex<0||p.goalIndex>3
                 ||p.activityIndex<0||p.activityIndex>3||p.levelIndex<0||p.levelIndex>2
                 ||p.equipmentIndex<0||p.equipmentIndex>2||p.trainingDays<1||p.trainingDays>6
                 ||p.sessionMinutes<10||p.sessionMinutes>180||p.mealsPerDay<3||p.mealsPerDay>5
