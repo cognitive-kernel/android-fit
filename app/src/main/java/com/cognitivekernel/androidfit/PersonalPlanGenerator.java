@@ -13,11 +13,16 @@ public final class PersonalPlanGenerator {
         public final ExerciseAssetIndex.ExerciseAsset asset;
         public final int sets;
         public final int reps;
+        public final int day;
 
         PlannedExercise(ExerciseAssetIndex.ExerciseAsset asset, int sets, int reps) {
+            this(asset,sets,reps,1);
+        }
+        PlannedExercise(ExerciseAssetIndex.ExerciseAsset asset, int sets, int reps, int day) {
             this.asset = asset;
             this.sets = sets;
             this.reps = reps;
+            this.day = day;
         }
     }
 
@@ -32,12 +37,19 @@ public final class PersonalPlanGenerator {
     public static List<PlannedExercise> generate(
             List<ExerciseAssetIndex.ExerciseAsset> catalog,
             int goal, int level, int equipment, String gender, int sessionMinutes, String limitations) {
-        return generate(catalog,goal,level,equipment,gender,sessionMinutes,limitations,3);
+        return generateInternal(catalog,goal,level,equipment,gender,sessionMinutes,limitations,3,false);
     }
 
     public static List<PlannedExercise> generate(
             List<ExerciseAssetIndex.ExerciseAsset> catalog,
             int goal, int level, int equipment, String gender, int sessionMinutes, String limitations, int trainingDays) {
+        return generateInternal(catalog,goal,level,equipment,gender,sessionMinutes,limitations,trainingDays,true);
+    }
+
+    private static List<PlannedExercise> generateInternal(
+            List<ExerciseAssetIndex.ExerciseAsset> catalog,
+            int goal, int level, int equipment, String gender, int sessionMinutes, String limitations,
+            int trainingDays, boolean weeklyPlan) {
         if (catalog == null || catalog.isEmpty()) throw new IllegalArgumentException("Exercise catalog is empty");
         if (goal < 0 || goal > 3 || level < 0 || level > 2 || equipment < 0 || equipment > 2
                 || sessionMinutes < 10 || sessionMinutes > 180 || trainingDays < 1 || trainingDays > 6
@@ -63,27 +75,67 @@ public final class PersonalPlanGenerator {
         });
         if (eligible.isEmpty()) throw new IllegalStateException(limitations==null||limitations.trim().isEmpty()? "No exercises match the selected gender and equipment" : "No exercises match the reported injury restrictions; request a clinician-reviewed exercise selection");
 
-        String[] priorities;
-        if (goal == 0) priorities = new String[]{"legs", "push", "pull", "glutes", "core", "legs", "push", "pull"};
-        else if (goal == 1) priorities = new String[]{"legs", "push", "pull", "glutes", "core", "push", "pull", "legs"};
-        else if (goal == 3) priorities = new String[]{"cardio", "legs", "push", "pull", "core", "cardio", "glutes", "core"};
-        else priorities = new String[]{"legs", "push", "pull", "core", "cardio", "glutes", "push", "legs"};
-
-        ArrayList<ExerciseAssetIndex.ExerciseAsset> selected = new ArrayList<>();
+        ArrayList<PlannedExercise> result = new ArrayList<>();
         Set<String> usedIds = new HashSet<>();
         Set<String> usedNames = new HashSet<>();
-        for (String category : priorities) {
-            if (selected.size() >= count) break;
-            ExerciseAssetIndex.ExerciseAsset candidate = choose(eligible, category, usedIds, usedNames);
-            if (candidate != null) add(candidate, selected, usedIds, usedNames);
+        int daysToBuild=weeklyPlan?trainingDays:1;
+        for(int day=1;day<=daysToBuild;day++) {
+            String split=weeklyPlan?splitKey(trainingDays,day):"full";
+            String[] priorities=prioritiesFor(goal,split,day);
+            ArrayList<ExerciseAssetIndex.ExerciseAsset> selected=new ArrayList<>();
+            for(String category:priorities) {
+                if(selected.size()>=count)break;
+                ExerciseAssetIndex.ExerciseAsset candidate=choose(eligible,category,usedIds,usedNames);
+                if(candidate!=null)add(candidate,selected,usedIds,usedNames);
+            }
+            for(ExerciseAssetIndex.ExerciseAsset candidate:eligible) {
+                if(selected.size()>=count)break;
+                String category=category(candidate.name);
+                if(matchesSplit(split,category))add(candidate,selected,usedIds,usedNames);
+            }
+            if(selected.size()<Math.min(3,count)) {
+                throw new IllegalStateException("Not enough distinct catalog movements for training day "+day+" ("+split+")");
+            }
+            int sets=2;
+            int reps=goal==0?(level==0?8:6):goal==1?10:goal==2?12:15;
+            for(ExerciseAssetIndex.ExerciseAsset asset:selected) {
+                result.add(new PlannedExercise(asset,sets,reps,day));
+            }
         }
-        // Category classification is only a prioritization hint, never an eligibility rule.
-        // Fill every remaining slot from the already gender- and equipment-filtered catalog.
-        for (ExerciseAssetIndex.ExerciseAsset candidate : eligible) {
-            if (selected.size() >= count) break;
-            add(candidate, selected, usedIds, usedNames);
-        }
-        if (selected.isEmpty()) throw new IllegalStateException("No suitable exercises could be generated");
+        if(result.isEmpty())throw new IllegalStateException("No suitable exercises could be generated");
+        return Collections.unmodifiableList(result);
+    }
+
+    private static String splitKey(int days,int day) {
+        if(days<=3)return "full";
+        if(days==5)return day==1||day==4?"push":day==2||day==5?"pull":"legs";
+        return day%2==1?"upper":"lower";
+    }
+
+    private static String[] prioritiesFor(int goal,String split,int day) {
+        if("push".equals(split))return new String[]{"push","other"};
+        if("pull".equals(split))return new String[]{"pull","other"};
+        if("legs".equals(split))return new String[]{"legs","glutes","core","other"};
+        if("upper".equals(split))return new String[]{"pull","push","other"};
+        if("lower".equals(split))return new String[]{"legs","glutes","core","other"};
+        String[] base=goal==0?new String[]{"legs","push","pull","glutes","core","other"}
+                :goal==1?new String[]{"legs","push","pull","glutes","core","other"}
+                :goal==3?new String[]{"cardio","legs","push","pull","core","glutes","other"}
+                :new String[]{"legs","push","pull","core","cardio","glutes","other"};
+        int rotate=(day-1)%base.length;
+        String[] ordered=new String[base.length];
+        for(int i=0;i<base.length;i++)ordered[i]=base[(i+rotate)%base.length];
+        return ordered;
+    }
+
+    private static boolean matchesSplit(String split,String category) {
+        if("full".equals(split))return true;
+        if("upper".equals(split))return "push".equals(category)||"pull".equals(category)||"other".equals(category);
+        if("lower".equals(split)||"legs".equals(split))return "legs".equals(category)||"glutes".equals(category)||"core".equals(category)||"other".equals(category);
+        if("push".equals(split))return "push".equals(category)||"other".equals(category);
+        if("pull".equals(split))return "pull".equals(category)||"other".equals(category);
+        return false;
+    }
 
         int sets = 2;
         int reps = goal == 0 ? (level == 0 ? 8 : 6)
