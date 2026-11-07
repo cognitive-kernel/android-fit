@@ -14,7 +14,7 @@ public final class FitnessPlanEngine {
     private FitnessPlanEngine() {}
 
     public static final class Profile {
-        public int age = 30;
+        public boolean english;\n        public int age = 30;
         public double heightCm = 170;
         public double weightKg = 70;
         public int sexIndex;
@@ -139,12 +139,12 @@ public final class FitnessPlanEngine {
            .append("WEEKLY TRAINING STRUCTURE\n");
         int days=p.trainingDays;
         for(int day=1;day<=days;day++) {
-            out.append("Day ").append(day).append(": ");
-            if(days<=2) out.append("Full body");
-            else if(days==3) out.append(day==1?"Full body A":day==2?"Full body B":"Full body C");
-            else if(days==4) out.append(day%2==1?"Upper body":"Lower body");
-            else if(days==5) out.append(day==1||day==4?"Push":day==2||day==5?"Pull":"Legs & core");
-            else out.append(day%2==1?"Upper body":"Lower body");
+            out.append(tr(p,"Day ","روز ")).append(day).append(": ");
+            if(days<=2) out.append(tr(p,"Full body","کل بدن"));
+            else if(days==3) out.append(tr(p,day==1?"Full body A":day==2?"Full body B":"Full body C",day==1?"کل بدن الف":day==2?"کل بدن ب":"کل بدن ج"));
+            else if(days==4) out.append(tr(p,day%2==1?"Upper body":"Lower body",day%2==1?"بالاتنه":"پایین‌تنه"));
+            else if(days==5) out.append(tr(p,day==1||day==4?"Push":day==2||day==5?"Pull":"Legs & core",day==1||day==4?"فشاری":day==2||day==5?"کششی":"پا و میان‌تنه"));
+            else out.append(tr(p,day%2==1?"Upper body":"Lower body",day%2==1?"بالاتنه":"پایین‌تنه"));
             out.append(" — ").append(p.sessionMinutes).append(" min\n");
         }
         out.append("\nSESSION PRESCRIPTION\n");
@@ -152,7 +152,7 @@ public final class FitnessPlanEngine {
         int repsLow=p.goalIndex==0?4:p.goalIndex==1?6:8;
         int repsHigh=p.goalIndex==0?8:p.goalIndex==1?12:15;
         int weeklySets=p.levelIndex==0?6:p.levelIndex==1?10:12;
-        out.append("Use ").append(sets).append(" working sets per selected movement, ").append(repsLow).append("–").append(repsHigh)
+        out.append(tr(p,"Use ","برای هر حرکت ").append(sets).append(tr(p," working sets, "," ست کاری، ").append(repsLow).append("–").append(repsHigh)
            .append(" reps, controlled full range of motion, and 2–3 minutes rest for compound lifts (about 60–120 sec for smaller isolation work).\n")
            .append("Initial volume: approximately ").append(weeklySets).append(" challenging sets per major muscle group per week, adjusted to recovery and experience. For hypertrophy, build toward ~10+ weekly sets only when tolerated.\n")
            .append("Effort: finish most sets with about 2–3 good repetitions in reserve; do not force failure. Add repetitions first, then the smallest available load when all sets reach the top of the range with sound technique.\n")
@@ -161,7 +161,7 @@ public final class FitnessPlanEngine {
             out.append("\nMOVEMENT SELECTION FROM THE INSTALLED EXERCISE CATALOG\n");
             int i=1;
             for(PersonalPlanGenerator.PlannedExercise item:exercises) {
-                out.append(i++).append(". ").append(item.asset.name).append(" — ")
+                out.append(i++).append(". ").append(p.english?item.asset.name:ExerciseNameLocalizer.toPersian(item.asset.name)).append(" — ")
                    .append(item.sets).append(" sets × ").append(item.reps).append(" reps\n");
             }
         }
@@ -179,7 +179,7 @@ public final class FitnessPlanEngine {
         StringBuilder out=new StringBuilder();
         out.append("DAILY NUTRITION TARGET (ESTIMATE)\n")
            .append("Energy: ").append(Math.round(a.targetCalories)).append(" kcal\n")
-           .append("Protein: ").append(Math.round(a.proteinGrams)).append(" g | Carbohydrate: ").append(Math.round(a.carbohydrateGrams))
+           .append(tr(p,"Protein: ","پروتئین: ")).append(Math.round(a.proteinGrams)).append(tr(p," g | Carbohydrate: "," گرم | کربوهیدرات: ")).append(Math.round(a.carbohydrateGrams))
            .append(" g | Fat: ").append(Math.round(a.fatGrams)).append(" g\n")
            .append("Values are estimates; brands, cooking method, water loss and edible portion change the actual values. Weigh rice/potato/meat in the stated cooked state.\n\n");
         double totalK=0,totalP=0,totalC=0,totalF=0;
@@ -190,16 +190,16 @@ public final class FitnessPlanEngine {
                 if(portion.grams<=0) continue;
                 mk+=portion.kcal();mp+=portion.protein();mc+=portion.carbs();mf+=portion.fat();
                 String amount;
-                if("egg whites".equals(portion.food.unit)) amount=Math.max(1,Math.round(portion.grams/portion.food.unitGrams))+" egg whites (~"+Math.round(portion.grams)+" g)";
+                if("egg whites".equals(portion.food.unit)) amount=Math.max(1,Math.round(portion.grams/portion.food.unitGrams))+(p.english?" egg whites (~":" عدد سفیده تخم‌مرغ (حدود ")+Math.round(portion.grams)+" g)";
                 else amount=Math.round(portion.grams)+" g";
-                out.append("• ").append(portion.food.name).append(": ").append(amount)
+                out.append("• ").append(displayFoodName(p,portion.food.name)).append(": ").append(amount)
                    .append(" — ").append(Math.round(portion.kcal())).append(" kcal\n");
             }
             totalK+=mk;totalP+=mp;totalC+=mc;totalF+=mf;
             out.append("Meal subtotal: ").append(Math.round(mk)).append(" kcal | P ").append(Math.round(mp))
                .append(" g | C ").append(Math.round(mc)).append(" g | F ").append(Math.round(mf)).append(" g\n\n");
         }
-        out.append("DAILY MENU TOTAL: ").append(Math.round(totalK)).append(" kcal | Protein ").append(Math.round(totalP))
+        out.append(tr(p,"DAILY MENU TOTAL: ","مجموع کل منوی روز: ")).append(Math.round(totalK)).append(" kcal | ").append(tr(p,"Protein ","پروتئین ")).append(Math.round(totalP))
            .append(" g | Carbs ").append(Math.round(totalC)).append(" g | Fat ").append(Math.round(totalF)).append(" g\n")
            .append("Adjust portions after 2–3 weeks using average weight trend, training performance, hunger and recovery. Do not treat calorie estimates as exact laboratory values.\n");
         if(a.needsMedicalReview) out.append("\nMEDICAL/DIETARY REVIEW REQUIRED\n").append(a.medicalReason).append("\n");
@@ -221,13 +221,13 @@ public final class FitnessPlanEngine {
         Food almonds=food("Almonds",579,21.2,21.6,49.9,0,"g",2);
         Food beef=food("Lean beef (cooked)",217,26,0,12,0,"g",0);
         Food potato=food("Potato (boiled)",87,1.9,20.1,0.1,0,"g",1);
-        Meal breakfast=new Meal("Breakfast");
+        Meal breakfast=new Meal(tr(p,"Breakfast","صبحانه"));
         breakfast.add(oats,50);breakfast.add(egg,132);breakfast.add(banana,100);
-        Meal lunch=new Meal("Lunch");
+        Meal lunch=new Meal(tr(p,"Lunch","ناهار"));
         lunch.add(chicken,150);lunch.add(rice,180);lunch.add(veg,150);lunch.add(oil,5);
-        Meal snack=new Meal("Snack");
+        Meal snack=new Meal(tr(p,"Snack","میان‌وعده"));
         snack.add(yogurt,200);snack.add(apple,150);snack.add(almonds,10);
-        Meal dinner=new Meal("Dinner");
+        Meal dinner=new Meal(tr(p,"Dinner","شام"));
         dinner.add(beef,130);dinner.add(potato,200);dinner.add(veg,150);dinner.add(oil,5);
         List<Meal> result=new ArrayList<>();Collections.addAll(result,breakfast,lunch,snack,dinner);
         double baseProtein=0,baseFat=0,baseCarbs=0;
@@ -311,6 +311,28 @@ public final class FitnessPlanEngine {
     }
     private static Food food(String name,double kcal,double protein,double carbs,double fat,double unit,String unitName,int group) {
         return new Food(name,kcal,protein,carbs,fat,unit,unitName,group);
+    }
+    private static String tr(Profile p,String english,String persian){return p.english?english:persian;}
+    private static String displayFoodName(Profile p,String name) {
+        if(p.english)return name;
+        switch(name) {
+            case "Rolled oats (dry)": return "جو دوسر پرک (خشک)";
+            case "Egg whites": return "سفیده تخم‌مرغ";
+            case "Banana (edible)": return "موز (قسمت خوراکی)";
+            case "Chicken breast (cooked)": return "سینه مرغ (پخته)";
+            case "White rice (cooked)": return "برنج سفید (پخته)";
+            case "Mixed non-starchy vegetables": return "سبزیجات غیرنشاسته‌ای مخلوط";
+            case "Olive oil": return "روغن زیتون";
+            case "Plain Greek yogurt, low-fat": return "ماست یونانی ساده کم‌چرب";
+            case "Apple (edible)": return "سیب (قسمت خوراکی)";
+            case "Almonds": return "بادام";
+            case "Lean beef (cooked)": return "گوشت گوساله کم‌چرب (پخته)";
+            case "Potato (boiled)": return "سیب‌زمینی آب‌پز";
+            case "Lentils (cooked)": return "عدس پخته";
+            case "Firm tofu": return "توفوی سفت";
+            case "Unsweetened soy yogurt": return "ماست سویای بدون شکر";
+            default: return name;
+        }
     }
     private static boolean blank(String s){return s==null||s.trim().isEmpty();}
     private static double clamp(double v,double min,double max){return Math.max(min,Math.min(max,v));}
