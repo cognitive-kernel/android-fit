@@ -475,6 +475,7 @@ public final class AdvancedFeatures {
   Spinner sex=spinner(new String[]{tr("Select sex","جنسیت را انتخاب کنید"),tr("Male","مرد"),tr("Female","زن"),tr("Other / prefer not to say","سایر / ترجیح می‌دهم اعلام نکنم")});
   Spinner activity=spinner(new String[]{tr("Select daily activity","فعالیت روزانه را انتخاب کنید"),tr("Sedentary","کم‌تحرک"),tr("Lightly active","فعالیت سبک"),tr("Moderately active","فعالیت متوسط"),tr("Very active","فعالیت زیاد")});
   Spinner diet=spinner(new String[]{tr("Select diet preference","الگوی غذایی را انتخاب کنید"),tr("Omnivore","همه‌چیزخوار"),tr("Vegetarian","گیاه‌خوار"),tr("Vegan","وگان")});
+  Spinner meals=spinner(new String[]{tr("Select meals per day","تعداد وعده را انتخاب کنید"),tr("3 meals","۳ وعده"),tr("4 meals","۴ وعده"),tr("5 meals","۵ وعده")});
   EditText age=field(tr("Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),android.text.InputType.TYPE_CLASS_NUMBER);
   EditText height=field(tr("Height (cm)","قد (سانتی‌متر)"),(hasProfile?String.valueOf(saved.heightCm):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
   EditText weight=field(tr("Current weight (kg)","وزن فعلی (کیلوگرم)"),(hasProfile?String.valueOf(saved.weightKg):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -494,7 +495,7 @@ public final class AdvancedFeatures {
   if(hasProfile){
    goal.setSelection(saved.goalIndex+1);level.setSelection(saved.levelIndex+1);equipment.setSelection(saved.equipmentIndex+1);
    sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
-   diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);
+   diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);\n   meals.setSelection(Math.max(1,Math.min(3,saved.mealsPerDay-2)));
   }
   addField(form,tr("Main goal","هدف اصلی"),goal);
   addField(form,tr("Training experience","سطح تجربه تمرین"),level);
@@ -509,7 +510,7 @@ public final class AdvancedFeatures {
   addField(form,tr("Injuries and limitations","آسیب‌ها و محدودیت‌ها"),injuries);
   addField(form,tr("Medicines","داروها"),medications);
   addField(form,tr("Food allergies","حساسیت غذایی"),allergies);
-  addField(form,tr("Food preference","الگوی غذایی"),diet);
+  addField(form,tr("Food preference","الگوی غذایی"),diet);\n  addField(form,tr("Meals per day","تعداد وعده در روز"),meals);
   addField(form,tr("Foods to avoid","غذاهای نامطلوب"),dislikes);
   addField(form,tr("Additional details","توضیحات بیشتر"),notes);
   addField(form,tr("Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
@@ -526,7 +527,7 @@ public final class AdvancedFeatures {
     p.sleepHours=sleep.getText().toString().trim().isEmpty()?0:parseLocalizedDouble(sleep.getText().toString());p.conditions=conditions.getText().toString();
     p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
     p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();
-    p.notes=notes.getText().toString();p.medicalClearance=clearance.isChecked();p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
+    p.notes=notes.getText().toString();p.medicalClearance=clearance.isChecked();p.mealsPerDay=2+meals.getSelectedItemPosition();p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
     FitnessPlanEngine.validate(p);
     FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(p);
     if(analysis.needsMedicalReview&&!p.medicalClearance){
