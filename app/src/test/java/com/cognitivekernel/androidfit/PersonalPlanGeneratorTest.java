@@ -122,6 +122,22 @@ public class PersonalPlanGeneratorTest {
         }
     }
 
+    @Test public void fiveAndSixDayPlansUseTheExpectedWeeklySplit() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            List<ExerciseAssetIndex.ExerciseAsset> catalog=ExerciseAssetIndex.all(controller.get());
+            List<PersonalPlanGenerator.PlannedExercise> five=PersonalPlanGenerator.generate(
+                    catalog,1,1,2,"all",45,"none",5);
+            int[] fiveCounts=new int[6];
+            for(PersonalPlanGenerator.PlannedExercise item:five)fiveCounts[item.day]++;
+            for(int day=1;day<=5;day++)assertTrue("five-day split missing day "+day,fiveCounts[day]>=3);
+            List<PersonalPlanGenerator.PlannedExercise> six=PersonalPlanGenerator.generate(
+                    catalog,1,1,2,"all",45,"none",6);
+            int[] sixCounts=new int[7];
+            for(PersonalPlanGenerator.PlannedExercise item:six)sixCounts[item.day]++;
+            for(int day=1;day<=6;day++)assertTrue("six-day split missing day "+day,sixCounts[day]>=3);
+        }
+    }
+
     @Test public void weeklyDayAssignmentsSurviveDatabasePersistence() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             Activity activity=controller.get();
