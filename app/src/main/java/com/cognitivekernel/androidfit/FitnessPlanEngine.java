@@ -131,45 +131,58 @@ public final class FitnessPlanEngine {
     public static String trainingReport(Profile p, Analysis a, List<PersonalPlanGenerator.PlannedExercise> exercises) {
         validate(p);
         StringBuilder out=new StringBuilder();
-        out.append("PROFILE & TARGET\n")
-           .append("Age: ").append(p.age).append(" | Height: ").append(round(p.heightCm)).append(" cm | Weight: ").append(round(p.weightKg)).append(" kg\n")
-           .append("BMI screening estimate: ").append(round(a.bmi)).append(" (not a diagnosis)\n")
-           .append("Estimated maintenance: ").append(Math.round(a.maintenanceCalories)).append(" kcal/day\n")
-           .append("Starting energy target: ").append(Math.round(a.targetCalories)).append(" kcal/day\n\n")
-           .append("WEEKLY TRAINING STRUCTURE\n");
-        int days=p.trainingDays;
-        for(int day=1;day<=days;day++) {
-            out.append(tr(p,"Day ","روز ")).append(day).append(": ");
-            if(days<=2) out.append(tr(p,"Full body","کل بدن"));
-            else if(days==3) out.append(tr(p,day==1?"Full body A":day==2?"Full body B":"Full body C",day==1?"کل بدن الف":day==2?"کل بدن ب":"کل بدن ج"));
-            else if(days==4) out.append(tr(p,day%2==1?"Upper body":"Lower body",day%2==1?"بالاتنه":"پایین‌تنه"));
-            else if(days==5) out.append(tr(p,day==1||day==4?"Push":day==2||day==5?"Pull":"Legs & core",day==1||day==4?"فشاری":day==2||day==5?"کششی":"پا و میان‌تنه"));
-            else out.append(tr(p,day%2==1?"Upper body":"Lower body",day%2==1?"بالاتنه":"پایین‌تنه"));
-            out.append(" — ").append(p.sessionMinutes).append(" min\n");
+        out.append(tr(p,"PROFILE & TARGET\\n","مشخصات و هدف\\n"))
+           .append(tr(p,"Age: ","سن: ")).append(p.age)
+           .append(tr(p," | Height: "," | قد: ")).append(round(p.heightCm))
+           .append(tr(p," cm | Weight: "," سانتی‌متر | وزن: ")).append(round(p.weightKg)).append(" kg\\n")
+           .append(tr(p,"BMI screening estimate (not a diagnosis): ","BMI تخمینی (تشخیص پزشکی نیست): ")).append(round(a.bmi)).append("\\n")
+           .append(tr(p,"Estimated maintenance: ","کالری نگهدارنده تخمینی: ")).append(Math.round(a.maintenanceCalories)).append(" kcal/day\\n")
+           .append(tr(p,"Starting energy target: ","هدف اولیه انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal/day\\n\\n")
+           .append(tr(p,"WEEKLY TRAINING STRUCTURE\\n","ساختار تمرین هفتگی\\n"));
+        for(int day=1;day<=p.trainingDays;day++) {
+            String split;
+            if(p.trainingDays<=2) split=tr(p,"Full body","کل بدن");
+            else if(p.trainingDays==3) split=tr(p,day==1?"Full body A":day==2?"Full body B":"Full body C",day==1?"کل بدن الف":day==2?"کل بدن ب":"کل بدن ج");
+            else if(p.trainingDays==4) split=tr(p,day%2==1?"Upper body":"Lower body",day%2==1?"بالاتنه":"پایین‌تنه");
+            else if(p.trainingDays==5) split=tr(p,day==1||day==4?"Push":day==2||day==5?"Pull":"Legs & core",day==1||day==4?"فشاری":day==2||day==5?"کششی":"پا و میان‌تنه");
+            else split=tr(p,day%2==1?"Upper body":"Lower body",day%2==1?"بالاتنه":"پایین‌تنه");
+            out.append(tr(p,"Day ","روز ")).append(day).append(": ").append(split)
+               .append(" — ").append(p.sessionMinutes).append(tr(p," min\\n"," دقیقه\\n"));
         }
-        out.append("\nSESSION PRESCRIPTION\n");
         int sets=p.goalIndex==1?3:p.goalIndex==0?3:2;
         int repsLow=p.goalIndex==0?4:p.goalIndex==1?6:8;
         int repsHigh=p.goalIndex==0?8:p.goalIndex==1?12:15;
         int weeklySets=p.levelIndex==0?6:p.levelIndex==1?10:12;
-        out.append(tr(p,"Use ","برای هر حرکت ").append(sets).append(tr(p," working sets, "," ست کاری، ").append(repsLow).append("–").append(repsHigh)
-           .append(" reps, controlled full range of motion, and 2–3 minutes rest for compound lifts (about 60–120 sec for smaller isolation work).\n")
-           .append("Initial volume: approximately ").append(weeklySets).append(" challenging sets per major muscle group per week, adjusted to recovery and experience. For hypertrophy, build toward ~10+ weekly sets only when tolerated.\n")
-           .append("Effort: finish most sets with about 2–3 good repetitions in reserve; do not force failure. Add repetitions first, then the smallest available load when all sets reach the top of the range with sound technique.\n")
-           .append("Warm up 5–10 minutes and perform lighter ramp-up sets before demanding lifts. Stop for chest pain, faintness, unusual breathlessness, or sharp/worsening pain.\n");
+        out.append(tr(p,"\\nSESSION PRESCRIPTION\\n","\\nنسخه تمرین هر جلسه\\n"))
+           .append(tr(p,"Use ","برای هر حرکت ").append(sets).append(tr(p," working sets, "," ست کاری، "))
+           .append(repsLow).append("–").append(repsHigh)
+           .append(tr(p," reps. Use controlled full range of motion; rest 2–3 min for compound lifts and 60–120 sec for isolation work.\\n",
+               " تکرار با دامنه کامل و کنترل‌شده اجرا کنید؛ استراحت حرکات چندمفصلی ۲ تا ۳ دقیقه و حرکات تک‌مفصلی ۶۰ تا ۱۲۰ ثانیه باشد.\\n"))
+           .append(tr(p,"Initial volume: about ","حجم شروع: حدود ")).append(weeklySets)
+           .append(tr(p," challenging sets per major muscle group per week. For hypertrophy, build toward ~10+ weekly sets only when recovery allows.\\n",
+               " ست مؤثر برای هر گروه عضلانی در هفته. در عضله‌سازی فقط در صورت ریکاوری مناسب به حدود ۱۰ ست یا بیشتر برسید.\\n"))
+           .append(tr(p,"Effort: keep about 2–3 good repetitions in reserve on most sets; failure is not required. Add reps first, then the smallest load increase when all sets reach the top of the range with good technique.\\n",
+               "شدت: در پایان بیشتر ست‌ها حدود ۲ تا ۳ تکرار توان باقی بماند؛ تمرین تا ناتوانی ضروری نیست. ابتدا تکرار را افزایش دهید و پس از رسیدن همه ست‌ها به سقف دامنه با تکنیک صحیح، کمترین افزایش وزنه را اعمال کنید.\\n"))
+           .append(tr(p,"Warm up 5–10 minutes and perform lighter ramp-up sets before demanding lifts. Stop for chest pain, faintness, unusual breathlessness, or sharp/worsening pain.\\n",
+               "۵ تا ۱۰ دقیقه گرم کنید و پیش از حرکات سنگین چند ست سبک انجام دهید. در صورت درد قفسه سینه، غش، تنگی نفس غیرعادی یا درد تیز و تشدیدشونده تمرین را متوقف کنید.\\n"));
         if(exercises!=null&&!exercises.isEmpty()) {
-            out.append("\nMOVEMENT SELECTION FROM THE INSTALLED EXERCISE CATALOG\n");
+            out.append(tr(p,"\\nMOVEMENT SELECTION\\n","\\nحرکات انتخاب‌شده\\n"));
             int i=1;
             for(PersonalPlanGenerator.PlannedExercise item:exercises) {
-                out.append(i++).append(". ").append(p.english?item.asset.name:ExerciseNameLocalizer.toPersian(item.asset.name)).append(" — ")
-                   .append(item.sets).append(" sets × ").append(item.reps).append(" reps\n");
+                out.append(i++).append(". ").append(p.english?item.asset.name:ExerciseNameLocalizer.toPersian(item.asset.name))
+                   .append(" — ").append(item.sets).append(tr(p," sets × "," ست × "))
+                   .append(item.reps).append(tr(p," reps\\n"," تکرار\\n"));
             }
         }
-        out.append("\nRECOVERY & REVIEW\n")
-           .append("Sleep reported: ").append(round(p.sleepHours)).append(" h/night. Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake in small steps rather than reacting to one weigh-in.\n");
-        if(a.needsMedicalReview) out.append("\nMEDICAL SCREENING — REVIEW REQUIRED\n").append(a.medicalReason).append("\n");
-        if(a.bmi<18.5) out.append("\nBMI screening is below 18.5; do not use a fat-loss target. Seek a clinician/dietitian assessment.\n");
-        if(a.bmi>=30) out.append("\nBMI screening is 30 or above; BMI alone does not determine fitness or diagnosis. Progress gradually and seek clinical guidance if there are symptoms or comorbidities.\n");
+        out.append(tr(p,"\\nRECOVERY & REVIEW\\n","\\nریکاوری و ارزیابی مجدد\\n"))
+           .append(tr(p,"Sleep reported: ","خواب گزارش‌شده: ")).append(round(p.sleepHours))
+           .append(tr(p," h/night. Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake gradually.\\n",
+               " ساعت در شب. در صورت امکان به ۷ تا ۹ ساعت نزدیک شوید. هر هفته دست‌کم یک روز ریکاوری داشته باشید. عملکرد، روند وزن، درد، خواب و سختی تمرین را هر دو هفته بررسی و تغییرات را تدریجی اعمال کنید.\\n"));
+        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL SCREENING — REVIEW REQUIRED\\n","\\nنیاز به بررسی پزشکی پیش از شروع یا تغییر برنامه\\n")).append(a.medicalReason).append("\\n");
+        if(a.bmi<18.5) out.append(tr(p,"\\nBMI screening is below 18.5; do not use a fat-loss target. Seek a clinician/dietitian assessment.\\n",
+            "\\nBMI کمتر از ۱۸٫۵ است؛ هدف کاهش وزن اعمال نشود و ارزیابی پزشک یا متخصص تغذیه انجام شود.\\n"));
+        if(a.bmi>=30) out.append(tr(p,"\\nBMI is 30 or above; BMI alone is not a diagnosis. Progress gradually and seek clinical guidance if symptoms or comorbidities are present.\\n",
+            "\\nBMI برابر یا بیشتر از ۳۰ است؛ این شاخص به‌تنهایی تشخیص پزشکی نیست. تدریجی پیش بروید و در صورت وجود علائم یا بیماری همراه، راهنمایی بالینی بگیرید.\\n"));
         return out.toString();
     }
 
@@ -177,34 +190,42 @@ public final class FitnessPlanEngine {
         validate(p);
         List<Meal> meals=createMeals(p,a);
         StringBuilder out=new StringBuilder();
-        out.append("DAILY NUTRITION TARGET (ESTIMATE)\n")
-           .append("Energy: ").append(Math.round(a.targetCalories)).append(" kcal\n")
-           .append(tr(p,"Protein: ","پروتئین: ")).append(Math.round(a.proteinGrams)).append(tr(p," g | Carbohydrate: "," گرم | کربوهیدرات: ")).append(Math.round(a.carbohydrateGrams))
-           .append(" g | Fat: ").append(Math.round(a.fatGrams)).append(" g\n")
-           .append("Values are estimates; brands, cooking method, water loss and edible portion change the actual values. Weigh rice/potato/meat in the stated cooked state.\n\n");
+        out.append(tr(p,"DAILY NUTRITION TARGET (ESTIMATE)\\n","هدف روزانه تغذیه (تخمینی)\\n"))
+           .append(tr(p,"Energy: ","انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal\\n")
+           .append(tr(p,"Protein: ","پروتئین: ")).append(Math.round(a.proteinGrams))
+           .append(tr(p," g | Carbohydrate: "," گرم | کربوهیدرات: ")).append(Math.round(a.carbohydrateGrams))
+           .append(tr(p," g | Fat: "," گرم | چربی: ")).append(Math.round(a.fatGrams)).append(" g\\n")
+           .append(tr(p,"Values are estimates; brands, cooking method, water loss and edible portion change actual values. Weigh rice, potato and meat in the stated cooked state.\\n\\n",
+               "مقادیر تخمینی‌اند و با برند، روش پخت، کاهش آب و بخش خوراکی تغییر می‌کنند. برنج، سیب‌زمینی و گوشت را مطابق وضعیت پخته‌شده ذکرشده وزن کنید.\\n\\n"));
         double totalK=0,totalP=0,totalC=0,totalF=0;
         for(Meal meal:meals) {
             double mk=0,mp=0,mc=0,mf=0;
-            out.append(meal.title).append("\n");
+            out.append(meal.title).append("\\n");
             for(Portion portion:meal.portions) {
                 if(portion.grams<=0) continue;
                 mk+=portion.kcal();mp+=portion.protein();mc+=portion.carbs();mf+=portion.fat();
                 String amount;
-                if("egg whites".equals(portion.food.unit)) amount=Math.max(1,Math.round(portion.grams/portion.food.unitGrams))+(p.english?" egg whites (~":" عدد سفیده تخم‌مرغ (حدود ")+Math.round(portion.grams)+" g)";
-                else amount=Math.round(portion.grams)+" g";
+                if("egg whites".equals(portion.food.unit)) amount=Math.max(1,Math.round(portion.grams/portion.food.unitGrams))
+                    +(p.english?" egg whites (~":" عدد سفیده تخم‌مرغ (حدود ")+Math.round(portion.grams)+(p.english?" g)":" گرم)");
+                else amount=Math.round(portion.grams)+(p.english?" g":" گرم");
                 out.append("• ").append(displayFoodName(p,portion.food.name)).append(": ").append(amount)
-                   .append(" — ").append(Math.round(portion.kcal())).append(" kcal\n");
+                   .append(" — ").append(Math.round(portion.kcal())).append(tr(p," kcal\\n"," کیلوکالری\\n"));
             }
             totalK+=mk;totalP+=mp;totalC+=mc;totalF+=mf;
-            out.append("Meal subtotal: ").append(Math.round(mk)).append(" kcal | P ").append(Math.round(mp))
-               .append(" g | C ").append(Math.round(mc)).append(" g | F ").append(Math.round(mf)).append(" g\n\n");
+            out.append(tr(p,"Meal subtotal: ","جمع این وعده: ")).append(Math.round(mk)).append(" kcal | P ").append(Math.round(mp))
+               .append(" g | C ").append(Math.round(mc)).append(" g | F ").append(Math.round(mf)).append(" g\\n\\n");
         }
-        out.append(tr(p,"DAILY MENU TOTAL: ","مجموع کل منوی روز: ")).append(Math.round(totalK)).append(" kcal | ").append(tr(p,"Protein ","پروتئین ")).append(Math.round(totalP))
-           .append(" g | Carbs ").append(Math.round(totalC)).append(" g | Fat ").append(Math.round(totalF)).append(" g\n")
-           .append("Adjust portions after 2–3 weeks using average weight trend, training performance, hunger and recovery. Do not treat calorie estimates as exact laboratory values.\n");
-        if(a.needsMedicalReview) out.append("\nMEDICAL/DIETARY REVIEW REQUIRED\n").append(a.medicalReason).append("\n");
-        if(!blank(p.allergies)) out.append("\nALLERGY NOTE: ").append(p.allergies).append(". The sample menu is generic and must be checked against the stated allergies before use.\n");
-        if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) out.append("Foods to avoid/replace: ").append(p.dislikedFoods).append("\n");
+        out.append(tr(p,"DAILY MENU TOTAL: ","مجموع کل منوی روز: ")).append(Math.round(totalK)).append(" kcal | ")
+           .append(tr(p,"Protein ","پروتئین ")).append(Math.round(totalP))
+           .append(" g | ").append(tr(p,"Carbs ","کربوهیدرات ")).append(Math.round(totalC))
+           .append(" g | ").append(tr(p,"Fat ","چربی ")).append(Math.round(totalF)).append(" g\\n")
+           .append(tr(p,"Adjust portions after 2–3 weeks using average weight trend, training performance, hunger and recovery. Calorie values are not laboratory-exact.\\n",
+               "پس از ۲ تا ۳ هفته با توجه به میانگین روند وزن، عملکرد تمرین، گرسنگی و ریکاوری مقدارها را تنظیم کنید. کالری‌ها مقدار آزمایشگاهی دقیق نیستند.\\n"));
+        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL/DIETARY REVIEW REQUIRED\\n","\\nنیاز به بررسی پزشکی/تغذیه‌ای\\n")).append(a.medicalReason).append("\\n");
+        if(!blank(p.allergies) && !isNone(p.allergies)) out.append(tr(p,"\\nALLERGY NOTE: ","\\nهشدار حساسیت غذایی: ")).append(p.allergies)
+           .append(tr(p,". Recognized matching foods are omitted, but ingredients and cross-contamination cannot be verified offline. Check labels and consult a dietitian for replacements.\\n",
+               "؛ موارد شناخته‌شده حذف می‌شوند، اما ترکیبات و آلودگی متقاطع به‌صورت آفلاین قابل بررسی نیست. برچسب محصولات را بررسی و برای جایگزین با متخصص تغذیه مشورت کنید.\\n"));
+        if(!blank(p.dislikedFoods) && !isNone(p.dislikedFoods)) out.append(tr(p,"Foods to avoid/replace: ","غذاهای حذف‌شده یا نامطلوب: ")).append(p.dislikedFoods).append("\\n");
         return out.toString();
     }
 
