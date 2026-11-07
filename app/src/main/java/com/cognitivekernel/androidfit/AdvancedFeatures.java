@@ -560,7 +560,7 @@ public final class AdvancedFeatures {
     FitnessProfileStore.save(a,p);
     a.getSharedPreferences("fityar_preferences",Context.MODE_PRIVATE).edit()
       .putInt("fitness_gender_index",p.sexIndex).putString("fitness_gender",String.valueOf(sex.getSelectedItem()))
-      .putInt("fitness_level",p.levelIndex).putString("equipment",String.valueOf(equipment.getSelectedItem()))
+      .putString("equipment",String.valueOf(equipment.getSelectedItem()))
       .putString("fitness_goal",String.valueOf(goal.getSelectedItem()))
       .putString("coach_plan_report_"+planId,FitnessPlanEngine.trainingReport(p,analysis,generated))
       .putLong("coach_last_plan_id",planId).apply();
