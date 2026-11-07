@@ -472,7 +472,8 @@ ALLERGY NOTE: ","\
         if(n.contains("chicken")) return contains(dislikes,"chicken","poultry","meat","گوشت","مرغ");
         if(n.contains("beef")) return contains(dislikes,"beef","meat","گوشت","گوشت قرمز","گوشت گوساله","گوشت گاو");
         if(n.contains("oats")) return contains(dislikes,"oats","oat","gluten","wheat","جو دوسر","جوپرک","جو پرک","گندم","گلوتن");
-        if(n.contains("soy yogurt")) return contains(dislikes,"soy","soya","سویا","yogurt","ماست");\n        if(n.contains("yogurt")) return contains(dislikes,"yogurt","dairy","milk","لبنیات","شیر","ماست");
+        if(n.contains("soy yogurt")) return contains(dislikes,"soy","soya","سویا","yogurt","ماست");
+        if(n.contains("yogurt")) return contains(dislikes,"yogurt","dairy","milk","لبنیات","شیر","ماست");
         if(n.contains("almond")) return contains(dislikes,"almond","بادام","آجیل");
         if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");
         if(n.contains("chickpeas")) return contains(dislikes,"chickpea","chickpeas","حمص","نخود");
