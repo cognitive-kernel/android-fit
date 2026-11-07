@@ -26,10 +26,10 @@ public final class FitnessProfileStore {
         x.sexIndex=p.getInt("coach_sex",0);
         x.goalIndex=p.getInt("coach_goal",1);
         x.activityIndex=p.getInt("coach_activity",1);
-        x.levelIndex=p.getInt("fitness_level",0);
+        x.levelIndex=p.getInt("coach_level",p.getInt("fitness_level",0));
         x.equipmentIndex=p.getInt("coach_equipment",1);
-        x.trainingDays=p.getInt("weekly_goal",3);
-        x.sessionMinutes=p.getInt("session_minutes",45);
+        x.trainingDays=p.getInt("coach_training_days",p.getInt("weekly_goal",3));
+        x.sessionMinutes=p.getInt("coach_session_minutes",p.getInt("session_minutes",45));
         x.mealsPerDay=p.getInt("coach_meals",4);
         x.sleepHours=Double.longBitsToDouble(p.getLong("coach_sleep_bits",Double.doubleToLongBits(0)));
         x.conditions=p.getString("coach_conditions","");
@@ -50,9 +50,9 @@ public final class FitnessProfileStore {
          .putLong("coach_height_bits",Double.doubleToLongBits(x.heightCm))
          .putLong("coach_weight_bits",Double.doubleToLongBits(x.weightKg))
          .putInt("coach_sex",x.sexIndex).putInt("coach_goal",x.goalIndex)
-         .putInt("coach_activity",x.activityIndex).putInt("fitness_level",x.levelIndex)
-         .putInt("coach_equipment",x.equipmentIndex).putInt("weekly_goal",x.trainingDays)
-         .putInt("session_minutes",x.sessionMinutes).putInt("coach_meals",x.mealsPerDay)
+         .putInt("coach_activity",x.activityIndex).putInt("coach_level",x.levelIndex)
+         .putInt("coach_equipment",x.equipmentIndex).putInt("coach_training_days",x.trainingDays)
+         .putInt("coach_session_minutes",x.sessionMinutes).putInt("coach_meals",x.mealsPerDay)
          .putLong("coach_sleep_bits",Double.doubleToLongBits(x.sleepHours))
          .putString("coach_conditions",safe(x.conditions)).putString("coach_injuries",safe(x.injuries))
          .putString("coach_medications",safe(x.medications)).putString("coach_allergies",safe(x.allergies))
