@@ -130,7 +130,7 @@ public final class FitnessPlanEngine {
         if(!blank(p.conditions) && !isNone(p.conditions)) result.append("Reported medical conditions: ").append(p.conditions.trim()).append(". ");
         if(!blank(p.injuries) && !isNone(p.injuries)) result.append("Reported pain/injury/limitations: ").append(p.injuries.trim()).append(". ");
         if(!blank(p.medications) && !isNone(p.medications)) result.append("Medication use reported: ").append(p.medications.trim()).append(". ");
-        if(!blank(result.toString())) result.append("Get individualized clearance from a qualified clinician before starting or changing exercise/nutrition; this offline app cannot assess severity or medication interactions.");
+        if(!blank(result.toString())) result.append("Reported health information requires clinician-specific guidance; this offline app cannot assess severity, contraindications or medication interactions.");
         return result.toString();
     }
 
@@ -198,7 +198,7 @@ public final class FitnessPlanEngine {
                : tr(p,"Sleep duration not provided. ","مدت خواب وارد نشده است. "))
            .append(tr(p,"Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake gradually.\\n",
                "در صورت امکان به ۷ تا ۹ ساعت خواب نزدیک شوید. هر هفته دست‌کم یک روز ریکاوری داشته باشید. عملکرد، روند وزن، درد، خواب و سختی تمرین را هر دو هفته بررسی و تغییرات را تدریجی اعمال کنید.\\n"));
-        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL SCREENING — REVIEW REQUIRED\\n","\\nنیاز به بررسی پزشکی پیش از شروع یا تغییر برنامه\\n")).append(a.medicalReason).append("\\n");
+        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL NOTE — FOLLOW YOUR CLINICIAN’S RESTRICTIONS\\n","\\nیادآوری پزشکی — محدودیت‌های متخصص را رعایت کنید\\n")).append(a.medicalReason).append("\\n");
         if(a.bmi<18.5) out.append(tr(p,"\\nBMI screening is below 18.5; do not use a fat-loss target. Seek a clinician/dietitian assessment.\\n",
             "\\nBMI کمتر از ۱۸٫۵ است؛ هدف کاهش وزن اعمال نشود و ارزیابی پزشک یا متخصص تغذیه انجام شود.\\n"));
         if(a.bmi>=30) out.append(tr(p,"\\nBMI is 30 or above; BMI alone is not a diagnosis. Progress gradually and seek clinical guidance if symptoms or comorbidities are present.\\n",
@@ -248,7 +248,7 @@ public final class FitnessPlanEngine {
            .append(" g | ").append(tr(p,"Fat ","چربی ")).append(Math.round(totalF)).append(" g\\n")
            .append(tr(p,"Adjust portions after 2–3 weeks using average weight trend, training performance, hunger and recovery. Calorie values are not laboratory-exact.\\n",
                "پس از ۲ تا ۳ هفته با توجه به میانگین روند وزن، عملکرد تمرین، گرسنگی و ریکاوری مقدارها را تنظیم کنید. کالری‌ها مقدار آزمایشگاهی دقیق نیستند.\\n"));
-        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL/DIETARY REVIEW REQUIRED\\n","\\nنیاز به بررسی پزشکی/تغذیه‌ای\\n")).append(a.medicalReason).append("\\n");
+        if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL/DIETARY NOTE — FOLLOW YOUR CLINICIAN’S RESTRICTIONS\\n","\\nیادآوری پزشکی/تغذیه‌ای — محدودیت‌های متخصص را رعایت کنید\\n")).append(a.medicalReason).append("\\n");
         if(!blank(p.allergies) && !isNone(p.allergies)) out.append(tr(p,"\\nALLERGY NOTE: ","\\nهشدار حساسیت غذایی: ")).append(p.allergies)
            .append(tr(p,". Recognized matching foods are omitted, but ingredients and cross-contamination cannot be verified offline. Check labels and consult a dietitian for replacements.\\n",
                "؛ موارد شناخته‌شده حذف می‌شوند، اما ترکیبات و آلودگی متقاطع به‌صورت آفلاین قابل بررسی نیست. برچسب محصولات را بررسی و برای جایگزین با متخصص تغذیه مشورت کنید.\\n"));
