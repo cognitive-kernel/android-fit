@@ -511,7 +511,8 @@ public final class AdvancedFeatures {
   addField(form,tr("Food allergies","حساسیت غذایی"),allergies);
   addField(form,tr("Food preference","الگوی غذایی"),diet);
   addField(form,tr("Foods to avoid","غذاهای نامطلوب"),dislikes);
-  addField(form,tr("Additional details","توضیحات بیشتر"),notes);\n  addField(form,tr("Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
+  addField(form,tr("Additional details","توضیحات بیشتر"),notes);
+  addField(form,tr("Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
   ScrollView scroll=new ScrollView(a);scroll.addView(form);
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(scroll).setPositiveButton(s("create_plan"),(d,w)->{
    try{
