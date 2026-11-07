@@ -25,6 +25,7 @@ public final class FitnessPlanEngine {
         public int trainingDays = 3;
         public int sessionMinutes = 45;
         public int mealsPerDay = 4;
+        public double sleepHours = 7.5;
         public String conditions = "";
         public String injuries = "";
         public String medications = "";
@@ -111,7 +112,8 @@ public final class FitnessPlanEngine {
                 ||p.sexIndex<0||p.sexIndex>1||p.goalIndex<0||p.goalIndex>3
                 ||p.activityIndex<0||p.activityIndex>3||p.levelIndex<0||p.levelIndex>2
                 ||p.equipmentIndex<0||p.equipmentIndex>2||p.trainingDays<1||p.trainingDays>7
-                ||p.sessionMinutes<10||p.sessionMinutes>180||p.mealsPerDay<3||p.mealsPerDay>6) {
+                ||p.sessionMinutes<10||p.sessionMinutes>180||p.mealsPerDay<3||p.mealsPerDay>6
+                ||p.sleepHours<0||p.sleepHours>24) {
             throw new IllegalArgumentException("Profile values are outside supported ranges");
         }
     }
