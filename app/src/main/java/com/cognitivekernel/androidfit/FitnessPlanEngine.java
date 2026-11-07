@@ -368,7 +368,7 @@ public final class FitnessPlanEngine {
     private static boolean allergyMatches(String allergy,String food) {
         String n=food.toLowerCase(Locale.ROOT);
         if(contains(allergy,"egg","تخم مرغ","تخم‌مرغ") && n.contains("egg")) return true;
-        if(contains(allergy,"milk","dairy","lactose","لبنیات","شیر") && (n.contains("yogurt")||n.contains("milk"))) return true;
+        if(contains(allergy,"milk","dairy","lactose","casein","whey","لبنیات","شیر") && (n.contains("yogurt")||n.contains("milk")) && !n.contains("soy yogurt")) return true;
         if(contains(allergy,"nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی") && n.contains("almond")) return true;
         if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;
         if(contains(allergy,"beef","گوشت گاو","گوشت قرمز") && n.contains("beef")) return true;
@@ -381,8 +381,8 @@ public final class FitnessPlanEngine {
         if(n.contains("egg")) return contains(dislikes,"egg","تخم مرغ","تخم‌مرغ");
         if(n.contains("chicken")) return contains(dislikes,"chicken","poultry","meat","گوشت","مرغ");
         if(n.contains("beef")) return contains(dislikes,"beef","meat","گوشت","گوشت قرمز","گوشت گوساله","گوشت گاو");
-        if(n.contains("oats")) return contains(dislikes,"oats","oat","جو دوسر","جوپرک","جو پرک");
-        if(n.contains("yogurt")) return contains(dislikes,"yogurt","ماست");
+        if(n.contains("oats")) return contains(dislikes,"oats","oat","gluten","wheat","جو دوسر","جوپرک","جو پرک","گندم","گلوتن");
+        if(n.contains("yogurt")) return contains(dislikes,"yogurt","dairy","milk","لبنیات","شیر","ماست");
         if(n.contains("almond")) return contains(dislikes,"almond","بادام","آجیل");
         if(n.contains("tofu")||n.contains("soy")) return contains(dislikes,"tofu","soy","توفو","سویا");
         if(n.contains("lentil")) return contains(dislikes,"lentil","عدس");
