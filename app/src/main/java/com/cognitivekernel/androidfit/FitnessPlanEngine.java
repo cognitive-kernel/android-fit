@@ -114,7 +114,7 @@ public final class FitnessPlanEngine {
                 ||p.sexIndex<0||p.sexIndex>1||p.goalIndex<0||p.goalIndex>3
                 ||p.activityIndex<0||p.activityIndex>3||p.levelIndex<0||p.levelIndex>2
                 ||p.equipmentIndex<0||p.equipmentIndex>2||p.trainingDays<1||p.trainingDays>7
-                ||p.sessionMinutes<10||p.sessionMinutes>180||p.mealsPerDay<3||p.mealsPerDay>6
+                ||p.sessionMinutes<10||p.sessionMinutes>180||p.mealsPerDay<3||p.mealsPerDay>5
                 ||(!"omnivore".equals(p.dietaryPreference)&&!"vegetarian".equals(p.dietaryPreference)&&!"vegan".equals(p.dietaryPreference))
                 ||Double.isNaN(p.heightCm)||Double.isInfinite(p.heightCm)||Double.isNaN(p.weightKg)||Double.isInfinite(p.weightKg)
                 ||Double.isNaN(p.sleepHours)||Double.isInfinite(p.sleepHours)||p.sleepHours<0||p.sleepHours>24) {
@@ -321,6 +321,20 @@ public final class FitnessPlanEngine {
                 String dislikes=p.dislikedFoods.toLowerCase(Locale.ROOT);
                 m.portions.removeIf(x -> isDisliked(dislikes,x.food.name));
             }
+        }
+        if(p.mealsPerDay==3) {
+            Meal combined=new Meal(tr(p,"Breakfast + snack","صبحانه و میان‌وعده"));
+            combined.portions.addAll(result.get(0).portions);
+            combined.portions.addAll(result.get(2).portions);
+            result.remove(2);result.remove(0);result.add(0,combined);
+        } else if(p.mealsPerDay==5) {
+            Meal first=new Meal(tr(p,"Snack 1","میان‌وعده اول"));
+            Meal second=new Meal(tr(p,"Snack 2","میان‌وعده دوم"));
+            for(Portion portion:result.get(2).portions) {
+                first.add(portion.food,portion.grams/2.0);
+                second.add(portion.food,portion.grams/2.0);
+            }
+            result.remove(2);result.add(2,first);result.add(3,second);
         }
         return result;
     }
