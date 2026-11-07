@@ -184,11 +184,8 @@ public final class FitnessPlanEngine {
                 int shown=0;
                 for(PersonalPlanGenerator.PlannedExercise item:exercises) {
                     String category=PersonalPlanGenerator.category(item.asset.name);
-                    if(!matchesSplit(split,category)) continue;
+                    if(item.day!=day||!matchesSplit(split,category)) continue;
                     appendExercise(out,p,item,++shown);
-                }
-                if(shown==0) {
-                    for(PersonalPlanGenerator.PlannedExercise item:exercises) appendExercise(out,p,item,++shown);
                 }
             }
         }
