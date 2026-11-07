@@ -528,7 +528,7 @@ ALLERGY NOTE: ","\
     private static boolean matchesSplit(String split,String category) {
         if("full".equals(split)) return true;
         if("upper".equals(split)) return "push".equals(category)||"pull".equals(category)||"other".equals(category);
-        if("lower".equals(split)||"legs".equals(split)) return "legs".equals(category)||"glutes".equals(category)||"core".equals(category);
+        if("lower".equals(split)||"legs".equals(split)) return "legs".equals(category)||"glutes".equals(category)||"core".equals(category)||"other".equals(category);
         if("push".equals(split)) return "push".equals(category)||"other".equals(category);
         if("pull".equals(split)) return "pull".equals(category)||"other".equals(category);
         return true;
