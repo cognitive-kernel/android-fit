@@ -137,16 +137,6 @@ public final class PersonalPlanGenerator {
         return false;
     }
 
-        int sets = 2;
-        int reps = goal == 0 ? (level == 0 ? 8 : 6)
-                : goal == 1 ? 10 : goal == 2 ? 12 : 15;
-        ArrayList<PlannedExercise> result = new ArrayList<>();
-        for (ExerciseAssetIndex.ExerciseAsset asset : selected) {
-            result.add(new PlannedExercise(asset, sets, reps));
-        }
-        return Collections.unmodifiableList(result);
-    }
-
     private static ExerciseAssetIndex.ExerciseAsset choose(
             List<ExerciseAssetIndex.ExerciseAsset> catalog, String category,
             Set<String> usedIds, Set<String> usedNames) {
