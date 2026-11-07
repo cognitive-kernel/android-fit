@@ -25,6 +25,12 @@ public class FitnessPlanEngineTest {
         assertTrue(a.carbohydrateGrams>0);
     }
 
+    @Test public void unspecifiedSexUsesTheMidpointEnergyEstimate() {
+        FitnessPlanEngine.Profile p=profile();p.sexIndex=2;
+        FitnessPlanEngine.Analysis a=FitnessPlanEngine.analyze(p);
+        assertEquals(1615.75,a.bmr,0.01);
+    }
+
     @Test public void underweightProfileDoesNotReceiveFatLossDeficit() {
         FitnessPlanEngine.Profile p=profile();
         p.heightCm=190;p.weightKg=50;p.goalIndex=3;
