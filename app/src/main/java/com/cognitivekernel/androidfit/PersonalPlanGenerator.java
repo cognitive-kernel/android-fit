@@ -104,7 +104,7 @@ public final class PersonalPlanGenerator {
         if (usedIds.add(asset.id) && usedNames.add(name)) selected.add(asset);
     }
 
-    private static String category(String name) {
+    static String category(String name) {
         String n = normalize(name);
         if (contains(n, "running", "run ", "jog", "cycling", "treadmill", "jump rope", "jumping jack",
                 "burpee", "mountain climber", "high knees", "skipping")) return "cardio";
