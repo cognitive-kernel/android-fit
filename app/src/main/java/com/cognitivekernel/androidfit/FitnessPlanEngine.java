@@ -110,6 +110,9 @@ public final class FitnessPlanEngine {
 
     public static void validate(Profile p) {
         if(p==null) throw new IllegalArgumentException("Profile is required");
+        if(blank(p.conditions)||blank(p.injuries)||blank(p.medications)||blank(p.allergies)) {
+            throw new IllegalArgumentException("Enter none explicitly when no condition, injury, medicine or food allergy applies");
+        }
         if(p.age<18||p.age>100||p.heightCm<120||p.heightCm>230||p.weightKg<30||p.weightKg>300
                 ||p.sexIndex<0||p.sexIndex>1||p.goalIndex<0||p.goalIndex>3
                 ||p.activityIndex<0||p.activityIndex>3||p.levelIndex<0||p.levelIndex>2
