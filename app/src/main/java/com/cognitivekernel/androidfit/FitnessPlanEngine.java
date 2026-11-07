@@ -324,6 +324,28 @@ public final class FitnessPlanEngine {
                 if(x.food.group==1)m.portions.set(i,new Portion(x.food,x.grams*carbFactor));
             }
         }
+        double menuKcal=0,menuProtein=0,menuFat=0;
+        for(Meal meal:result) {
+            if(meal.portions.isEmpty()) {
+                throw new IllegalStateException(tr(p,"A meal has no safe foods after exclusions. Adjust the allergy/dislike list with a dietitian.",
+                        "پس از حذف مواد غذایی، یک وعده بدون غذای ایمن باقی مانده است؛ فهرست حساسیت‌ها و غذاهای حذف‌شده را با متخصص تغذیه بازبینی کنید."));
+            }
+            for(Portion portion:meal.portions) {
+                menuKcal+=portion.kcal();menuProtein+=portion.protein();menuFat+=portion.fat();
+            }
+        }
+        if(menuProtein<a.proteinGrams*0.85) {
+            throw new IllegalStateException(tr(p,"The remaining safe foods cannot meet the estimated protein target. Add suitable tolerated protein foods with a dietitian.",
+                    "غذاهای باقی‌مانده پروتئین هدف تخمینی را تأمین نمی‌کنند؛ با کمک متخصص تغذیه منابع پروتئینی قابل‌تحمل دیگری اضافه کنید."));
+        }
+        if(menuFat<a.fatGrams*0.70) {
+            throw new IllegalStateException(tr(p,"The remaining foods cannot provide a balanced fat target. Review exclusions with a dietitian.",
+                    "غذاهای باقی‌مانده چربی هدف را تأمین نمی‌کنند؛ فهرست حذف‌ها را با متخصص تغذیه بازبینی کنید."));
+        }
+        if(menuKcal<a.targetCalories*0.85||menuKcal>a.targetCalories*1.15) {
+            throw new IllegalStateException(tr(p,"The available food choices cannot produce a menu close to your calorie target. Add more tolerated foods.",
+                    "با غذاهای انتخاب‌شده نمی‌توان منویی نزدیک به هدف کالری ساخت؛ مواد غذایی قابل‌تحمل بیشتری مشخص کنید."));
+        }
         if(p.mealsPerDay==3) {
             Meal combined=new Meal(tr(p,"Breakfast + snack","صبحانه و میان‌وعده"));
             combined.portions.addAll(result.get(0).portions);
