@@ -122,6 +122,24 @@ public class PersonalPlanGeneratorTest {
         }
     }
 
+    @Test public void weeklyDayAssignmentsSurviveDatabasePersistence() {
+        try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
+            Activity activity=controller.get();
+            WorkoutDb db=new WorkoutDb(activity);
+            try {
+                List<PersonalPlanGenerator.PlannedExercise> generated=PersonalPlanGenerator.generate(
+                        ExerciseAssetIndex.all(activity),1,1,2,"all",45,"none",4);
+                long planId=db.addPlanWithExercises("Four day plan",generated);
+                List<String[]> rows=db.exercises(planId);
+                assertEquals(generated.size(),rows.size());
+                for(int i=0;i<generated.size();i++) {
+                    assertEquals(String.valueOf(generated.get(i).day),rows.get(i)[6]);
+                    assertEquals(generated.get(i).asset.id,rows.get(i)[4]);
+                }
+            } finally { db.close(); }
+        }
+    }
+
     @Test public void failedGeneratedPlanTransactionRollsBackOnlyItsOwnWrites() {
         try (ActivityController<Activity> controller = Robolectric.buildActivity(Activity.class).setup()) {
             WorkoutDb db = new WorkoutDb(controller.get());
