@@ -144,6 +144,13 @@ public class FitnessPlanEngineTest {
     }
 
     @Test(expected=IllegalArgumentException.class)
+    public void requiresExplicitMedicalAndAllergyScreening() {
+        FitnessPlanEngine.Profile p=profile();
+        p.allergies="";
+        FitnessPlanEngine.analyze(p);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
     public void rejectsInvalidDietPreference() {
         FitnessPlanEngine.Profile p=profile();p.dietaryPreference="anything";
         FitnessPlanEngine.analyze(p);
