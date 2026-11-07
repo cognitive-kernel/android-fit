@@ -83,7 +83,7 @@ public class MainActivity extends Activity implements SensorEventListener {
  private void showPlans(List<String[]> p){String[] a=new String[p.size()+1];a[0]=tr("+ New plan","+ برنامه جدید");for(int i=0;i<p.size();i++)a[i+1]=p.get(i)[1];new AlertDialog.Builder(this).setTitle(tr("Plans","برنامه‌ها")).setItems(a,(d,w)->{if(w==0){EditText n=edit(tr("Plan name","نام برنامه"),null);new AlertDialog.Builder(this).setView(n).setPositiveButton(tr("Save","ذخیره"),(x,y)->{String s=n.getText().toString().trim();if(!s.isEmpty())showPlan(new String[]{""+db.addPlan(s),s});}).setNegativeButton(tr("Cancel","لغو"),null).show();}else showPlan(p.get(w-1));}).setNegativeButton(tr("Close","بستن"),null).show();}
  static String exerciseDisplayName(String name,boolean english){return english?name:ExerciseNameLocalizer.toPersian(name);}
  void showPlan(String[] p){
-  long planId=Long.parseLong(p[0]);final ArrayList<String[]> rows=new ArrayList<>(db.exercises(planId));
+  long planId=Long.parseLong(p[0]);final ArrayList<String[]> rows=new ArrayList<>(db.exercises(planId));boolean multiDay=false;for(String[] row:rows)if(row.length>6&&!"1".equals(row[6])){multiDay=true;break;}final boolean showDayLabels=multiDay;
   final BaseAdapter[] adapterRef=new BaseAdapter[1];final AlertDialog[] dialogRef=new AlertDialog[1];ListView list=new ListView(this);
   adapterRef[0]=new BaseAdapter(){
    public int getCount(){return rows.size()+3;}public Object getItem(int position){return position<3?null:rows.get(position-3);}public long getItemId(int position){return position;}
@@ -98,7 +98,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     else if(gif==null&&image!=null){item.removeView(image);holder[0]=null;holder[1]=null;}
     else if(image!=null)image.setContentDescription(exerciseDisplayName(exercise[1],english()));
     TextView label=(TextView)holder[2];if(label==null){label=new TextView(MainActivity.this);label.setTextSize(15);label.setPadding(pad,0,pad,0);item.addView(label,new LinearLayout.LayoutParams(0,-2,1));holder[2]=label;}
-    label.setText((rows.stream().anyMatch(row->row.length>6&&!"1".equals(row[6]))?tr("Day ","روز ")+exercise[6]+" — ":"")+exerciseDisplayName(exercise[1],english())+"\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));return item;
+    label.setText((showDayLabels?tr("Day ","روز ")+exercise[6]+" — ":"")+exerciseDisplayName(exercise[1],english())+"\n"+exercise[2]+tr(" sets × "," ست × ")+exercise[3]+tr(" reps"," تکرار"));return item;
    }
   };
   list.setAdapter(adapterRef[0]);Runnable refresh=()->{rows.clear();rows.addAll(db.exercises(planId));adapterRef[0].notifyDataSetChanged();};
