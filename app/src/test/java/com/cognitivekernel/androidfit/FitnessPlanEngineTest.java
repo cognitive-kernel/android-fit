@@ -139,7 +139,7 @@ public class FitnessPlanEngineTest {
         String report=FitnessPlanEngine.trainingReport(p,FitnessPlanEngine.analyze(p),Collections.emptyList());
         assertTrue(report.contains("Day 4"));
         assertTrue(report.contains("repetitions in reserve"));
-        assertTrue(report.contains("Progression")||report.contains("Add repetitions"));
+        assertTrue(report.contains("Add reps first"));
         assertTrue(report.contains("Sleep reported"));
     }
 
