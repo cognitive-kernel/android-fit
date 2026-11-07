@@ -517,6 +517,7 @@ public final class AdvancedFeatures {
   new AlertDialog.Builder(a).setTitle(s("personal_plan_builder")).setView(scroll).setPositiveButton(s("create_plan"),(d,w)->{
    try{
     FitnessPlanEngine.Profile p=new FitnessPlanEngine.Profile();
+    p.english="en".equals(selectedLanguage());
     p.age=parseLocalizedInt(age.getText().toString());p.heightCm=parseLocalizedDouble(height.getText().toString());
     p.weightKg=parseLocalizedDouble(weight.getText().toString());p.sexIndex=sex.getSelectedItemPosition()-1;
     p.goalIndex=goal.getSelectedItemPosition()-1;p.levelIndex=level.getSelectedItemPosition()-1;
@@ -644,6 +645,7 @@ public final class AdvancedFeatures {
   }
   try{
    FitnessPlanEngine.Profile profile=FitnessProfileStore.load(a);
+   profile.english="en".equals(selectedLanguage());
    FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(profile);
    String gender=profile.sexIndex==0?"male":profile.sexIndex==1?"female":"all";
    List<PersonalPlanGenerator.PlannedExercise> suggested=
