@@ -133,6 +133,18 @@ public class FitnessPlanEngineTest {
         assertFalse(report.contains("Almonds"));
     }
 
+    @Test public void lowerCalorieProfilesReceiveReducedPortionsInsteadOfAnUnusableMenu() {
+        FitnessPlanEngine.Profile p=profile();
+        p.sexIndex=1;p.heightCm=160;p.weightKg=50;p.goalIndex=3;p.activityIndex=0;
+        String report=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        java.util.regex.Matcher matcher=java.util.regex.Pattern.compile("DAILY MENU TOTAL: ([0-9]+) kcal").matcher(report);
+        assertTrue("daily menu total missing",matcher.find());
+        double actual=Double.parseDouble(matcher.group(1));
+        double target=FitnessPlanEngine.analyze(p).targetCalories;
+        assertTrue("reduced portions did not match calorie target: "+actual+" vs "+target,
+                Math.abs(actual-target)/target<0.15);
+    }
+
     @Test public void calorieTotalsRemainCloseAfterVegetarianAndAllergenFiltering() {
         FitnessPlanEngine.Profile p=profile();
         p.dietaryPreference="vegetarian";
