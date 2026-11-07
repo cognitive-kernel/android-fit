@@ -29,6 +29,17 @@ public class PersonalPlanInjuryFilterTest {
         assertTrue(PersonalPlanGenerator.isCompatibleWithLimitations("Seated Row","ankle injury"));
     }
 
+    @Test public void mixedNegativeAndPositiveInjuryTextStillAppliesThePositiveRestriction() {
+        assertFalse(PersonalPlanGenerator.isCompatibleWithLimitations("Dumbbell Shoulder Press","no injury, but shoulder pain"));
+        assertTrue(PersonalPlanGenerator.isCompatibleWithLimitations("Seated Leg Extension","no injury, but shoulder pain"));
+    }
+
+    @Test public void unknownInjuryRegionsAreNotSilentlyTreatedAsSafe() {
+        assertTrue(PersonalPlanGenerator.hasUnmappedLimitation("scoliosis"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("none"));
+        assertFalse(PersonalPlanGenerator.hasUnmappedLimitation("knee pain and shoulder injury"));
+    }
+
     @Test public void noReportedLimitationDoesNotFilterCatalog() {
         assertTrue(PersonalPlanGenerator.isCompatibleWithLimitations("Barbell Squat","none"));
         assertTrue(PersonalPlanGenerator.isCompatibleWithLimitations("Barbell Squat",""));
