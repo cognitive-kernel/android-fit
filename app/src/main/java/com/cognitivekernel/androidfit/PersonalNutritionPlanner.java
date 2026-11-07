@@ -46,7 +46,7 @@ public final class PersonalNutritionPlanner {
         EditText age=input(a,t(a,"Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),InputType.TYPE_CLASS_NUMBER);
         EditText height=input(a,t(a,"Height (cm)","قد (سانتی‌متر)"),(hasProfile?String.valueOf(saved.heightCm):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText weight=input(a,t(a,"Current weight (kg)","وزن فعلی (کیلوگرم)"),(hasProfile?String.valueOf(saved.weightKg):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        EditText days=input(a,t(a,"Training days per week (1–7)","روز تمرین در هفته (۱ تا ۷)"),(hasProfile?String.valueOf(saved.trainingDays):""),InputType.TYPE_CLASS_NUMBER);
+        EditText days=input(a,t(a,"Training days per week (1–6)","روز تمرین در هفته (۱ تا ۶)"),(hasProfile?String.valueOf(saved.trainingDays):""),InputType.TYPE_CLASS_NUMBER);
         EditText minutes=input(a,t(a,"Session duration (10–180 min)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),(hasProfile?String.valueOf(saved.sessionMinutes):""),InputType.TYPE_CLASS_NUMBER);
         EditText sleep=input(a,t(a,"Average sleep hours per night (optional)","میانگین ساعت خواب شبانه (اختیاری)"),(saved.sleepHours>0?String.valueOf(saved.sleepHours):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText conditions=input(a,t(a,"Medical conditions (or 'none')","بیماری‌ها و شرایط پزشکی (یا «ندارد»)"),saved.conditions,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
