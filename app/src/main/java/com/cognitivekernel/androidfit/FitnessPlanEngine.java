@@ -374,7 +374,7 @@ public final class FitnessPlanEngine {
         if(contains(allergy,"milk","dairy","lactose","casein","whey","لبنیات","شیر","ماست")
                 && (n.contains("yogurt")||n.contains("milk")) && !n.contains("soy yogurt")) return true;
         if(contains(allergy,"nut","tree nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی","گردو","پسته")
-                && (n.contains("almond")||n.contains("pumpkin seeds"))) return true;
+                && n.contains("almond")) return true;
         if(contains(allergy,"soy","soya","tofu","سویا","توفو") && (n.contains("tofu")||n.contains("soy"))) return true;
         if(contains(allergy,"legume","pulses","حبوبات") && (n.contains("lentil")||n.contains("chickpea")||n.contains("tofu")||n.contains("soy"))) return true;
         if(contains(allergy,"seed","pumpkin","تخمه","دانه کدو","تخمه کدو") && n.contains("pumpkin seeds")) return true;
