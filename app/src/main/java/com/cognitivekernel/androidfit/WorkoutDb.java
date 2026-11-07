@@ -29,6 +29,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
         ensureColumn(db,"logs","notes","TEXT NOT NULL DEFAULT ''");
         ensureColumn(db,"exercises","exercise_catalog_id","TEXT");
         ensureColumn(db,"exercises","exercise_gender","TEXT");
+        ensureColumn(db,"exercises","training_day","INTEGER NOT NULL DEFAULT 1");
         // Older generated plans encoded gender in the display name; migrate it into metadata.
         db.execSQL("UPDATE exercises SET exercise_gender='male' WHERE exercise_gender IS NULL AND lower(rtrim(name)) LIKE '% (male)' AND plan_id IN (SELECT id FROM plans WHERE lower(name) LIKE 'personal plan%' OR name LIKE 'برنامه شخصی%')");
         db.execSQL("UPDATE exercises SET exercise_gender='female' WHERE exercise_gender IS NULL AND lower(rtrim(name)) LIKE '% (female)' AND plan_id IN (SELECT id FROM plans WHERE lower(name) LIKE 'personal plan%' OR name LIKE 'برنامه شخصی%')");
@@ -58,7 +59,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
                     throw new IllegalArgumentException("Generated exercise is incomplete");
                 }
                 addExercise(planId, exercise.asset.name, exercise.sets, exercise.reps,
-                        exercise.asset.id, exercise.asset.gender);
+                        exercise.asset.id, exercise.asset.gender, exercise.day);
             }
             database.setTransactionSuccessful();
             return planId;
@@ -77,10 +78,13 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
 
     public long addExercise(long planId,String name,int sets,int reps) {
-        return addExercise(planId,name,sets,reps,null,null);
+        return addExercise(planId,name,sets,reps,null,null,1);
     }
     public long addExercise(long planId,String name,int sets,int reps,String catalogId,String gender) {
-        if(name==null||name.trim().isEmpty()||sets<1||reps<1) throw new IllegalArgumentException("Invalid exercise");
+        return addExercise(planId,name,sets,reps,catalogId,gender,1);
+    }
+    public long addExercise(long planId,String name,int sets,int reps,String catalogId,String gender,int trainingDay) {
+        if(name==null||name.trim().isEmpty()||sets<1||reps<1||trainingDay<1||trainingDay>6) throw new IllegalArgumentException("Invalid exercise");
         if(catalogId!=null&&!catalogId.matches("\\d{3,10}")) throw new IllegalArgumentException("Invalid exercise catalog ID");
         if(gender!=null&&!gender.equals("male")&&!gender.equals("female")&&!gender.equals("all")&&!gender.equals("unspecified")) throw new IllegalArgumentException("Invalid exercise gender");
         SQLiteDatabase database=getWritableDatabase();
@@ -88,7 +92,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
             if(!cursor.moveToFirst()) throw new IllegalArgumentException("Workout plan does not exist");
         }
         ContentValues v=new ContentValues();
-        v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps);
+        v.put("plan_id",planId); v.put("name",name.trim()); v.put("sets",sets); v.put("reps",reps); v.put("training_day",trainingDay);
         if(catalogId!=null)v.put("exercise_catalog_id",catalogId);
         if(gender!=null)v.put("exercise_gender",gender);
         return database.insertOrThrow("exercises",null,v);
@@ -121,7 +125,7 @@ public class WorkoutDb extends SQLiteOpenHelper {
     }
     public List<String[]> exercises(long planId) {
         List<String[]> rows=new ArrayList<>();
-        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps,exercise_catalog_id,exercise_gender FROM exercises WHERE plan_id=? ORDER BY id",new String[]{String.valueOf(planId)})) { while(c.moveToNext()) rows.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5)}); }
+        try(Cursor c=getReadableDatabase().rawQuery("SELECT id,name,sets,reps,exercise_catalog_id,exercise_gender,training_day FROM exercises WHERE plan_id=? ORDER BY training_day,id",new String[]{String.valueOf(planId)})) { while(c.moveToNext()) rows.add(new String[]{c.getString(0),c.getString(1),c.getString(2),c.getString(3),c.getString(4),c.getString(5),c.getString(6)}); }
         return rows;
     }
     public void log(String date,String plan,String exercise,int sets,int reps,double kg) { logDetailed(date,plan,exercise,sets,reps,kg,60,7,""); }
