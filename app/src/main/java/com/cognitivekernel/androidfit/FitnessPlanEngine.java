@@ -162,7 +162,7 @@ public final class FitnessPlanEngine {
             out.append(tr(p,"Day ","روز ")).append(day).append(": ").append(split)
                .append(" — ").append(p.sessionMinutes).append(tr(p," min\\n"," دقیقه\\n"));
         }
-        int sets=p.goalIndex==1?3:p.goalIndex==0?3:2;
+        int sets=p.trainingDays>=4?2:(p.goalIndex==1?3:p.goalIndex==0?3:2);
         int repsLow=p.goalIndex==0?4:p.goalIndex==1?6:8;
         int repsHigh=p.goalIndex==0?8:p.goalIndex==1?12:15;
         int weeklySets=p.levelIndex==0?6:p.levelIndex==1?10:12;
