@@ -495,7 +495,8 @@ public final class AdvancedFeatures {
   if(hasProfile){
    goal.setSelection(saved.goalIndex+1);level.setSelection(saved.levelIndex+1);equipment.setSelection(saved.equipmentIndex+1);
    sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
-   diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);\n   meals.setSelection(Math.max(1,Math.min(3,saved.mealsPerDay-2)));
+   diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);
+   meals.setSelection(Math.max(1,Math.min(3,saved.mealsPerDay-2)));
   }
   addField(form,tr("Main goal","هدف اصلی"),goal);
   addField(form,tr("Training experience","سطح تجربه تمرین"),level);
@@ -510,7 +511,8 @@ public final class AdvancedFeatures {
   addField(form,tr("Injuries and limitations","آسیب‌ها و محدودیت‌ها"),injuries);
   addField(form,tr("Medicines","داروها"),medications);
   addField(form,tr("Food allergies","حساسیت غذایی"),allergies);
-  addField(form,tr("Food preference","الگوی غذایی"),diet);\n  addField(form,tr("Meals per day","تعداد وعده در روز"),meals);
+  addField(form,tr("Food preference","الگوی غذایی"),diet);
+  addField(form,tr("Meals per day","تعداد وعده در روز"),meals);
   addField(form,tr("Foods to avoid","غذاهای نامطلوب"),dislikes);
   addField(form,tr("Additional details","توضیحات بیشتر"),notes);
   addField(form,tr("Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
