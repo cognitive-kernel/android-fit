@@ -42,7 +42,7 @@ public final class PersonalNutritionPlanner {
         Spinner equipment=spinner(a,new String[]{t(a,"Select equipment","تجهیزات را انتخاب کنید"),t(a,"No equipment","بدون تجهیزات"),t(a,"Home equipment","تجهیزات خانگی"),t(a,"Full gym","باشگاه کامل")});
         Spinner activity=spinner(a,new String[]{t(a,"Select daily activity","فعالیت روزانه را انتخاب کنید"),t(a,"Sedentary","کم‌تحرک"),t(a,"Lightly active","فعالیت سبک"),t(a,"Moderately active","فعالیت متوسط"),t(a,"Very active","فعالیت زیاد")});
         Spinner diet=spinner(a,new String[]{t(a,"Select diet preference","الگوی غذایی را انتخاب کنید"),t(a,"Omnivore","همه‌چیزخوار"),t(a,"Vegetarian","گیاه‌خوار"),t(a,"Vegan","وگان")});
-        Spinner meals=spinner(a,new String[]{t(a,"3 meals","۳ وعده"),t(a,"4 meals","۴ وعده"),t(a,"5 meals","۵ وعده")});
+        Spinner meals=spinner(a,new String[]{t(a,"Select meals per day","تعداد وعده را انتخاب کنید"),t(a,"3 meals","۳ وعده"),t(a,"4 meals","۴ وعده"),t(a,"5 meals","۵ وعده")});
         EditText age=input(a,t(a,"Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),InputType.TYPE_CLASS_NUMBER);
         EditText height=input(a,t(a,"Height (cm)","قد (سانتی‌متر)"),(hasProfile?String.valueOf(saved.heightCm):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText weight=input(a,t(a,"Current weight (kg)","وزن فعلی (کیلوگرم)"),(hasProfile?String.valueOf(saved.weightKg):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
@@ -62,7 +62,7 @@ public final class PersonalNutritionPlanner {
             goal.setSelection(saved.goalIndex+1);sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
             level.setSelection(saved.levelIndex+1);equipment.setSelection(saved.equipmentIndex+1);
             diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);
-            meals.setSelection(Math.max(0,Math.min(2,saved.mealsPerDay-3)));
+            meals.setSelection(Math.max(1,Math.min(3,saved.mealsPerDay-2)));
         }
         add(form,a,t(a,"Goal","هدف"),goal);add(form,a,t(a,"Sex for energy estimate","جنسیت برای تخمین انرژی"),sex);
         add(form,a,t(a,"Age","سن"),age);add(form,a,t(a,"Height","قد"),height);add(form,a,t(a,"Weight","وزن"),weight);
@@ -89,7 +89,7 @@ public final class PersonalNutritionPlanner {
                 p.sessionMinutes=GoalPlanner.parseInteger(minutes.getText().toString());
                 p.sleepHours=sleep.getText().toString().trim().isEmpty()?0:GoalPlanner.parseDecimal(sleep.getText().toString());
                 p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
-                p.mealsPerDay=3+meals.getSelectedItemPosition();
+                p.mealsPerDay=2+meals.getSelectedItemPosition();
                 p.conditions=conditions.getText().toString();p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
                 p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();p.medicalClearance=clearance.isChecked();
                 FitnessPlanEngine.validate(p);
