@@ -32,23 +32,26 @@ public final class PersonalNutritionPlanner {
 
     public static void show(Activity a) {
         FitnessPlanEngine.Profile saved=FitnessProfileStore.load(a);
+        boolean hasProfile=FitnessProfileStore.hasProfile(a);
         LinearLayout form=new LinearLayout(a);form.setOrientation(LinearLayout.VERTICAL);
         int pad=(int)(16*a.getResources().getDisplayMetrics().density);form.setPadding(pad,pad,pad,pad);
-        Spinner goal=spinner(a,new String[]{t(a,"Strength","قدرت"),t(a,"Muscle building","عضله‌سازی"),t(a,"General fitness","تناسب اندام"),t(a,"Fat loss","کاهش چربی")});
-        Spinner sex=spinner(a,new String[]{t(a,"Male","مرد"),t(a,"Female","زن")});
-        Spinner activity=spinner(a,new String[]{t(a,"Sedentary","کم‌تحرک"),t(a,"Lightly active","فعالیت سبک"),t(a,"Moderately active","فعالیت متوسط"),t(a,"Very active","فعالیت زیاد")});
-        Spinner diet=spinner(a,new String[]{t(a,"Omnivore","همه‌چیزخوار"),t(a,"Vegetarian","گیاه‌خوار"),t(a,"Vegan","وگان")});
-        EditText age=input(a,t(a,"Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),String.valueOf(saved.age),InputType.TYPE_CLASS_NUMBER);
-        EditText height=input(a,t(a,"Height (cm)","قد (سانتی‌متر)"),String.valueOf(saved.heightCm),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
-        EditText weight=input(a,t(a,"Current weight (kg)","وزن فعلی (کیلوگرم)"),String.valueOf(saved.weightKg),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        Spinner goal=spinner(a,new String[]{t(a,"Select a goal","هدف را انتخاب کنید"),t(a,"Strength","قدرت"),t(a,"Muscle building","عضله‌سازی"),t(a,"General fitness","تناسب اندام"),t(a,"Fat loss","کاهش چربی")});
+        Spinner sex=spinner(a,new String[]{t(a,"Select sex","جنسیت را انتخاب کنید"),t(a,"Male","مرد"),t(a,"Female","زن")});
+        Spinner activity=spinner(a,new String[]{t(a,"Select daily activity","فعالیت روزانه را انتخاب کنید"),t(a,"Sedentary","کم‌تحرک"),t(a,"Lightly active","فعالیت سبک"),t(a,"Moderately active","فعالیت متوسط"),t(a,"Very active","فعالیت زیاد")});
+        Spinner diet=spinner(a,new String[]{t(a,"Select diet preference","الگوی غذایی را انتخاب کنید"),t(a,"Omnivore","همه‌چیزخوار"),t(a,"Vegetarian","گیاه‌خوار"),t(a,"Vegan","وگان")});
+        EditText age=input(a,t(a,"Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),InputType.TYPE_CLASS_NUMBER);
+        EditText height=input(a,t(a,"Height (cm)","قد (سانتی‌متر)"),(hasProfile?String.valueOf(saved.heightCm):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        EditText weight=input(a,t(a,"Current weight (kg)","وزن فعلی (کیلوگرم)"),(hasProfile?String.valueOf(saved.weightKg):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText conditions=input(a,t(a,"Medical conditions (or 'none')","بیماری‌ها و شرایط پزشکی (یا «ندارد»)"),saved.conditions,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText injuries=input(a,t(a,"Pain, injuries, surgeries or movement restrictions","درد، آسیب، جراحی یا محدودیت حرکتی"),saved.injuries,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText medications=input(a,t(a,"Medicines and supplements","داروها و مکمل‌های مصرفی"),saved.medications,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText allergies=input(a,t(a,"Food allergies / intolerances","حساسیت یا عدم تحمل غذایی"),saved.allergies,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText dislikes=input(a,t(a,"Foods to avoid / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
-        goal.setSelection(saved.goalIndex);sex.setSelection(saved.sexIndex);activity.setSelection(saved.activityIndex);
-        diet.setSelection("vegan".equals(saved.dietaryPreference)?2:"vegetarian".equals(saved.dietaryPreference)?1:0);
+        if(hasProfile) {
+            goal.setSelection(saved.goalIndex+1);sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
+            diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);
+        }
         add(form,a,t(a,"Goal","هدف"),goal);add(form,a,t(a,"Sex for energy estimate","جنسیت برای تخمین انرژی"),sex);
         add(form,a,t(a,"Age","سن"),age);add(form,a,t(a,"Height","قد"),height);add(form,a,t(a,"Weight","وزن"),weight);
         add(form,a,t(a,"Daily activity","فعالیت روزانه"),activity);add(form,a,t(a,"Diet preference","الگوی غذایی"),diet);
