@@ -15,6 +15,7 @@ public final class FitnessPlanEngine {
 
     public static final class Profile {
         public boolean english;
+        public boolean medicalClearance;
         public int age = 30;
         public double heightCm = 170;
         public double weightKg = 70;
@@ -141,6 +142,13 @@ public final class FitnessPlanEngine {
            .append(tr(p,"Estimated maintenance: ","کالری نگهدارنده تخمینی: ")).append(Math.round(a.maintenanceCalories)).append(" kcal/day\\n")
            .append(tr(p,"Starting energy target: ","هدف اولیه انرژی: ")).append(Math.round(a.targetCalories)).append(" kcal/day\\n\\n")
            .append(tr(p,"WEEKLY TRAINING STRUCTURE\\n","ساختار تمرین هفتگی\\n"));
+        if(a.needsMedicalReview&&!p.medicalClearance) {
+            out.append(tr(p,"\\nMEDICAL REVIEW REQUIRED BEFORE TRAINING\\n","\\nپیش از تجویز تمرین، بررسی پزشکی لازم است\\n"))
+               .append(a.medicalReason).append("\\n")
+               .append(tr(p,"No individualized exercise prescription has been generated until a qualified clinician reviews the reported condition, injury or medication.\\n",
+                   "تا زمان بررسی شرایط پزشکی، آسیب یا دارو توسط متخصص واجد صلاحیت، نسخه تمرینی اختصاصی تولید نمی‌شود.\\n"));
+            return out.toString();
+        }
         for(int day=1;day<=p.trainingDays;day++) {
             String split;
             if(p.trainingDays<=2) split=tr(p,"Full body","کل بدن");
@@ -201,6 +209,13 @@ public final class FitnessPlanEngine {
            .append(tr(p," g | Fat: "," گرم | چربی: ")).append(Math.round(a.fatGrams)).append(" g\\n")
            .append(tr(p,"Values are estimates; brands, cooking method, water loss and edible portion change actual values. Weigh rice, potato and meat in the stated cooked state.\\n\\n",
                "مقادیر تخمینی‌اند و با برند، روش پخت، کاهش آب و بخش خوراکی تغییر می‌کنند. برنج، سیب‌زمینی و گوشت را مطابق وضعیت پخته‌شده ذکرشده وزن کنید.\\n\\n"));
+        if(a.needsMedicalReview&&!p.medicalClearance) {
+            out.append(tr(p,"\\nMEDICAL/DIETARY REVIEW REQUIRED\\n","\\nپیش از ساخت منوی غذایی، بررسی پزشکی/تغذیه‌ای لازم است\\n"))
+               .append(a.medicalReason).append("\\n")
+               .append(tr(p,"No individualized food menu has been generated until a qualified clinician/dietitian reviews the reported condition or medication.\\n",
+                   "تا زمان بررسی شرایط یا دارو توسط پزشک یا متخصص تغذیه، منوی غذایی اختصاصی تولید نمی‌شود.\\n"));
+            return out.toString();
+        }
         double totalK=0,totalP=0,totalC=0,totalF=0;
         for(Meal meal:meals) {
             double mk=0,mp=0,mc=0,mf=0;
