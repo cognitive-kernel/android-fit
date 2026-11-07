@@ -461,6 +461,7 @@ ALLERGY NOTE: ","\
         if(contains(allergy,"milk","dairy","lactose","casein","whey","لبنیات","شیر") && (n.contains("yogurt")||n.contains("milk")) && !n.contains("soy yogurt")) return true;
         if(contains(allergy,"nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی") && n.contains("almond")) return true;
         if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;
+        if(contains(allergy,"legume","pulses","حبوبات") && (n.contains("lentil")||n.contains("chickpea")||n.contains("tofu")||n.contains("soy"))) return true;
         if(contains(allergy,"seed","pumpkin","تخمه","دانه") && n.contains("pumpkin seeds")) return true;
         if(contains(allergy,"beef","گوشت گاو","گوشت قرمز") && n.contains("beef")) return true;
         if(contains(allergy,"chicken","poultry","مرغ") && n.contains("chicken")) return true;
