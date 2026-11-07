@@ -289,10 +289,10 @@ public final class FitnessPlanEngine {
                     if(animal||veganOnly)m.portions.remove(i);
                 }
             }
-            result.get(1).add(food("Lentils (cooked)",116,9,20.1,0.4,0,"g",0),180*pFactor);
-            result.get(3).add(food("Firm tofu",144,17.3,2.8,8.7,0,"g",0),150*pFactor);
+            result.get(1).add(food("Lentils (cooked)",116,9,20.1,0.4,0,"g",0),180);
+            result.get(3).add(food("Firm tofu",144,17.3,2.8,8.7,0,"g",0),150);
             if("vegan".equals(p.dietaryPreference)) {
-                result.get(2).add(food("Unsweetened soy yogurt",50,4,3,2.5,0,"g",0),200*pFactor);
+                result.get(2).add(food("Unsweetened soy yogurt",50,4,3,2.5,0,"g",0),200);
             }
         }
         String allergy=p.allergies==null?"":p.allergies.toLowerCase(Locale.ROOT);
