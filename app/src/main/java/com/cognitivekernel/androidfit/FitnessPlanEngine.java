@@ -371,14 +371,25 @@ public final class FitnessPlanEngine {
     private static boolean allergyMatches(String allergy,String food) {
         String n=food.toLowerCase(Locale.ROOT);
         if(contains(allergy,"egg","تخم مرغ","تخم‌مرغ") && n.contains("egg")) return true;
-        if(contains(allergy,"milk","dairy","lactose","casein","whey","لبنیات","شیر") && (n.contains("yogurt")||n.contains("milk")) && !n.contains("soy yogurt")) return true;
-        if(contains(allergy,"nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی") && n.contains("almond")) return true;
-        if(contains(allergy,"soy","سویا") && (n.contains("tofu")||n.contains("soy"))) return true;
+        if(contains(allergy,"milk","dairy","lactose","casein","whey","لبنیات","شیر","ماست")
+                && (n.contains("yogurt")||n.contains("milk")) && !n.contains("soy yogurt")) return true;
+        if(contains(allergy,"nut","tree nut","almond","peanut","بادام","آجیل","مغزها","بادام زمینی","گردو","پسته")
+                && (n.contains("almond")||n.contains("pumpkin seeds"))) return true;
+        if(contains(allergy,"soy","soya","tofu","سویا","توفو") && (n.contains("tofu")||n.contains("soy"))) return true;
         if(contains(allergy,"legume","pulses","حبوبات") && (n.contains("lentil")||n.contains("chickpea")||n.contains("tofu")||n.contains("soy"))) return true;
-        if(contains(allergy,"seed","pumpkin","تخمه","دانه") && n.contains("pumpkin seeds")) return true;
-        if(contains(allergy,"beef","گوشت گاو","گوشت قرمز") && n.contains("beef")) return true;
-        if(contains(allergy,"chicken","poultry","مرغ") && n.contains("chicken")) return true;
+        if(contains(allergy,"seed","pumpkin","تخمه","دانه کدو","تخمه کدو") && n.contains("pumpkin seeds")) return true;
+        if(contains(allergy,"beef","red meat","گوشت گاو","گوشت قرمز","گوشت گوساله") && n.contains("beef")) return true;
+        if(contains(allergy,"chicken","poultry","مرغ","گوشت مرغ") && n.contains("chicken")) return true;
         if(contains(allergy,"gluten","wheat","گندم","گلوتن") && n.contains("oats")) return true;
+        if(contains(allergy,"banana","موز","میوه موز") && n.contains("banana")) return true;
+        if(contains(allergy,"apple","سیب") && n.contains("apple")) return true;
+        if(contains(allergy,"rice","برنج") && n.contains("rice")) return true;
+        if(contains(allergy,"potato","سیب زمینی","سیب‌زمینی") && n.contains("potato")) return true;
+        if(contains(allergy,"chickpea","chickpeas","garbanzo","نخود","حمص") && n.contains("chickpea")) return true;
+        if(contains(allergy,"lentil","عدس") && n.contains("lentil")) return true;
+        if(contains(allergy,"vegetable","vegetables","سبزیجات","سبزی") && n.contains("vegetables")) return true;
+        if(contains(allergy,"olive oil","olive","زیتون","روغن زیتون") && n.contains("olive oil")) return true;
+        if(contains(allergy,"pumpkin seed","تخمه کدو","دانه کدو") && n.contains("pumpkin seeds")) return true;
         return false;
     }
     private static boolean isDisliked(String dislikes,String name) {
