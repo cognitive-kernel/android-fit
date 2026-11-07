@@ -50,9 +50,9 @@ public final class PersonalNutritionPlanner {
         EditText minutes=input(a,t(a,"Session duration (10–180 min)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),(hasProfile?String.valueOf(saved.sessionMinutes):""),InputType.TYPE_CLASS_NUMBER);
         EditText sleep=input(a,t(a,"Average sleep hours per night (optional)","میانگین ساعت خواب شبانه (اختیاری)"),(saved.sleepHours>0?String.valueOf(saved.sleepHours):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText conditions=input(a,t(a,"Medical conditions (or 'none')","بیماری‌ها و شرایط پزشکی (یا «ندارد»)"),saved.conditions,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        EditText injuries=input(a,t(a,"Pain, injuries, surgeries or movement restrictions","درد، آسیب، جراحی یا محدودیت حرکتی"),saved.injuries,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        EditText medications=input(a,t(a,"Medicines and supplements","داروها و مکمل‌های مصرفی"),saved.medications,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        EditText allergies=input(a,t(a,"Food allergies / intolerances","حساسیت یا عدم تحمل غذایی"),saved.allergies,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        EditText injuries=input(a,t(a,"Pain, injuries, surgeries or movement restrictions (or none)","درد، آسیب، جراحی یا محدودیت حرکتی (یا ندارد)"),saved.injuries,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        EditText medications=input(a,t(a,"Medicines and supplements (write none if not applicable)","داروها و مکمل‌ها (در صورت نداشتن بنویسید: ندارد)"),saved.medications,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        EditText allergies=input(a,t(a,"Food allergies / intolerances (or none)","حساسیت یا عدم تحمل غذایی (یا ندارد)"),saved.allergies,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText dislikes=input(a,t(a,"Foods to avoid / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         CheckBox clearance=new CheckBox(a);
         clearance.setText(t(a,"I have clinician clearance for nutrition with the conditions/medicines listed above","برای تغذیه با توجه به شرایط و داروهای ذکرشده، مجوز متخصص دارم"));
@@ -102,8 +102,8 @@ public final class PersonalNutritionPlanner {
                   .setView(result).setPositiveButton(android.R.string.ok,null).show();
             } catch(Exception ex) {
                 new AlertDialog.Builder(a).setTitle(t(a,"Check your information","اطلاعات را بررسی کنید"))
-                  .setMessage(t(a,"Enter age 18–100, height 120–230 cm and weight 30–300 kg using valid numbers.",
-                    "سن ۱۸ تا ۱۰۰، قد ۱۲۰ تا ۲۳۰ سانتی‌متر و وزن ۳۰ تا ۳۰۰ کیلوگرم را با اعداد معتبر وارد کنید."))
+                  .setMessage(t(a,"Enter valid measurements, select every required option, and write none in medical, injury, medicine and allergy fields when not applicable.",
+                    "اطلاعات قد، وزن و سن را معتبر وارد کنید، گزینه‌های لازم را انتخاب کنید و در صورت نداشتن بیماری، آسیب، دارو یا حساسیت، عبارت «ندارد» را بنویسید."))
                   .setPositiveButton(android.R.string.ok,null).show();
             }
           }).setNegativeButton(android.R.string.cancel,null).show();
