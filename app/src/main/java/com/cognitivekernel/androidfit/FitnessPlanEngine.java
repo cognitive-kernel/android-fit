@@ -175,9 +175,11 @@ public final class FitnessPlanEngine {
             }
         }
         out.append(tr(p,"\\nRECOVERY & REVIEW\\n","\\nریکاوری و ارزیابی مجدد\\n"))
-           .append(tr(p,"Sleep reported: ","خواب گزارش‌شده: ")).append(round(p.sleepHours))
-           .append(tr(p," h/night. Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake gradually.\\n",
-               " ساعت در شب. در صورت امکان به ۷ تا ۹ ساعت نزدیک شوید. هر هفته دست‌کم یک روز ریکاوری داشته باشید. عملکرد، روند وزن، درد، خواب و سختی تمرین را هر دو هفته بررسی و تغییرات را تدریجی اعمال کنید.\\n"));
+           .append(p.sleepHours>0
+               ? tr(p,"Sleep reported: ","خواب گزارش‌شده: ")+round(p.sleepHours)+tr(p," h/night. "," ساعت در شب. ")
+               : tr(p,"Sleep duration not provided. ","مدت خواب وارد نشده است. "))
+           .append(tr(p,"Aim toward 7–9 hours where feasible. Keep at least one recovery day each week. Review performance, body-weight trend, pain, sleep and session effort every 2 weeks; adjust volume or energy intake gradually.\\n",
+               "در صورت امکان به ۷ تا ۹ ساعت خواب نزدیک شوید. هر هفته دست‌کم یک روز ریکاوری داشته باشید. عملکرد، روند وزن، درد، خواب و سختی تمرین را هر دو هفته بررسی و تغییرات را تدریجی اعمال کنید.\\n"));
         if(a.needsMedicalReview) out.append(tr(p,"\\nMEDICAL SCREENING — REVIEW REQUIRED\\n","\\nنیاز به بررسی پزشکی پیش از شروع یا تغییر برنامه\\n")).append(a.medicalReason).append("\\n");
         if(a.bmi<18.5) out.append(tr(p,"\\nBMI screening is below 18.5; do not use a fat-loss target. Seek a clinician/dietitian assessment.\\n",
             "\\nBMI کمتر از ۱۸٫۵ است؛ هدف کاهش وزن اعمال نشود و ارزیابی پزشک یا متخصص تغذیه انجام شود.\\n"));
