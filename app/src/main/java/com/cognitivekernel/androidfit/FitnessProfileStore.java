@@ -16,6 +16,9 @@ public final class FitnessProfileStore {
     public static FitnessPlanEngine.Profile load(Context context) {
         SharedPreferences p=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE);
         FitnessPlanEngine.Profile x=new FitnessPlanEngine.Profile();
+        String language=context.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString(
+                "language",context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("language","fa"));
+        x.english="en".equalsIgnoreCase(language);
         x.age=p.getInt("coach_age",30);
         x.heightCm=Double.longBitsToDouble(p.getLong("coach_height_bits",Double.doubleToLongBits(170)));
         x.weightKg=Double.longBitsToDouble(p.getLong("coach_weight_bits",Double.doubleToLongBits(70)));
