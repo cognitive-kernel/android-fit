@@ -37,7 +37,7 @@ public final class PersonalNutritionPlanner {
         LinearLayout form=new LinearLayout(a);form.setOrientation(LinearLayout.VERTICAL);
         int pad=(int)(16*a.getResources().getDisplayMetrics().density);form.setPadding(pad,pad,pad,pad);
         Spinner goal=spinner(a,new String[]{t(a,"Select a goal","هدف را انتخاب کنید"),t(a,"Strength","قدرت"),t(a,"Muscle building","عضله‌سازی"),t(a,"General fitness","تناسب اندام"),t(a,"Fat loss","کاهش چربی")});
-        Spinner sex=spinner(a,new String[]{t(a,"Select sex","جنسیت را انتخاب کنید"),t(a,"Male","مرد"),t(a,"Female","زن")});
+        Spinner sex=spinner(a,new String[]{t(a,"Select sex","جنسیت را انتخاب کنید"),t(a,"Male","مرد"),t(a,"Female","زن"),t(a,"Other / prefer not to say","سایر / ترجیح می‌دهم اعلام نکنم")});
         Spinner level=spinner(a,new String[]{t(a,"Select experience","سطح تجربه را انتخاب کنید"),t(a,"Beginner","مبتدی"),t(a,"Intermediate","متوسط"),t(a,"Advanced","پیشرفته")});
         Spinner equipment=spinner(a,new String[]{t(a,"Select equipment","تجهیزات را انتخاب کنید"),t(a,"No equipment","بدون تجهیزات"),t(a,"Home equipment","تجهیزات خانگی"),t(a,"Full gym","باشگاه کامل")});
         Spinner activity=spinner(a,new String[]{t(a,"Select daily activity","فعالیت روزانه را انتخاب کنید"),t(a,"Sedentary","کم‌تحرک"),t(a,"Lightly active","فعالیت سبک"),t(a,"Moderately active","فعالیت متوسط"),t(a,"Very active","فعالیت زیاد")});
