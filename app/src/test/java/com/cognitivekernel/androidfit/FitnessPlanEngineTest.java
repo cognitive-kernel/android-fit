@@ -103,6 +103,18 @@ public class FitnessPlanEngineTest {
         assertTrue(report.contains("ALLERGY NOTE"));
     }
 
+    @Test public void dairyAllergyKeepsDairyFreeSoyYogurtButSoyAllergyRemovesIt() {
+        FitnessPlanEngine.Profile p=profile();
+        p.dietaryPreference="vegan";
+        p.allergies="dairy";
+        String dairySafe=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertTrue(dairySafe.contains("Unsweetened soy yogurt"));
+        assertFalse(dairySafe.contains("Plain Greek yogurt"));
+        p.allergies="soy";
+        String soySafe=FitnessPlanEngine.nutritionReport(p,FitnessPlanEngine.analyze(p));
+        assertFalse(soySafe.contains("Unsweetened soy yogurt"));
+    }
+
     @Test public void foodDislikesAreRemovedFromSampleMenu() {
         FitnessPlanEngine.Profile p=profile();
         p.dislikedFoods="chicken, beef";
