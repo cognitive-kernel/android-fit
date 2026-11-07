@@ -38,12 +38,17 @@ public final class PersonalNutritionPlanner {
         int pad=(int)(16*a.getResources().getDisplayMetrics().density);form.setPadding(pad,pad,pad,pad);
         Spinner goal=spinner(a,new String[]{t(a,"Select a goal","هدف را انتخاب کنید"),t(a,"Strength","قدرت"),t(a,"Muscle building","عضله‌سازی"),t(a,"General fitness","تناسب اندام"),t(a,"Fat loss","کاهش چربی")});
         Spinner sex=spinner(a,new String[]{t(a,"Select sex","جنسیت را انتخاب کنید"),t(a,"Male","مرد"),t(a,"Female","زن")});
+        Spinner level=spinner(a,new String[]{t(a,"Select experience","سطح تجربه را انتخاب کنید"),t(a,"Beginner","مبتدی"),t(a,"Intermediate","متوسط"),t(a,"Advanced","پیشرفته")});
+        Spinner equipment=spinner(a,new String[]{t(a,"Select equipment","تجهیزات را انتخاب کنید"),t(a,"No equipment","بدون تجهیزات"),t(a,"Home equipment","تجهیزات خانگی"),t(a,"Full gym","باشگاه کامل")});
         Spinner activity=spinner(a,new String[]{t(a,"Select daily activity","فعالیت روزانه را انتخاب کنید"),t(a,"Sedentary","کم‌تحرک"),t(a,"Lightly active","فعالیت سبک"),t(a,"Moderately active","فعالیت متوسط"),t(a,"Very active","فعالیت زیاد")});
         Spinner diet=spinner(a,new String[]{t(a,"Select diet preference","الگوی غذایی را انتخاب کنید"),t(a,"Omnivore","همه‌چیزخوار"),t(a,"Vegetarian","گیاه‌خوار"),t(a,"Vegan","وگان")});
         Spinner meals=spinner(a,new String[]{t(a,"3 meals","۳ وعده"),t(a,"4 meals","۴ وعده"),t(a,"5 meals","۵ وعده")});
         EditText age=input(a,t(a,"Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),InputType.TYPE_CLASS_NUMBER);
         EditText height=input(a,t(a,"Height (cm)","قد (سانتی‌متر)"),(hasProfile?String.valueOf(saved.heightCm):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText weight=input(a,t(a,"Current weight (kg)","وزن فعلی (کیلوگرم)"),(hasProfile?String.valueOf(saved.weightKg):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        EditText days=input(a,t(a,"Training days per week (1–7)","روز تمرین در هفته (۱ تا ۷)"),(hasProfile?String.valueOf(saved.trainingDays):""),InputType.TYPE_CLASS_NUMBER);
+        EditText minutes=input(a,t(a,"Session duration (10–180 min)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),(hasProfile?String.valueOf(saved.sessionMinutes):""),InputType.TYPE_CLASS_NUMBER);
+        EditText sleep=input(a,t(a,"Average sleep hours per night (optional)","میانگین ساعت خواب شبانه (اختیاری)"),(saved.sleepHours>0?String.valueOf(saved.sleepHours):""),InputType.TYPE_CLASS_NUMBER|InputType.TYPE_NUMBER_FLAG_DECIMAL);
         EditText conditions=input(a,t(a,"Medical conditions (or 'none')","بیماری‌ها و شرایط پزشکی (یا «ندارد»)"),saved.conditions,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText injuries=input(a,t(a,"Pain, injuries, surgeries or movement restrictions","درد، آسیب، جراحی یا محدودیت حرکتی"),saved.injuries,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText medications=input(a,t(a,"Medicines and supplements","داروها و مکمل‌های مصرفی"),saved.medications,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
@@ -55,12 +60,16 @@ public final class PersonalNutritionPlanner {
         for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
         if(hasProfile) {
             goal.setSelection(saved.goalIndex+1);sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
+            level.setSelection(saved.levelIndex+1);equipment.setSelection(saved.equipmentIndex+1);
             diet.setSelection("vegan".equals(saved.dietaryPreference)?3:"vegetarian".equals(saved.dietaryPreference)?2:1);
             meals.setSelection(Math.max(0,Math.min(2,saved.mealsPerDay-3)));
         }
         add(form,a,t(a,"Goal","هدف"),goal);add(form,a,t(a,"Sex for energy estimate","جنسیت برای تخمین انرژی"),sex);
         add(form,a,t(a,"Age","سن"),age);add(form,a,t(a,"Height","قد"),height);add(form,a,t(a,"Weight","وزن"),weight);
         add(form,a,t(a,"Daily activity","فعالیت روزانه"),activity);add(form,a,t(a,"Diet preference","الگوی غذایی"),diet);
+        add(form,a,t(a,"Training experience","سطح تجربه تمرین"),level);add(form,a,t(a,"Available equipment","تجهیزات در دسترس"),equipment);
+        add(form,a,t(a,"Training days per week","روز تمرین در هفته"),days);add(form,a,t(a,"Minutes per session","مدت هر جلسه"),minutes);
+        add(form,a,t(a,"Sleep per night","خواب شبانه"),sleep);
         add(form,a,t(a,"Meals per day","تعداد وعده در روز"),meals);
         add(form,a,t(a,"Medical conditions (include pregnancy/breastfeeding if applicable)","شرایط پزشکی (در صورت ارتباط بارداری یا شیردهی را هم ذکر کنید)"),conditions);add(form,a,t(a,"Injuries and movement restrictions","آسیب‌ها و محدودیت‌های حرکتی"),injuries);add(form,a,t(a,"Medicines","داروها"),medications);
         add(form,a,t(a,"Allergies","حساسیت‌ها"),allergies);add(form,a,t(a,"Foods to avoid","غذاهای نامطلوب"),dislikes);
@@ -75,6 +84,10 @@ public final class PersonalNutritionPlanner {
                 p.weightKg=GoalPlanner.parseDecimal(weight.getText().toString());
                 p.sexIndex=sex.getSelectedItemPosition()-1;p.goalIndex=goal.getSelectedItemPosition()-1;
                 p.activityIndex=activity.getSelectedItemPosition()-1;
+                p.levelIndex=level.getSelectedItemPosition()-1;p.equipmentIndex=equipment.getSelectedItemPosition()-1;
+                p.trainingDays=GoalPlanner.parseInteger(days.getText().toString());
+                p.sessionMinutes=GoalPlanner.parseInteger(minutes.getText().toString());
+                p.sleepHours=sleep.getText().toString().trim().isEmpty()?0:GoalPlanner.parseDecimal(sleep.getText().toString());
                 p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
                 p.mealsPerDay=3+meals.getSelectedItemPosition();
                 p.conditions=conditions.getText().toString();p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
