@@ -96,7 +96,7 @@ public final class PersonalPlanGenerator {
             if(selected.size()<Math.min(3,count)) {
                 throw new IllegalStateException("Not enough distinct catalog movements for training day "+day+" ("+split+")");
             }
-            int sets=2;
+            int sets=(trainingDays>=5||level==0)?2:3;
             int reps=goal==0?(level==0?8:6):goal==1?10:goal==2?12:15;
             for(ExerciseAssetIndex.ExerciseAsset asset:selected) {
                 result.add(new PlannedExercise(asset,sets,reps,day));
