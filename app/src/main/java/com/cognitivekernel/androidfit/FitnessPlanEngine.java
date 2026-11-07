@@ -395,8 +395,8 @@ ALLERGY NOTE: ","\
         }
         double baseProtein=0,baseFat=0,baseCarbs=0;
         for(Meal m:result)for(Portion x:m.portions){baseProtein+=x.protein();baseFat+=x.fat();baseCarbs+=x.carbs();}
-        double pFactor=baseProtein<=0?1:clamp(a.proteinGrams/baseProtein,0.65,1.8);
-        double fFactor=baseFat<=0?1:clamp(a.fatGrams/baseFat,0.65,1.8);
+        double pFactor=baseProtein<=0?1:clamp(a.proteinGrams/baseProtein,0.20,1.8);
+        double fFactor=baseFat<=0?1:clamp(a.fatGrams/baseFat,0.20,1.8);
         for(Meal m:result) {
             for(int i=0;i<m.portions.size();i++) {
                 Portion x=m.portions.get(i);
@@ -408,7 +408,7 @@ ALLERGY NOTE: ","\
         }
         double currentK=0,carbK=0;
         for(Meal m:result)for(Portion x:m.portions){currentK+=x.kcal();if(x.food.group==1)carbK+=x.kcal();}
-        double carbFactor=carbK<=0?1:clamp((a.targetCalories-currentK+carbK)/carbK,0.5,2.5);
+        double carbFactor=carbK<=0?1:clamp((a.targetCalories-currentK+carbK)/carbK,0.20,2.5);
         for(Meal m:result) {
             for(int i=0;i<m.portions.size();i++) {
                 Portion x=m.portions.get(i);
