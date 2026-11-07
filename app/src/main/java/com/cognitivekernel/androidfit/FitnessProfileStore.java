@@ -18,7 +18,8 @@ public final class FitnessProfileStore {
         FitnessPlanEngine.Profile x=new FitnessPlanEngine.Profile();
         String language=context.getSharedPreferences("fit_settings",Context.MODE_PRIVATE).getString(
                 "language",context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("language","fa"));
-        x.english="en".equalsIgnoreCase(language);\n        x.medicalClearance=p.getBoolean("coach_medical_clearance",false);
+        x.english="en".equalsIgnoreCase(language);
+        x.medicalClearance=p.getBoolean("coach_medical_clearance",false);
         x.age=p.getInt("coach_age",30);
         x.heightCm=Double.longBitsToDouble(p.getLong("coach_height_bits",Double.doubleToLongBits(170)));
         x.weightKg=Double.longBitsToDouble(p.getLong("coach_weight_bits",Double.doubleToLongBits(70)));
@@ -44,7 +45,8 @@ public final class FitnessProfileStore {
     public static void save(Context context,FitnessPlanEngine.Profile x) {
         FitnessPlanEngine.validate(x);
         SharedPreferences.Editor e=context.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit();
-        e.putBoolean("coach_medical_clearance",x.medicalClearance)\n         .putInt("coach_age",x.age)
+        e.putBoolean("coach_medical_clearance",x.medicalClearance)
+         .putInt("coach_age",x.age)
          .putLong("coach_height_bits",Double.doubleToLongBits(x.heightCm))
          .putLong("coach_weight_bits",Double.doubleToLongBits(x.weightKg))
          .putInt("coach_sex",x.sexIndex).putInt("coach_goal",x.goalIndex)
