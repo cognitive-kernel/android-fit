@@ -40,7 +40,7 @@ public final class PersonalPlanGenerator {
             int goal, int level, int equipment, String gender, int sessionMinutes, String limitations, int trainingDays) {
         if (catalog == null || catalog.isEmpty()) throw new IllegalArgumentException("Exercise catalog is empty");
         if (goal < 0 || goal > 3 || level < 0 || level > 2 || equipment < 0 || equipment > 2
-                || sessionMinutes < 10 || sessionMinutes > 180
+                || sessionMinutes < 10 || sessionMinutes > 180 || trainingDays < 1 || trainingDays > 6
                 || (!"male".equals(gender) && !"female".equals(gender))) {
             throw new IllegalArgumentException("Invalid personal plan preferences");
         }
@@ -85,7 +85,8 @@ public final class PersonalPlanGenerator {
         }
         if (selected.isEmpty()) throw new IllegalStateException("No suitable exercises could be generated");
 
-        int sets = (goal == 2 || goal == 3 ? 2 : 3) + level;\n        if(trainingDays>=4) sets=Math.min(sets,2);
+        int sets = (goal == 2 || goal == 3 ? 2 : 3) + level;
+        if(trainingDays>=4) sets=Math.min(sets,2);
         int reps = goal == 0 ? (level == 0 ? 8 : 6)
                 : goal == 1 ? 10 : goal == 2 ? 12 : 15;
         ArrayList<PlannedExercise> result = new ArrayList<>();
