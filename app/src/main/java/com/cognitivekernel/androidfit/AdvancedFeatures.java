@@ -544,7 +544,7 @@ public final class AdvancedFeatures {
     if(persisted.size()!=generated.size())throw new IllegalStateException("Saved exercise count does not match generated plan");
     for(int i=0;i<generated.size();i++){
      String[] row=persisted.get(i);PersonalPlanGenerator.PlannedExercise expected=generated.get(i);
-     if(!expected.asset.id.equals(row[4])||!expected.asset.gender.equals(row[5]))
+     if(!expected.asset.id.equals(row[4])||!expected.asset.gender.equals(row[5])||!String.valueOf(expected.day).equals(row[6]))
       throw new IllegalStateException("Saved exercise metadata does not match generated plan");
     }
     FitnessProfileStore.save(a,p);
