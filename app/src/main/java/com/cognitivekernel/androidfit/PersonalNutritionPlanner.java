@@ -5,7 +5,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.text.InputType;
 import android.view.View;
-import android.widget.ArrayAdapter;
+import android.widget.ArrayAdapter;\nimport android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -47,6 +47,9 @@ public final class PersonalNutritionPlanner {
         EditText medications=input(a,t(a,"Medicines and supplements","داروها و مکمل‌های مصرفی"),saved.medications,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText allergies=input(a,t(a,"Food allergies / intolerances","حساسیت یا عدم تحمل غذایی"),saved.allergies,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
         EditText dislikes=input(a,t(a,"Foods to avoid / dislike","غذاهایی که مصرف نمی‌کنید یا دوست ندارید"),saved.dislikedFoods,InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        CheckBox clearance=new CheckBox(a);
+        clearance.setText(t(a,"I have clinician clearance for nutrition with the conditions/medicines listed above","برای تغذیه با توجه به شرایط و داروهای ذکرشده، مجوز متخصص دارم"));
+        clearance.setChecked(saved.medicalClearance);
         for(EditText e:new EditText[]{conditions,injuries,medications,allergies,dislikes}){e.setSingleLine(false);e.setMinLines(2);e.setMaxLines(4);}
         if(hasProfile) {
             goal.setSelection(saved.goalIndex+1);sex.setSelection(saved.sexIndex+1);activity.setSelection(saved.activityIndex+1);
@@ -57,6 +60,7 @@ public final class PersonalNutritionPlanner {
         add(form,a,t(a,"Daily activity","فعالیت روزانه"),activity);add(form,a,t(a,"Diet preference","الگوی غذایی"),diet);
         add(form,a,t(a,"Medical conditions (include pregnancy/breastfeeding if applicable)","شرایط پزشکی (در صورت ارتباط بارداری یا شیردهی را هم ذکر کنید)"),conditions);add(form,a,t(a,"Injuries and movement restrictions","آسیب‌ها و محدودیت‌های حرکتی"),injuries);add(form,a,t(a,"Medicines","داروها"),medications);
         add(form,a,t(a,"Allergies","حساسیت‌ها"),allergies);add(form,a,t(a,"Foods to avoid","غذاهای نامطلوب"),dislikes);
+        add(form,a,t(a,"Medical clearance (required when health risks are reported)","تأییدیه پزشکی (در صورت وجود شرایط پزشکی لازم است)"),clearance);
         ScrollView scroll=new ScrollView(a);scroll.addView(form);
         new AlertDialog.Builder(a).setTitle(t(a,"Personal nutrition plan","برنامه تغذیه شخصی")).setView(scroll)
           .setPositiveButton(t(a,"Calculate and create menu","محاسبه و ساخت برنامه غذایی"),(dialog,which)->{
@@ -69,7 +73,7 @@ public final class PersonalNutritionPlanner {
                 p.activityIndex=activity.getSelectedItemPosition()-1;
                 p.dietaryPreference=diet.getSelectedItemPosition()==3?"vegan":diet.getSelectedItemPosition()==2?"vegetarian":diet.getSelectedItemPosition()==1?"omnivore":"";
                 p.conditions=conditions.getText().toString();p.injuries=injuries.getText().toString();p.medications=medications.getText().toString();
-                p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();
+                p.allergies=allergies.getText().toString();p.dislikedFoods=dislikes.getText().toString();p.medicalClearance=clearance.isChecked();
                 FitnessPlanEngine.validate(p);
                 FitnessPlanEngine.Analysis analysis=FitnessPlanEngine.analyze(p);
                 FitnessProfileStore.save(a,p);
