@@ -478,7 +478,7 @@ public final class AdvancedFeatures {
   EditText age=field(tr("Age (18–100 years)","سن (۱۸ تا ۱۰۰ سال)"),(hasProfile?String.valueOf(saved.age):""),android.text.InputType.TYPE_CLASS_NUMBER);
   EditText height=field(tr("Height (cm)","قد (سانتی‌متر)"),(hasProfile?String.valueOf(saved.heightCm):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
   EditText weight=field(tr("Current weight (kg)","وزن فعلی (کیلوگرم)"),(hasProfile?String.valueOf(saved.weightKg):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
-  EditText days=field(tr("Training days per week (1–7)","روزهای تمرین در هفته (۱ تا ۷)"),(hasProfile?String.valueOf(saved.trainingDays):""),android.text.InputType.TYPE_CLASS_NUMBER);
+  EditText days=field(tr("Training days per week (1–6)","روزهای تمرین در هفته (۱ تا ۶)"),(hasProfile?String.valueOf(saved.trainingDays):""),android.text.InputType.TYPE_CLASS_NUMBER);
   EditText minutes=field(tr("Session duration (10–180 min)","مدت هر جلسه (۱۰ تا ۱۸۰ دقیقه)"),(hasProfile?String.valueOf(saved.sessionMinutes):""),android.text.InputType.TYPE_CLASS_NUMBER);
   EditText sleep=field(tr("Average sleep hours per night","میانگین ساعت خواب شبانه"),(saved.sleepHours>0?String.valueOf(saved.sleepHours):""),android.text.InputType.TYPE_CLASS_NUMBER|android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
   EditText conditions=field(tr("Medical conditions (write 'none' if none)","بیماری‌ها و شرایط پزشکی (در صورت نداشتن بنویسید: ندارد)"),saved.conditions,android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
