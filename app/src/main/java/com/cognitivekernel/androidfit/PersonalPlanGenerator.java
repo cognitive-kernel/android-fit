@@ -45,6 +45,7 @@ public final class PersonalPlanGenerator {
             if (asset == null || asset.name == null || asset.name.trim().isEmpty()) continue;
             if (!gender.equals(asset.gender) && !"unspecified".equals(asset.gender)) continue;
             if (!supportsEquipment(asset.name, equipment)) continue;
+            if (!isCompatibleWithLimitations(asset.name, limitations)) continue;
             if (isStretchOnly(asset.name)) continue;
             eligible.add(asset);
         }
